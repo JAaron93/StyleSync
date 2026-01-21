@@ -32,7 +32,6 @@ class SecureStorageServiceImpl implements SecureStorageService {
 
   Future<void> _init() async {
     if (_initCompleter.isCompleted) return;
-    if (_initialized) return _initCompleter.future;
 
     try {
       if (_platform.isAndroid) {

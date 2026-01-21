@@ -16,6 +16,7 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance, _In_opt_ HINSTANCE prev,
   // Initialize COM, so that it is available for use in the library and/or
   // plugins.
   HRESULT hr = ::CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED);
+  bool com_initialized = SUCCEEDED(hr) && hr != RPC_E_CHANGED_MODE;
   if (FAILED(hr) && hr != RPC_E_CHANGED_MODE) {
     return EXIT_FAILURE;
   }
@@ -41,6 +42,8 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance, _In_opt_ HINSTANCE prev,
     ::DispatchMessage(&msg);
   }
 
-  ::CoUninitialize();
+  if (com_initialized) {
+    ::CoUninitialize();
+  }
   return EXIT_SUCCESS;
 }

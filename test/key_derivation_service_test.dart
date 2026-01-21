@@ -78,10 +78,10 @@ void main() {
 
       final linuxMeta = await linuxService.generateMetadata();
       expect(
-      linuxMeta.algorithm,
-      KdfAlgorithm.pbkdf2,
-      // Linux doesn't support Argon2id, so generateMetadata() falls back to KdfAlgorithm.pbkdf2.
-    );
+        linuxMeta.algorithm,
+        KdfAlgorithm.pbkdf2,
+        reason: 'Linux falls back to PBKDF2 since Argon2id is not supported',
+      );
     });
   });
 }

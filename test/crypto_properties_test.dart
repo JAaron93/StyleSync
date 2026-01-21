@@ -79,7 +79,7 @@ void main() {
       final key2 = Uint8List.fromList(keyList2.map((i) => i & 0xFF).toList());
       
       // Only proceed if keys are actually different
-      if (keyList1.toString() == keyList2.toString()) return;
+      if (key1.toString() == key2.toString()) return;
 
       final input = Uint8List.fromList(data.map((i) => i & 0xFF).toList());
       final encrypted = await encryptionService.encrypt(input, key1);

@@ -61,7 +61,7 @@ class KdfMetadata {
         throw FormatException('$name must be an integer');
       }
       if (value < 0) {
-        throw ArgumentError('$name must be non-negative');
+        throw FormatException('$name must be non-negative');
       }
       return value;
     }

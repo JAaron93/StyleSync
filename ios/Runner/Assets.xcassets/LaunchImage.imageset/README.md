@@ -6,4 +6,4 @@ You can also do it via Xcode:
 
 1. Open your Flutter project's Xcode project with `open ios/Runner.xcworkspace`
 2. Select `Runner/Assets.xcassets` in the Project Navigator
-3. Drop in the desired imagesand dropping in the desired images.
+3. Drop in the desired images.

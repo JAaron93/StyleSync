@@ -1,4 +1,5 @@
 import 'dart:typed_data';
+import 'package:cryptography/cryptography.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:stylesync/core/crypto/encryption_service.dart';
 
@@ -39,7 +40,7 @@ void main() {
       
       await expectLater(
         encryptionService.decrypt(cipherText, wrongKey),
-        throwsException,
+        throwsA(isA<SecretBoxAuthenticationError>()),
       );
     });
 
@@ -55,7 +56,7 @@ void main() {
       
       await expectLater(
         encryptionService.decrypt(tamperedCipherText, dummyKey),
-        throwsException,
+        throwsA(isA<SecretBoxAuthenticationError>()),
       );
     });
   });
