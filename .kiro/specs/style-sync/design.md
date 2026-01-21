@@ -1961,8 +1961,12 @@ Future<void> checkForForcedUpdate() async {
 
 **Validates: Requirements 4.10, 4.11**
 
-### Property 9: Certificate Pinning with Fallback
-*For any* Vertex AI API call, if all configured certificate pins fail validation, then the system should fall back to standard TLS validation and display a security notification to the user.
+### Property 9: Certificate Pinning Failure Handling
+*For any* Vertex AI API call, if all configured certificate pins fail validation, then the system SHALL:
+1. Block the connection (no automatic fallback to standard TLS)
+2. Query Remote Config for emergency pins
+3. Show a security warning requiring explicit user opt-in
+4. Enter safe mode if the user declines
 
 **Validates: Requirements 4.11, 4.12**
 
@@ -2059,7 +2063,9 @@ Future<void> checkForForcedUpdate() async {
 ### Property 21: COPPA Age Verification and Parental Consent
 *For any* user identified as under 13 years old through age verification, the system should require COPPA-compliant verifiable parental consent (government ID, credit card, or signed form) before enabling virtual try-on features, and parents should have access to view, correct, and delete the child's data.
 
-**Validates: Requirements 4.19, 4.20, 4.21, 4.22, 4.23, 4.24**
+**Status**: Requires detailed COPPA design document; not yet testable. See "COPPA Implementation (Detailed Design Required)" section above for design considerations.
+
+**Will Validate**: Requirements 4.19, 4.20, 4.21, 4.22, 4.23, 4.24 (once COPPA design is complete)
 
 ### Property 22: Biometric Consent Required for Try-On
 *For any* first-time virtual try-on access, the system should display a biometric consent UI explaining data usage and require explicit user consent before processing any user photos.
