@@ -35,9 +35,11 @@ dependencies:
   firebase_auth: ^5.4.1
   firebase_storage: ^12.3.10
   cloud_firestore: ^5.6.3
-  flutter_secure_storage: ^9.2.4
+  flutter_secure_storage: ^10.0.0
   riverpod: ^2.6.1
   flutter_riverpod: ^2.6.1
+  cryptography: ^2.9.0
+  argon2: ^1.0.1
 
 dev_dependencies:
   flutter_test:
@@ -49,6 +51,10 @@ dev_dependencies:
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
   flutter_lints: ^6.0.0
+  glados: ^1.1.7
+  mockito: ^5.6.3
+  build_runner: ^2.10.5
+  platform: ^3.1.5
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec

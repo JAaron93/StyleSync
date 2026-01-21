@@ -15,8 +15,8 @@ This implementation plan breaks down the StyleSync feature into discrete, increm
   - Set up CI/CD pipeline with GitHub Actions or similar
   - _Requirements: 10.1, 10.2, 10.3, 10.5_
 
-- [ ] 2. Implement secure storage foundation
-  - [ ] 2.1 Create SecureStorageService interface and platform implementations
+- [x] 2. Implement secure storage foundation
+  - [x] 2.1 Create SecureStorageService interface and platform implementations
     - Implement iOS Keychain integration with kSecAttrAccessibleWhenUnlockedThisDeviceOnly
     - Implement Android Keystore with StrongBox detection and fallback
     - Add SecureStorageBackend enum (strongBox, hardwareBacked, software)
@@ -24,18 +24,18 @@ This implementation plan breaks down the StyleSync feature into discrete, increm
     - Add logging for storage backend selection
     - _Requirements: 2.5, 2.8, 2.9, 4.4_
   
-  - [ ] 2.2 Write property test for secure storage backend selection
+  - [x] 2.2 Write property test for secure storage backend selection
     - **Property 24: API Key Secure Storage Hardware Backing**
     - **Validates: Requirements 4.4**
   
-  - [ ] 2.3 Write unit tests for secure storage operations
+  - [x] 2.3 Write unit tests for secure storage operations
     - Test write/read/delete operations
     - Test biometric authentication requirement
     - Test platform-specific implementations
     - _Requirements: 2.5, 2.8, 2.9_
 
-- [ ] 3. Implement key derivation and encryption services
-  - [ ] 3.1 Create KeyDerivationService with Argon2id and PBKDF2 support
+- [x] 3. Implement key derivation and encryption services
+  - [x] 3.1 Create KeyDerivationService with Argon2id and PBKDF2 support
     - Add argon2_ffi_base dependency for Argon2id
     - Implement platform detection (Web → PBKDF2, others → try Argon2id)
     - Implement Argon2id with params: time=3, memory=64MB, parallelism=4
@@ -44,18 +44,18 @@ This implementation plan breaks down the StyleSync feature into discrete, increm
     - Store KDF metadata with encrypted backups
     - _Requirements: 2.12, 2.13_
   
-  - [ ] 3.2 Create AES-GCM encryption service
+  - [x] 3.2 Create AES-GCM encryption service
     - Implement AES-256-GCM encryption/decryption
     - Generate 96-bit cryptographically-random nonces
     - Implement nonce prepending to ciphertext
     - Add nonce reuse prevention checks
     - _Requirements: 2.12_
   
-  - [ ] 3.3 Write property test for encryption round-trip
+  - [x] 3.3 Write property test for encryption round-trip
     - **Property 3: Cloud Backup Encryption Round-Trip**
     - **Validates: Requirements 2.12, 2.13, 2.14, 2.16**
   
-  - [ ] 3.4 Write property test for KDF consistency
+  - [x] 3.4 Write property test for KDF consistency
     - **Property 23: Argon2id Key Derivation Consistency**
     - **Validates: Requirements 2.12**
 
