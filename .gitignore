@@ -7,4 +7,8 @@ build/
 .flutter-plugins
 .flutter-plugins-dependencies
 .metadata
-.idea/libraries/
+.idea/
+*.iml
+android/key.properties
+*.jks
+*.keystore
