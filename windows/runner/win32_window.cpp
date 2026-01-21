@@ -1,4 +1,5 @@
 #include "win32_window.h"
+#include <atomic>
 
 #include <dwmapi.h>
 #include <flutter_windows.h>
@@ -27,7 +28,7 @@ constexpr const wchar_t kGetPreferredBrightnessRegKey[] =
 constexpr const wchar_t kGetPreferredBrightnessRegValue[] = L"AppsUseLightTheme";
 
 // The number of Win32Window objects that currently exist.
-static int g_active_window_count = 0;
+static std::atomic<int> g_active_window_count{0};
 
 using EnableNonClientDpiScaling = BOOL __stdcall(HWND hwnd);
 
@@ -100,23 +101,24 @@ const wchar_t* WindowClassRegistrar::GetWindowClass() {
     window_class.hbrBackground = 0;
     window_class.lpszMenuName = nullptr;
     window_class.lpfnWndProc = Win32Window::WndProc;
-    RegisterClass(&window_class);
-    class_registered_ = true;
+    if (RegisterClass(&window_class)) {
+      class_registered_ = true;
+    }
   }
   return kWindowClassName;
 }
-
 void WindowClassRegistrar::UnregisterWindowClass() {
-  UnregisterClass(kWindowClassName, nullptr);
+  UnregisterClass(kWindowClassName, GetModuleHandle(nullptr));
   class_registered_ = false;
+}
 }
 
 Win32Window::Win32Window() {
-  ++g_active_window_count;
+  g_active_window_count.fetch_add(1);
 }
 
 Win32Window::~Win32Window() {
-  --g_active_window_count;
+  g_active_window_count.fetch_sub(1);
   Destroy();
 }
 
@@ -180,10 +182,12 @@ Win32Window::MessageHandler(HWND hwnd,
                             LPARAM const lparam) noexcept {
   switch (message) {
     case WM_DESTROY:
-      window_handle_ = nullptr;
-      Destroy();
-      if (quit_on_close_) {
-        PostQuitMessage(0);
+      if (!destroyed_) {
+        window_handle_ = nullptr;
+        Destroy();
+        if (quit_on_close_) {
+          PostQuitMessage(0);
+        }
       }
       return 0;
 
@@ -218,17 +222,21 @@ Win32Window::MessageHandler(HWND hwnd,
       return 0;
   }
 
-  return DefWindowProc(window_handle_, message, wparam, lparam);
+  return DefWindowProc(hwnd, message, wparam, lparam);
 }
 
 void Win32Window::Destroy() {
+  if (destroyed_) {
+    return;
+  }
+
   OnDestroy();
 
   if (window_handle_) {
     DestroyWindow(window_handle_);
     window_handle_ = nullptr;
   }
-  if (g_active_window_count == 0) {
+  if (g_active_window_count.load() == 0) {
     WindowClassRegistrar::GetInstance()->UnregisterWindowClass();
   }
 }
@@ -269,7 +277,10 @@ bool Win32Window::OnCreate() {
 }
 
 void Win32Window::OnDestroy() {
-  // No-op; provided for subclasses.
+  if (destroyed_) {
+    return;
+  }
+  destroyed_ = true;
 }
 
 void Win32Window::UpdateTheme(HWND const window) {

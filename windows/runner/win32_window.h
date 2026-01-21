@@ -13,9 +13,9 @@
 class Win32Window {
  public:
   struct Point {
-    unsigned int x;
-    unsigned int y;
-    Point(unsigned int x, unsigned int y) : x(x), y(y) {}
+    int x;
+    int y;
+    Point(int x, int y) : x(x), y(y) {}
   };
 
   struct Size {
@@ -27,6 +27,10 @@ class Win32Window {
 
   Win32Window();
   virtual ~Win32Window();
+
+  // Disallow copy and assign.
+  Win32Window(const Win32Window&) = delete;
+  Win32Window& operator=(const Win32Window&) = delete;
 
   // Creates a win32 window with |title| that is positioned and sized using
   // |origin| and |size|. New windows are created on the default monitor. Window
@@ -64,7 +68,7 @@ class Win32Window {
                                  WPARAM const wparam,
                                  LPARAM const lparam) noexcept;
 
-  // Called when CreateAndShow is called, allowing subclass window-related
+  // Called when Create is called, allowing subclass window-related
   // setup. Subclasses should return false if setup fails.
   virtual bool OnCreate();
 
@@ -97,6 +101,9 @@ class Win32Window {
 
   // window handle for hosted content.
   HWND child_content_ = nullptr;
+
+  // Whether or not the window has been destroyed.
+  bool destroyed_ = false;
 };
 
 #endif  // RUNNER_WIN32_WINDOW_H_

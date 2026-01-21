@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- StyleSync Branding Colors -->
+    <color name="brand_background">#1A1A1A</color> <!-- Sophisticated Dark/Charcoal -->
+    <color name="brand_primary">#F0F0F0</color>
+</resources>

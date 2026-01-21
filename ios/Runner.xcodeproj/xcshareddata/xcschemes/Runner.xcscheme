@@ -79,7 +79,8 @@
       shouldUseLaunchSchemeArgsEnv = "YES"
       savedToolIdentifier = ""
       useCustomWorkingDirectory = "NO"
-      debugDocumentVersioning = "YES">
+      debugDocumentVersioning = "YES"
+      customLLDBInitFile = "$(SRCROOT)/Flutter/ephemeral/flutter_lldbinit">
       <BuildableProductRunnable
          runnableDebuggingMode = "0">
          <BuildableReference

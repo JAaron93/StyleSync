@@ -11,4 +11,4 @@ PRODUCT_NAME = stylesync
 PRODUCT_BUNDLE_IDENTIFIER = com.stylesync.stylesync
 
 // The copyright displayed in application information
-PRODUCT_COPYRIGHT = Copyright © 2026 com.stylesync. All rights reserved.
+PRODUCT_COPYRIGHT = Copyright © 2026 StyleSync. All rights reserved.
