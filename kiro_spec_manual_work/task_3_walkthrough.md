@@ -4,9 +4,9 @@ Implemented the core cryptographic layer for StyleSync, establishing a high-secu
 
 ## Changes Made
 
-- **[key_derivation_service.dart](file:///Users/pretermodernist/StyleSync/lib/core/crypto/key_derivation_service.dart)**: Argon2id and PBKDF2 support.
-- **[encryption_service.dart](file:///Users/pretermodernist/StyleSync/lib/core/crypto/encryption_service.dart)**: AES-256-GCM authenticated encryption.
-- **[kdf_metadata.dart](file:///Users/pretermodernist/StyleSync/lib/core/crypto/kdf_metadata.dart)**: Persistable metadata for key regeneration.
+- **[key_derivation_service.dart](lib/core/crypto/key_derivation_service.dart)**: Argon2id and PBKDF2 support.
+- **[encryption_service.dart](lib/core/crypto/encryption_service.dart)**: AES-256-GCM authenticated encryption.
+- **[kdf_metadata.dart](lib/core/crypto/kdf_metadata.dart)**: Persistable metadata for key regeneration.
 
 ## Verification Results
 

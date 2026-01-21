@@ -4,8 +4,8 @@ Implemented the core secure storage infrastructure for StyleSync, ensuring sensi
 
 ## Changes Made
 
-- **[secure_storage_service.dart](file:///Users/pretermodernist/StyleSync/lib/core/storage/secure_storage_service.dart)**: Interface and backend definitions.
-- **[secure_storage_service_impl.dart](file:///Users/pretermodernist/StyleSync/lib/core/storage/secure_storage_service_impl.dart)**: Implementation with `flutter_secure_storage`.
+- **[secure_storage_service.dart](../../lib/core/storage/secure_storage_service.dart)**: Interface and backend definitions.
+- **[secure_storage_service_impl.dart](../../lib/core/storage/secure_storage_service_impl.dart)**: Implementation with `flutter_secure_storage`.
     - **Android**: Configured for hardware-isolated storage (StrongBox/TEE).
     - **iOS**: Configured with device-bound keychain access.
 

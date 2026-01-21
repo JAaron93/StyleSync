@@ -50,18 +50,16 @@ class KeyDerivationServiceImpl implements KeyDerivationService {
   }
 
   Future<Uint8List> _deriveWithArgon2id(String passphrase, KdfMetadata metadata) async {
-    final parameters = Argon2Parameters(
-      Argon2Parameters.ARGON2_id,
-      metadata.salt,
-      iterations: metadata.iterations,
-      memory: metadata.memory,
-      lanes: metadata.parallelism,
+    return compute(
+      _deriveArgon2Bytes,
+      _Argon2Arguments(
+        passphrase: passphrase,
+        salt: metadata.salt,
+        iterations: metadata.iterations,
+        memory: metadata.memory,
+        parallelism: metadata.parallelism,
+      ),
     );
-    final generator = Argon2BytesGenerator();
-    generator.init(parameters);
-    final result = Uint8List(32);
-    generator.generateBytesFromString(passphrase, result, 0, 32);
-    return result;
   }
 
   Future<Uint8List> _deriveWithPbkdf2(String passphrase, KdfMetadata metadata) async {
@@ -82,4 +80,35 @@ class KeyDerivationServiceImpl implements KeyDerivationService {
     final random = Random.secure();
     return Uint8List.fromList(List.generate(length, (_) => random.nextInt(256)));
   }
+}
+
+class _Argon2Arguments {
+  final String passphrase;
+  final Uint8List salt;
+  final int iterations;
+  final int memory;
+  final int parallelism;
+
+  _Argon2Arguments({
+    required this.passphrase,
+    required this.salt,
+    required this.iterations,
+    required this.memory,
+    required this.parallelism,
+  });
+}
+
+Uint8List _deriveArgon2Bytes(_Argon2Arguments args) {
+  final parameters = Argon2Parameters(
+    Argon2Parameters.ARGON2_id,
+    args.salt,
+    iterations: args.iterations,
+    memory: args.memory,
+    lanes: args.parallelism,
+  );
+  final generator = Argon2BytesGenerator();
+  generator.init(parameters);
+  final result = Uint8List(32);
+  generator.generateBytesFromString(args.passphrase, result, 0, 32);
+  return result;
 }

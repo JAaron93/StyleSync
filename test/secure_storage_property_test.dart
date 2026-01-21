@@ -6,7 +6,7 @@ import 'package:stylesync/core/storage/secure_storage_service_impl.dart';
 
 void main() {
   group('SecureStorageServiceImpl Property Tests', () {
-    Glados(any.int).test('Backend selection based on platform', (char) {
+    test('Backend selection based on platform', () {
       // Test Android
       final androidPlatform = FakePlatform(operatingSystem: 'android');
       final androidService = SecureStorageServiceImpl(platform: androidPlatform);

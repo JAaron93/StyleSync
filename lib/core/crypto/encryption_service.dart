@@ -14,6 +14,9 @@ class AESGCMEncryptionService implements EncryptionService {
 
   @override
   Future<Uint8List> encrypt(Uint8List data, Uint8List key) async {
+    if (key.length != 32) {
+      throw ArgumentError('Key must be exactly 32 bytes for AES-256');
+    }
     final secretKey = SecretKey(key);
     // AesGcm generates a random 96-bit nonce by default if not provided.
     final secretBox = await _algorithm.encrypt(
@@ -28,6 +31,14 @@ class AESGCMEncryptionService implements EncryptionService {
 
   @override
   Future<Uint8List> decrypt(Uint8List encryptedData, Uint8List key) async {
+    if (key.length != 32) {
+      throw ArgumentError('Key must be exactly 32 bytes for AES-256');
+    }
+    if (encryptedData.length < 28) {
+      throw ArgumentError(
+        'Encrypted data is too short (must be at least 28 bytes for nonce and MAC)',
+      );
+    }
     final secretKey = SecretKey(key);
     
     // AesGcm expects a 12-byte (96-bit) nonce and a 16-byte mac.

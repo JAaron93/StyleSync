@@ -31,7 +31,7 @@ void main() {
         webOptions: anyNamed('webOptions'),
         mOptions: anyNamed('mOptions'),
         wOptions: anyNamed('wOptions'),
-      )).thenAnswer((_) async => {});
+      )).thenAnswer((_) async {});
 
       await service.write('test_key', 'test_value');
 
@@ -81,7 +81,7 @@ void main() {
         webOptions: anyNamed('webOptions'),
         mOptions: anyNamed('mOptions'),
         wOptions: anyNamed('wOptions'),
-      )).thenAnswer((_) async => {});
+      )).thenAnswer((_) async {});
 
       await service.delete('test_key');
 
@@ -104,7 +104,7 @@ void main() {
         webOptions: anyNamed('webOptions'),
         mOptions: anyNamed('mOptions'),
         wOptions: anyNamed('wOptions'),
-      )).thenAnswer((_) async => {});
+      )).thenAnswer((_) async {});
 
       await service.deleteAll();
 

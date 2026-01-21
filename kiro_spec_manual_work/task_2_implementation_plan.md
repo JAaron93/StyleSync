@@ -7,11 +7,11 @@ Establish a robust and secure storage mechanism for sensitive data, such as API 
 ### [Component] Storage Layer
 Implement the core secure storage service.
 
-#### [NEW] [secure_storage_service.dart](file:///Users/pretermodernist/StyleSync/lib/core/storage/secure_storage_service.dart)
+#### [NEW] [secure_storage_service.dart](../../lib/core/storage/secure_storage_service.dart)
 - Define `SecureStorageService` interface with `write`, `read`, `delete`, and `deleteAll`.
 - Define `SecureStorageBackend` enum (strongBox, hardwareBacked, software).
 
-#### [MODIFY] [secure_storage_service_impl.dart](file:///Users/pretermodernist/StyleSync/lib/core/storage/secure_storage_service_impl.dart)
+#### [MODIFY] [secure_storage_service_impl.dart](../../lib/core/storage/secure_storage_service_impl.dart)
 - Implement `SecureStorageService` using `flutter_secure_storage`.
 - **Android**: Use `AES_GCM_NoPadding` for hardware-backed security (StrongBox/TEE).
 - **iOS**: Use `KeychainAccessibility.unlocked_this_device`.

@@ -67,7 +67,7 @@ void main() {
         platform: FakePlatform(operatingSystem: 'ios'),
       );
       final webService = KeyDerivationServiceImpl(
-        platform: FakePlatform(operatingSystem: 'macos'), // Pretend macos but logic check
+        platform: FakePlatform(operatingSystem: 'linux'),
       );
 
       final androidMeta = await androidService.generateMetadata();
@@ -75,6 +75,9 @@ void main() {
 
       final iosMeta = await iosService.generateMetadata();
       expect(iosMeta.algorithm, KdfAlgorithm.argon2id);
+
+      final webMeta = await webService.generateMetadata();
+      expect(webMeta.algorithm, KdfAlgorithm.pbkdf2); // Or expected fallback algorithm
     });
   });
 }
