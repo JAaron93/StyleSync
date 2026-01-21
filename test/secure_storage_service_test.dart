@@ -72,6 +72,31 @@ void main() {
       )).called(1);
     });
 
+    test('read returns null when key not found', () async {
+      when(mockStorage.read(
+        key: anyNamed('key'),
+        iOptions: anyNamed('iOptions'),
+        aOptions: anyNamed('aOptions'),
+        lOptions: anyNamed('lOptions'),
+        webOptions: anyNamed('webOptions'),
+        mOptions: anyNamed('mOptions'),
+        wOptions: anyNamed('wOptions'),
+      )).thenAnswer((_) async => null);
+
+      final result = await service.read('missing_key');
+
+      expect(result, isNull);
+      verify(mockStorage.read(
+        key: 'missing_key',
+        iOptions: anyNamed('iOptions'),
+        aOptions: anyNamed('aOptions'),
+        lOptions: anyNamed('lOptions'),
+        webOptions: anyNamed('webOptions'),
+        mOptions: anyNamed('mOptions'),
+        wOptions: anyNamed('wOptions'),
+      )).called(1);
+    });
+
     test('delete calls storage.delete', () async {
       when(mockStorage.delete(
         key: anyNamed('key'),

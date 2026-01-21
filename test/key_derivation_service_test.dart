@@ -66,7 +66,7 @@ void main() {
       final iosService = KeyDerivationServiceImpl(
         platform: FakePlatform(operatingSystem: 'ios'),
       );
-      final webService = KeyDerivationServiceImpl(
+      final linuxService = KeyDerivationServiceImpl(
         platform: FakePlatform(operatingSystem: 'linux'),
       );
 
@@ -76,8 +76,12 @@ void main() {
       final iosMeta = await iosService.generateMetadata();
       expect(iosMeta.algorithm, KdfAlgorithm.argon2id);
 
-      final webMeta = await webService.generateMetadata();
-      expect(webMeta.algorithm, KdfAlgorithm.pbkdf2); // Or expected fallback algorithm
+      final linuxMeta = await linuxService.generateMetadata();
+      expect(
+      linuxMeta.algorithm,
+      KdfAlgorithm.pbkdf2,
+      // Linux doesn't support Argon2id, so generateMetadata() falls back to KdfAlgorithm.pbkdf2.
+    );
     });
   });
 }

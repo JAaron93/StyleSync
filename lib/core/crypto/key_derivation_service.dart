@@ -21,6 +21,9 @@ class KeyDerivationServiceImpl implements KeyDerivationService {
 
   @override
   Future<Uint8List> deriveKey(String passphrase, KdfMetadata metadata) async {
+    if (passphrase.isEmpty) {
+      throw ArgumentError('Passphrase cannot be empty');
+    }
     switch (metadata.algorithm) {
       case KdfAlgorithm.argon2id:
         return _deriveWithArgon2id(passphrase, metadata);

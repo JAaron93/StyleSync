@@ -1,5 +1,4 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:glados/glados.dart' hide expect, group;
 import 'package:platform/platform.dart';
 import 'package:stylesync/core/storage/secure_storage_service.dart';
 import 'package:stylesync/core/storage/secure_storage_service_impl.dart';

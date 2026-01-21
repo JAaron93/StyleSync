@@ -62,7 +62,10 @@ static void my_application_activate(GApplication* application) {
   GdkRGBA background_color;
   // Background defaults to black, override it here if necessary, e.g. #00000000
   // for transparent.
-  gdk_rgba_parse(&background_color, "#000000");
+  if (!gdk_rgba_parse(&background_color, "#000000")) {
+    g_warning("Failed to parse background color");
+    background_color = (GdkRGBA){0.0, 0.0, 0.0, 1.0};
+  }
   fl_view_set_background_color(view, &background_color);
   gtk_widget_show(GTK_WIDGET(view));
   gtk_container_add(GTK_CONTAINER(window), GTK_WIDGET(view));
@@ -101,19 +104,11 @@ static gboolean my_application_local_command_line(GApplication* application,
 
 // Implements GApplication::startup.
 static void my_application_startup(GApplication* application) {
-  // MyApplication* self = MY_APPLICATION(object);
-
-  // Perform any actions required at application startup.
-
   G_APPLICATION_CLASS(my_application_parent_class)->startup(application);
 }
 
 // Implements GApplication::shutdown.
 static void my_application_shutdown(GApplication* application) {
-  // MyApplication* self = MY_APPLICATION(object);
-
-  // Perform any actions required at application shutdown.
-
   G_APPLICATION_CLASS(my_application_parent_class)->shutdown(application);
 }
 

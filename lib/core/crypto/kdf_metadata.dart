@@ -32,12 +32,46 @@ class KdfMetadata {
   }
 
   factory KdfMetadata.fromJson(Map<String, dynamic> json) {
+    // Check required keys
+    for (final key in ['algorithm', 'salt', 'iterations']) {
+      if (!json.containsKey(key)) {
+        throw FormatException('Missing required key: $key');
+      }
+    }
+
+    // Validate algorithm
+    final KdfAlgorithm algorithm;
+    try {
+      algorithm = KdfAlgorithm.values.byName(json['algorithm'] as String);
+    } catch (e) {
+      throw FormatException('Invalid or unknown KDF algorithm: ${json['algorithm']}');
+    }
+
+    // Validate salt
+    final Uint8List salt;
+    try {
+      salt = base64Decode(json['salt'] as String);
+    } catch (e) {
+      throw FormatException('Invalid base64 encoding for salt: ${e.toString()}');
+    }
+
+    // Validate integers
+    int validateInt(dynamic value, String name) {
+      if (value is! int) {
+        throw FormatException('$name must be an integer');
+      }
+      if (value < 0) {
+        throw ArgumentError('$name must be non-negative');
+      }
+      return value;
+    }
+
     return KdfMetadata(
-      algorithm: KdfAlgorithm.values.byName(json['algorithm']),
-      salt: base64Decode(json['salt']),
-      iterations: json['iterations'],
-      memory: json['memory'] ?? 0,
-      parallelism: json['parallelism'] ?? 0,
+      algorithm: algorithm,
+      salt: salt,
+      iterations: validateInt(json['iterations'], 'iterations'),
+      memory: validateInt(json['memory'] ?? 0, 'memory'),
+      parallelism: validateInt(json['parallelism'] ?? 0, 'parallelism'),
     );
   }
 }

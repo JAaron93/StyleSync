@@ -37,21 +37,24 @@ void main() {
       
       final wrongKey = Uint8List.fromList(List.generate(32, (i) => i + 1));
       
-      expect(
-        () => encryptionService.decrypt(cipherText, wrongKey),
-        throwsException, // cryptography package throws an exception on auth failure
+      await expectLater(
+        encryptionService.decrypt(cipherText, wrongKey),
+        throwsException,
       );
     });
 
     test('Decryption fails if ciphertext is tampered', () async {
       final plainText = Uint8List.fromList('Sensitive data'.codeUnits);
-      final cipherText = await encryptionService.encrypt(plainText, dummyKey);
+      final originalCipherText = await encryptionService.encrypt(plainText, dummyKey);
+      
+      // Make an explicit copy of the encrypted bytes before mutating them
+      final tamperedCipherText = Uint8List.fromList(originalCipherText);
       
       // Tamper with the ciphertext part
-      cipherText[15] = cipherText[15] ^ 0xFF;
+      tamperedCipherText[15] = tamperedCipherText[15] ^ 0xFF;
       
-      expect(
-        () => encryptionService.decrypt(cipherText, dummyKey),
+      await expectLater(
+        encryptionService.decrypt(tamperedCipherText, dummyKey),
         throwsException,
       );
     });

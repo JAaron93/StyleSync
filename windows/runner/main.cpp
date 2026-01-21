@@ -15,7 +15,10 @@ int APIENTRY wWinMain(_In_ HINSTANCE instance, _In_opt_ HINSTANCE prev,
 
   // Initialize COM, so that it is available for use in the library and/or
   // plugins.
-  ::CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED);
+  HRESULT hr = ::CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED);
+  if (FAILED(hr) && hr != RPC_E_CHANGED_MODE) {
+    return EXIT_FAILURE;
+  }
 
   flutter::DartProject project(L"data");
 
