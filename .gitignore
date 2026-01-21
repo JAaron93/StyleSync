@@ -12,3 +12,4 @@ build/
 android/key.properties
 *.jks
 *.keystore
+.kilocode/
