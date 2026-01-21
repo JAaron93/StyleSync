@@ -684,8 +684,7 @@ class UserProfile {
   final bool onboardingComplete;
   final bool faceDetectionConsentGranted;
   final bool biometricConsentGranted;
-  final int age; // for COPPA compliance
-  final bool parentalConsentGranted; // if age < 13
+  final bool is18PlusVerified;
 }
 
 class StorageQuota {
@@ -713,8 +712,7 @@ users/{userId}
   - onboardingComplete: boolean
   - faceDetectionConsentGranted: boolean
   - biometricConsentGranted: boolean
-  - age: number
-  - parentalConsentGranted: boolean
+  - is18PlusVerified: boolean
   
 clothing_items/{itemId}
   - userId: string
@@ -1635,56 +1633,37 @@ Future<Result<APIKeyConfig>> restoreFromCloudBackup(String passphrase) async {
 - Explicit consent required
 - Option to skip detection entirely
 
-**COPPA Compliance**:
-- Age verification on signup
-- Verifiable parental consent for users < 13
-- Parental access to child's data
-- Parental revocation rights
-- Clear data retention policies
+### 18+ Age Gate and "Privacy by Restriction"
 
-**COPPA Implementation (Detailed Design Required)**:
+StyleSync adopts a **Privacy by Restriction** approach to global privacy compliance, specifically regarding children's data (COPPA, GDPR-K, etc.). 
 
-This section requires a detailed follow-up design document covering:
+1. **Strict Exclusion**: The application is designed and marketed exclusively for adults (18+).
+2. **Age Gating**: A hard age gate is implemented at the point of authentication. Users who fail the age gate are blocked from account creation.
+3. **No Minor Data**: By excluding users under 18, the system ensures it never knowingly collects or processes personal data from minors, thereby eliminating the need for complex parental consent and verification workflows.
 
-1. **Age Verification Method**:
-   - Option A: Self-reported with age gates (simple, privacy-friendly, but less reliable)
-   - Option B: ID-based verification using third-party provider (e.g., Yoti, Jumio)
-   - Trade-offs: Privacy vs. reliability vs. cost vs. UX friction
+#### Age Verification Implementation
 
-2. **Parental Consent Method Decision Matrix**:
-   - **Government ID Verification**: High reliability, privacy concerns, requires third-party integration (e.g., Yoti, Jumio)
-   - **Credit Card Token Check**: Moderate reliability, payment processor integration (e.g., Stripe), minimal PII storage
-   - **Signed Consent Form**: Manual process, secure document storage (Firebase Storage with encryption), retention rules (7 years per FTC guidelines)
-   - Recommended: Hybrid approach with user choice
+The age gate is enforced using a multi-layered approach to maximize both privacy and reliability.
 
-3. **Parental Access Workflow**:
-   - Parent authentication (email verification + security questions)
-   - View child's data (clothing items, outfits, usage history)
-   - Correct/update child's data
-   - Export data (GDPR-compliant data portability)
-   - Audit logging of all parental access events
+1.  **Verification Method**:
+    *   **Primary**: Users self-report their Date of Birth (DOB) during signup.
+    *   **Risk Mitigation**: Clients implement a session-based cooldown (24 hours) after a failed age gate attempt to discourage "guessing" by minors.
+    *   **Step-up Verification**: For users who fail the initial gate but wish to appeal, high-assurance verification via a third-party API (e.g., Jumio or Yoti) is provided as an alternative.
+2.  **Enforcement Point**:
+    *   **Firebase Auth Blocking Function**: The `beforeCreate` cloud function acts as the hard enforcement point. It intercepts signup requests, validates the age data, and blocks account creation if the user is under 18 or if verification is incomplete.
+3.  **Data Persistence & Privacy**:
+    *   **Verified Status Only**: The system stores only a boolean `is18PlusVerified: true` in the user's Firestore profile.
+    *   **Discarding PII**: Raw DOB and ID document data are discarded immediately after the verification outcome is determined. No persistent record of the user's exact birthdate is maintained.
+4.  **Appeals & False Positives**:
+    *   Users who fail the self-reported age gate are offered a "Verify Identity" flow. This involves a one-time third-party verification. Successful verification updates the user's status and allows signup to proceed.
+5.  **Audit Requirements**:
+    *   **Compliance Logging**: To satisfy regulatory audits, the system logs anonymized verification events.
+    *   **Log Schema**: `{ "anonymized_id": "sha256(uid)", "outcome": "success|fail", "timestamp": "ISO8601", "verification_method": "self_reported | jumio_v1", "provider_id": "..." }`. These logs facilitate compliance with data retention/erase policies by being completely decoupled from direct PII.
 
-4. **Parental Revocation Process**:
-   - Revoke consent → immediate feature disablement
-   - Data deletion request → follow account deletion flow (Requirements 7.9-7.13)
-   - Confirmation email to parent
-   - Audit trail of revocation
+**Property 21: 18+ Age Verification**
+*For any* user signing up, the system should verify they are at least 18 years old via the **Firebase Auth blocking function**. Access must be denied to all minors, and only the verified boolean status should be persisted.
 
-5. **Third-Party Integrations**:
-   - Age verification provider (if ID-based)
-   - Payment processor (if credit card method)
-   - Document storage and retention
-   - Compliance monitoring
-
-6. **Data Retention Policies**:
-   - Parental consent records: 7 years (FTC requirement)
-   - Child's data: Until revocation or age 13
-   - Audit logs: 7 years
-   - Deletion confirmation records: 7 years
-
-**Action Item**: Create detailed COPPA compliance design document before implementing user authentication and virtual try-on features.
-
-**Current Property 21 Status**: Marked as "requires detailed design" - implementation deferred until COPPA design document is complete.
+**Validates: Requirement 4.19, 4.20**
 
 ## Platform-Specific Considerations
 
@@ -2060,12 +2039,10 @@ Future<void> checkForForcedUpdate() async {
 
 **Validates: Requirements 9.6, 9.7**
 
-### Property 21: COPPA Age Verification and Parental Consent
-*For any* user identified as under 13 years old through age verification, the system should require COPPA-compliant verifiable parental consent (government ID, credit card, or signed form) before enabling virtual try-on features, and parents should have access to view, correct, and delete the child's data.
+### Property 21: 18+ Age Verification
+*For any* signup attempt, the system should verify that the user is 18 years or older via the **Firebase Auth blocking function**. Access must be denied to any user under the age of 18, and only the `is18PlusVerified` boolean should be persisted.
 
-**Status**: Requires detailed COPPA design document; not yet testable. See "COPPA Implementation (Detailed Design Required)" section above for design considerations.
-
-**Will Validate**: Requirements 4.19, 4.20, 4.21, 4.22, 4.23, 4.24 (once COPPA design is complete)
+**Validates: Requirement 4.19, 4.20**
 
 ### Property 22: Biometric Consent Required for Try-On
 *For any* first-time virtual try-on access, the system should display a biometric consent UI explaining data usage and require explicit user consent before processing any user photos.

@@ -28,8 +28,7 @@ Users must have a Google Cloud project with Vertex AI API enabled and appropriat
 - **Onboarding_Flow**: First-time user experience guiding setup
 - **API_Key**: User's personal Gemini API authentication credential
 - **Error_Reporter**: Component that collects and sanitizes diagnostic data for issue reporting
-- **Face_Detection_Consent_Dialog**: UI component that obtains user consent for face detection analysis
-- **COPPA_Consent_System**: Component that implements Children's Online Privacy Protection Act compliance for users under 13
+- **18+ Age Gate System**: Component that enforces a strict 18+ age requirement using self-reported DOB with step-up third-party API verification for appeals (refer to Requirement 4: Acceptance Criteria 19-25)
 - **Deletion_Confirmation_Dialog**: UI component that explains data deletion timelines to users
 - **Cloud_Backup_System**: Component that manages end-to-end encrypted cloud backup of API keys with user-derived encryption
 - **Backup_Retention_System**: Component that manages backup archives and ensures they are inaccessible during retention periods
@@ -125,7 +124,6 @@ Users must have a Google Cloud project with Vertex AI API enabled and appropriat
 11. IF all certificate pins fail validation, THEN THE Virtual_Try_On_Engine SHALL block the connection and display an error message instructing the user to update the application or check for app updates
 12. THE Virtual_Try_On_Engine MAY implement a time-limited grace period (maximum 48 hours from first pin failure) during which connections are permitted with prominent security warnings, after which connections SHALL be blocked
 13. THE StyleSync_App SHALL provide operational documentation for certificate pin expiry monitoring and rotation procedures, including procedures for emergency pin-set updates via the remote configuration service
-14. THE Virtual_Try_On_Engine SHALL NOT proxy requests through any backend server
 10. THE Virtual_Try_On_Engine SHALL delete user photos from device memory immediately after generation completes
 11. THE Virtual_Try_On_Engine SHALL NOT store user photos in Firebase Storage or any cloud backend by default
 12. WHEN constructing requests, THE Virtual_Try_On_Engine SHALL use the Virtual_Try_On_Model (`virtual-try-on-preview-08-04`) or Gemini_Image_Models for generation
@@ -135,13 +133,14 @@ Users must have a Google Cloud project with Vertex AI API enabled and appropriat
 16. WHEN a try-on request is successful, THE Virtual_Try_On_Engine SHALL display the generated image to the user
 17. WHEN a try-on request fails due to network issues, THE Virtual_Try_On_Engine SHALL display an appropriate error message
 18. WHEN a try-on is generated, THE StyleSync_App SHALL provide explicit save/share controls requiring user consent
-19. THE StyleSync_App SHALL implement age verification to detect users under 13 years old
-20. IF a user is identified as under 13 years old, THEN THE StyleSync_App SHALL require COPPA-compliant parental consent before enabling virtual try-on features
-21. THE COPPA_Consent_System SHALL implement verifiable parental consent methods including government ID verification, credit card verification, or signed consent form submission
-22. THE COPPA_Consent_System SHALL provide clear parental notice describing data collection, retention, and use practices
-23. THE COPPA_Consent_System SHALL enable parental access to view and correct the child's data
-24. THE COPPA_Consent_System SHALL enable parents to revoke consent and request deletion or portability of the child's data at any time
-25. THE StyleSync_App SHALL provide a clear data retention policy stating that user photos are ephemeral and not stored
+19. **THE StyleSync_App SHALL implement a strict 18+ age gate, denying access to all users under the age of 18.**
+20. WHEN a user signs up or logs in, THE Age_Gate_System SHALL verify the user's age is 18 or older using a self-reported Date of Birth (DOB) as the primary verification method; this verification SHALL occur pre-account-creation via a Firebase Auth blocking function.
+21. THE Age_Gate_System SHALL implement a session-based cooldown of 24 hours after a failed age-gate attempt to prevent brute-force DOB entry.
+22. IF a user is identified as under 18 years old or fails self-reported verification, THEN THE StyleSync_App SHALL deny access and provide an option for high-assurance re-verification via a third-party ID/age-verification API (e.g., Jumio, Yoti).
+23. THE StyleSync_App IS PERMITTED to collect minimal age-verification attributes (DOB, verification status, or third-party ID token) solely for the purpose of the verification process; THE Age_Gate_System SHALL discard all raw DOB and third-party PII immediately after the verification outcome is determined.
+24. THE Age_Gate_System SHALL require re-verification only if the user's account status is reset or if legally required by updated jurisdictional regulations.
+25. IF a user is determined to be under 18 years old, THEN THE Age_Gate_System SHALL immediately block account creation and purge all transient verification data; THE StyleSync_App SHALL NOT collect, store, or process any personal data from such users, except for anonymized audit logs as required for regulatory compliance.
+26. THE StyleSync_App SHALL provide a clear data retention policy stating that user photos are ephemeral and not stored.
 
 ### Requirement 5: Rate Limit and Quota Management
 

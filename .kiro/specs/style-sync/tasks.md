@@ -15,15 +15,8 @@ This implementation plan breaks down the StyleSync feature into discrete, increm
   - Set up CI/CD pipeline with GitHub Actions or similar
   - _Requirements: 10.1, 10.2, 10.3, 10.5_
 
-- [ ] 2. Draft COPPA compliance technical design
-  - [ ] 2.1 Define age verification and under-13 detection logic
-  - [ ] 2.2 Design verifiable parental consent (VPC) workflows (e.g., government ID, credit card, or signed form)
-  - [ ] 2.3 Define parental access, correction, and revocation data flows
-  - [ ] 2.4 Document data retention and analytics anonymization policies for child accounts
-  - _Requirements: 4.19, 4.20, 4.21, 4.22, 4.23, 4.24_
-
-- [ ] 3. Implement secure storage foundation
-  - [ ] 3.1 Create SecureStorageService interface and platform implementations
+- [ ] 2. Implement secure storage foundation
+  - [ ] 2.1 Create SecureStorageService interface and platform implementations
     - Implement iOS Keychain integration with kSecAttrAccessibleWhenUnlockedThisDeviceOnly
     - Implement Android Keystore with StrongBox detection and fallback
     - Add SecureStorageBackend enum (strongBox, hardwareBacked, software)
@@ -31,18 +24,18 @@ This implementation plan breaks down the StyleSync feature into discrete, increm
     - Add logging for storage backend selection
     - _Requirements: 2.5, 2.8, 2.9, 4.4_
   
-  - [ ] 3.2 Write property test for secure storage backend selection
+  - [ ] 2.2 Write property test for secure storage backend selection
     - **Property 24: API Key Secure Storage Hardware Backing**
     - **Validates: Requirements 4.4**
   
-  - [ ] 3.3 Write unit tests for secure storage operations
+  - [ ] 2.3 Write unit tests for secure storage operations
     - Test write/read/delete operations
     - Test biometric authentication requirement
     - Test platform-specific implementations
     - _Requirements: 2.5, 2.8, 2.9_
 
-- [ ] 4. Implement key derivation and encryption services
-  - [ ] 4.1 Create KeyDerivationService with Argon2id and PBKDF2 support
+- [ ] 3. Implement key derivation and encryption services
+  - [ ] 3.1 Create KeyDerivationService with Argon2id and PBKDF2 support
     - Add argon2_ffi_base dependency for Argon2id
     - Implement platform detection (Web → PBKDF2, others → try Argon2id)
     - Implement Argon2id with params: time=3, memory=64MB, parallelism=4
@@ -51,35 +44,35 @@ This implementation plan breaks down the StyleSync feature into discrete, increm
     - Store KDF metadata with encrypted backups
     - _Requirements: 2.12, 2.13_
   
-  - [ ] 4.2 Create AES-GCM encryption service
+  - [ ] 3.2 Create AES-GCM encryption service
     - Implement AES-256-GCM encryption/decryption
     - Generate 96-bit cryptographically-random nonces
     - Implement nonce prepending to ciphertext
     - Add nonce reuse prevention checks
     - _Requirements: 2.12_
   
-  - [ ] 4.3 Write property test for encryption round-trip
+  - [ ] 3.3 Write property test for encryption round-trip
     - **Property 3: Cloud Backup Encryption Round-Trip**
     - **Validates: Requirements 2.12, 2.13, 2.14, 2.16**
   
-  - [ ] 4.4 Write property test for KDF consistency
+  - [ ] 3.4 Write property test for KDF consistency
     - **Property 23: Argon2id Key Derivation Consistency**
     - **Validates: Requirements 2.12**
 
-- [ ] 5. Implement BYOK system (API key management)
-  - [ ] 5.1 Create BYOKManager service
+- [ ] 4. Implement BYOK system (API key management)
+  - [ ] 4.1 Create BYOKManager service
     - Implement API key storage/retrieval from SecureStorage
     - Generate idempotency keys for operations
     - Implement device-specific storage by default
     - _Requirements: 2.1, 2.7, 2.10, 2.15_
   
-  - [ ] 5.2 Create APIKeyValidator service
+  - [ ] 4.2 Create APIKeyValidator service
     - Implement format validation (check key structure)
     - Implement functional verification (test API call to Vertex AI models list endpoint)
     - Return specific error messages for validation failures
     - _Requirements: 2.3, 2.4, 2.5, 2.6_
   
-  - [ ] 5.3 Create CloudBackupService
+  - [ ] 4.3 Create CloudBackupService
     - Implement backup encryption with user passphrase
     - Store encrypted backup in Firebase Storage (users/{userId}/api_key_backup.json)
     - Include salt, KDF metadata, encrypted data, nonce in backup blob
@@ -87,18 +80,18 @@ This implementation plan breaks down the StyleSync feature into discrete, increm
     - Implement backup deletion
     - _Requirements: 2.11, 2.12, 2.13, 2.14, 2.16, 2.17, 2.18, 2.19_
   
-  - [ ] 5.4 Write property test for API key validation pipeline
+  - [ ] 4.4 Write property test for API key validation pipeline
     - **Property 2: API Key Validation Pipeline**
     - **Validates: Requirements 2.3, 2.4, 2.5, 2.6, 2.7**
   
-  - [ ] 5.5 Write unit tests for BYOK operations
+  - [ ] 4.5 Write unit tests for BYOK operations
     - Test API key storage and retrieval
     - Test cloud backup enable/disable
     - Test sign-out options
     - _Requirements: 2.15, 2.17, 2.18_
 
-- [ ] 6. Implement onboarding flow
-  - [ ] 6.1 Create onboarding screens
+- [ ] 5. Implement onboarding flow
+  - [ ] 5.1 Create onboarding screens
     - Welcome screen with app features overview
     - API key tutorial screen with step-by-step instructions
     - Links to Google Cloud Console and Vertex AI setup
@@ -106,40 +99,40 @@ This implementation plan breaks down the StyleSync feature into discrete, increm
     - API key input screen with validation
     - _Requirements: 1.1, 1.2, 1.3, 1.4, 1.5, 1.6_
   
-  - [ ] 6.2 Create OnboardingController
+  - [ ] 5.2 Create OnboardingController
     - Track onboarding completion state
     - Persist onboarding status across app restarts
     - Navigate between onboarding screens
     - _Requirements: 1.7_
   
-  - [ ] 6.3 Write property test for onboarding persistence
+  - [ ] 5.3 Write property test for onboarding persistence
     - **Property 1: Onboarding Persistence**
     - **Validates: Requirements 1.7**
   
-  - [ ] 6.4 Write widget tests for onboarding screens
+  - [ ] 5.4 Write widget tests for onboarding screens
     - Test screen rendering
     - Test navigation flow
     - Test API key input validation
     - _Requirements: 1.1, 1.2, 1.3, 1.4, 1.5, 1.6_
 
-- [ ] 7. Checkpoint - Ensure all tests pass
+- [ ] 6. Checkpoint - Ensure all tests pass
   - [ ] All unit tests pass with >80% coverage
   - [ ] Property tests run for 100+ iterations without failures
   - [ ] Security tests validate API key protection and encryption round-trips
   - [ ] Manual verification of onboarding flow completed
 
-- [ ] 8. UI prototyping and wireframes
-  - [ ] 8.1 Create low-fidelity wireframes for core user flows
+- [ ] 7. UI prototyping and wireframes
+  - [ ] 7.1 Create low-fidelity wireframes for core user flows
     - Onboarding flow (welcome → API key tutorial → key input)
     - Digital Closet flow (upload → face detection consent → background removal → tagging → item view)
     - Virtual Try-On flow (biometric consent → photo selection → clothing selection → generation → result display)
     - Rate Limit flow (80% warning banner → 100% modal with upgrade instructions)
     - Outfit Canvas flow (item selection → layering → saving)
     - Settings flow (API key management → cloud backup → usage history)
-    - COPPA flows (age verification → parental consent → parental dashboard)
+    - Age verification flows (18+ age gate → verification → access granted/denied)
     - _Requirements: 1.1-1.6, 3.1-3.18, 4.1-4.24, 5.1-5.18, 6.1-6.8_
   
-  - [ ] 8.2 Create clickable prototype
+  - [ ] 7.2 Create clickable prototype
     - Build interactive prototype using Figma, Adobe XD, or similar tool
     - Include all critical user flows and decision points
     - Demonstrate navigation between screens
@@ -148,7 +141,7 @@ This implementation plan breaks down the StyleSync feature into discrete, increm
     - Include loading states and progress indicators
     - _Requirements: 1.1-1.6, 3.1-3.18, 4.1-4.24, 5.1-5.18, 6.1-6.8_
   
-  - [ ] 8.3 Draft API data contracts and component interfaces
+  - [ ] 7.3 Draft API data contracts and component interfaces
     - Define data structures for API responses (clothing items, outfits, quota status, user profile)
     - Define component props and state interfaces
     - Document data flow between screens and services
@@ -156,7 +149,7 @@ This implementation plan breaks down the StyleSync feature into discrete, increm
     - Create mock data for prototype testing
     - _Requirements: 3.13-3.18, 4.6-4.24, 5.1-5.4, 6.1-6.8_
   
-  - [ ] 8.4 Conduct user testing and validation
+  - [ ] 7.4 Conduct user testing and validation
     - Test prototype with at least 3-5 users (mix of technical and non-technical)
     - Validate onboarding clarity (can users understand how to get API key?)
     - Validate consent flows (do users understand what they're consenting to?)
@@ -166,7 +159,7 @@ This implementation plan breaks down the StyleSync feature into discrete, increm
     - Document feedback and iterate on wireframes
     - _Requirements: 1.1-1.6, 3.1-3.2, 4.1-4.2, 5.6-5.15, 4.19-4.24_
   
-  - [ ] 8.5 Finalize design specifications
+  - [ ] 7.5 Finalize design specifications
     - Document approved wireframes and user flows
     - Finalize API data contracts based on prototype feedback
     - Create design handoff documentation for task 23 (UI implementation)
@@ -190,134 +183,131 @@ This implementation plan breaks down the StyleSync feature into discrete, increm
   
   **Note**: This task validates UX assumptions early before backend finalization. Findings may require updates to API designs and data contracts in tasks 9-22. Task 23 will implement the approved designs from this prototyping phase.
 
-- [ ] 9. Implement Firebase Authentication and Age Verification
-  - [ ] 9.1 Set up Firebase Authentication
+- [ ] 8. Implement Firebase Authentication and 18+ Age Gate
+  - [ ] 8.1 Set up Firebase Authentication
     - Configure email/password authentication
     - Configure social authentication (Google, Apple)
     - Implement user sign-up and sign-in flows
-    - Implement age collection step during signup
-    - Implement under-13 detection and account tagging
+    - Implement 18+ age verification step during signup
+    - Deny access to users under 18
     - Associate user data with Firebase Auth UID
-    - _Requirements: 7.1, 7.2, 7.3, 4.19_
+    - _Requirements: 7.1, 7.2, 7.3_
   
-  - [ ] 9.2 Implement user profile management
-    - Create UserProfile model with accountType (child/adult) and age
+  - [ ] 8.2 Implement user profile management
+    - Create UserProfile model with age and verification status
     - Store user profile in Firestore (users/{userId})
-    - Track onboarding completion, consent states, age, and parental link
-    - _Requirements: 7.3, 4.19_
+    - Track onboarding completion and 18+ verification state
+    - _Requirements: 7.3_
   
-  - [ ] 9.3 Write unit tests for authentication and age verification
+  - [ ] 8.3 Write unit tests for authentication and age gate
     - Test sign-up and sign-in
-    - Test age collection and under-13 enforcement
-    - Test user profile creation with accountType
+    - Test 18+ age verification and rejection of minors
+    - Test user profile creation
     - Test data association with user ID
-    - _Requirements: 7.1, 7.2, 7.3, 4.19_
+    - _Requirements: 7.1, 7.2, 7.3_
 
-- [ ] 10. Implement metadata stripping and privacy services
-  - [ ] 10.1 Create MetadataStripperService
+- [ ] 9. Implement metadata stripping and privacy services
+  - [ ] 9.1 Create MetadataStripperService
     - Strip EXIF data (GPS, timestamps, device IDs)
     - Preserve only image pixel data
     - _Requirements: 3.4_
   
-  - [ ] 10.2 Create FaceDetectionService using ML Kit
+  - [ ] 9.2 Create FaceDetectionService using ML Kit
     - Add google_mlkit_face_detection dependency
     - Implement on-device face detection
     - Return boolean (face detected or not)
     - No biometric data extraction
     - _Requirements: 3.5, 3.6, 3.7_
   
-  - [ ] 10.3 Create consent management services
+  - [ ] 9.3 Create consent management services
     - FaceDetectionConsentDialog UI component
     - BiometricConsentManager for try-on consent
-    - Implement Verifiable Parental Consent (VPC) workflow for child accounts
     - Track consent states in user profile
-    - _Requirements: 3.1, 3.2, 4.1, 4.2, 4.20, 4.21, 4.22_
+    - _Requirements: 3.1, 3.2, 4.1, 4.2_
   
-  - [ ] 10.4 Write property test for EXIF metadata stripping
+  - [ ] 9.4 Write property test for EXIF metadata stripping
     - **Property 4: EXIF Metadata Stripping**
     - **Validates: Requirements 3.4**
   
-  - [ ] 10.5 Write property test for face detection consent enforcement
+  - [ ] 9.5 Write property test for face detection consent enforcement
     - **Property 5: Face Detection Consent Enforcement**
     - **Validates: Requirements 3.1, 3.2, 3.5, 3.6, 3.7**
-    - **Includes VPC checks for child accounts (Requirements 4.20)**
 
-- [ ] 11. Implement background removal service
-  - [ ] 11.1 Create BackgroundRemovalService with TensorFlow Lite
+- [ ] 10. Implement background removal service
+  - [ ] 10.1 Create BackgroundRemovalService with TensorFlow Lite
     - Add tflite_flutter dependency
     - Bundle DeepLabV3+ segmentation model
     - Implement on-device background removal
     - Add 10-second timeout with fallback to original image
     - _Requirements: 3.8, 9.6, 9.7_
   
-  - [ ] 11.2 Write property test for background removal timeout
+  - [ ] 10.2 Write property test for background removal timeout
     - **Property 20: Background Removal Timeout with Fallback**
     - **Validates: Requirements 9.6, 9.7**
   
-  - [ ] 11.3 Write unit tests for background removal
+  - [ ] 10.3 Write unit tests for background removal
     - Test successful removal
     - Test timeout behavior
     - Test fallback to original image
     - _Requirements: 3.8, 9.6, 9.7_
 
-- [ ] 12. Implement auto-tagging service
-  - [ ] 12.1 Create AutoTaggerService
+- [ ] 11. Implement auto-tagging service
+  - [ ] 11.1 Create AutoTaggerService
     - Implement clothing category classification (tops, bottoms, shoes, accessories)
     - Implement color detection
     - Implement season suggestion
     - Restrict analysis to clothing attributes only (no biometric data)
     - _Requirements: 3.9, 3.10, 3.11, 3.12_
   
-  - [ ] 12.2 Write property test for auto-tagger privacy invariant
+  - [ ] 11.2 Write property test for auto-tagger privacy invariant
     - **Property 6: Auto-Tagger Privacy Invariant**
     - **Validates: Requirements 3.10**
   
-  - [ ] 12.3 Write unit tests for auto-tagging
+  - [ ] 11.3 Write unit tests for auto-tagging
     - Test category classification
     - Test color detection
     - Test season suggestion
     - _Requirements: 3.9, 3.11, 3.12_
 
-- [ ] 13. Implement digital closet repository and COPPA data management
-  - [ ] 13.1 Create ClothingRepository with idempotency
+- [ ] 12. Implement digital closet repository
+  - [ ] 12.1 Create ClothingRepository with idempotency
     - Implement uploadClothing with idempotency key generation
     - Implement CRUD operations (create, read, update, delete)
     - Implement storage quota checking (500 items or 2GB)
     - Implement partial failure handling with retry logic
-    - Implement COPPA-compliant data retention policies (auto-deletion of child data on specific triggers)
     - Store clothing items in Firestore and Firebase Storage
-    - _Requirements: 3.13, 3.14, 3.15, 3.16, 3.17, 3.18, 4.23, 4.24_
+    - _Requirements: 3.13, 3.14, 3.15, 3.16, 3.17, 3.18_
   
-  - [ ] 13.2 Implement upload flow with error recovery
+  - [ ] 12.2 Implement upload flow with error recovery
     - Implement exponential backoff with jitter (1s, 2s, 4s)
     - Implement automatic background retry for processing failures
     - Implement manual retry option
     - Track item processing state (uploading, processing, completed, processingFailed)
     - _Requirements: 3.16, 8.3_
   
-  - [ ] 13.3 Write property test for storage quota enforcement
+  - [ ] 12.3 Write property test for storage quota enforcement
     - **Property 7: Storage Quota Enforcement**
     - **Validates: Requirements 3.13, 3.14, 3.15**
   
-  - [ ] 13.4 Write property test for CRUD consistency
+  - [ ] 12.4 Write property test for CRUD consistency
     - **Property 25: Clothing Item CRUD Consistency**
     - **Validates: Requirements 3.16, 3.17, 3.18**
   
-  - [ ] 13.5 Write unit tests for upload flow
+  - [ ] 12.5 Write unit tests for upload flow
     - Test successful upload
     - Test partial failure handling
     - Test retry logic
     - Test idempotency
     - _Requirements: 3.16, 8.3_
 
-- [ ] 14. Checkpoint - Ensure all tests pass
+- [ ] 13. Checkpoint - Ensure all tests pass
   - [ ] All unit tests pass with >80% coverage
   - [ ] Property tests run for 100+ iterations without failures
   - [ ] Security tests validate API key protection and encryption round-trips
   - [ ] Manual verification of onboarding flow completed
 
-- [ ] 15. Implement Vertex AI client and model availability service
-  - [ ] 15.1 Create VertexAIClient
+- [ ] 14. Implement Vertex AI client and model availability service
+  - [ ] 14.1 Create VertexAIClient
     - Implement direct client-to-AI communication
     - Implement TLS encryption with certificate validation
     - Implement certificate pinning with Remote Config
@@ -325,32 +315,32 @@ This implementation plan breaks down the StyleSync feature into discrete, increm
     - Implement safe mode when pinning fails
     - _Requirements: 4.7, 4.8, 4.9, 4.11, 4.12, 4.13_
   
-  - [ ] 15.2 Create ModelAvailabilityService
+  - [ ] 14.2 Create ModelAvailabilityService
     - Implement model availability checking
     - Implement model selection with fallback (quality → speed → tryOn)
     - Validate at least one model is available
     - _Requirements: 4.12, 4.13_
   
-  - [ ] 15.3 Create CertificatePinningService
+  - [ ] 14.3 Create CertificatePinningService
     - Fetch pin-set from Firebase Remote Config
     - Implement certificate validation with multiple backup pins
     - Implement emergency pin update flow
     - Implement forced update flow for critical security updates
     - _Requirements: 4.9, 4.10, 4.11, 4.12_
   
-  - [ ] 15.4 Write property test for certificate pinning failure handling
+  - [ ] 14.4 Write property test for certificate pinning failure handling
     - **Property 9: Certificate Pinning Failure Handling**
     - **Validates: Requirements 4.11, 4.12**
   
-  - [ ] 15.5 Write unit tests for Vertex AI client
+  - [ ] 14.5 Write unit tests for Vertex AI client
     - Test API call success
     - Test certificate pinning
     - Test emergency pin query behavior
     - Test safe mode
     - _Requirements: 4.7, 4.8, 4.9, 4.11, 4.12, 4.13_
 
-- [ ] 16. Implement virtual try-on engine
-  - [ ] 16.1 Create VirtualTryOnEngine
+- [ ] 15. Implement virtual try-on engine
+  - [ ] 15.1 Create VirtualTryOnEngine
     - Implement try-on generation with model selection
     - Implement ephemeral photo processing (RAM only, no disk persistence)
     - Implement immediate photo deletion after generation
@@ -358,34 +348,34 @@ This implementation plan breaks down the StyleSync feature into discrete, increm
     - Implement client-side throttling
     - _Requirements: 4.6, 4.10, 4.11, 4.12, 4.13, 4.14, 4.15, 4.16, 4.17_
   
-  - [ ] 16.2 Create ImageCacheService
+  - [ ] 15.2 Create ImageCacheService
     - Implement cache key generation (userId:photoSHA256:itemId:itemVersion:mode)
     - Implement TTL-based caching (24h default, configurable per mode)
     - Implement cache invalidation on item update/delete
     - Implement LRU eviction (100 entries or 50MB per user)
     - _Requirements: 4.14_
   
-  - [ ] 16.3 Write property test for photo ephemeral processing
+  - [ ] 15.3 Write property test for photo ephemeral processing
     - **Property 8: Photo Ephemeral Processing**
     - **Validates: Requirements 4.10, 4.11**
   
-  - [ ] 16.4 Write property test for client-side caching
+  - [ ] 15.4 Write property test for client-side caching
     - **Property 10: Client-Side Caching Reduces Redundant Calls**
     - **Validates: Requirements 4.14**
   
-  - [ ] 16.5 Write property test for biometric consent
+  - [ ] 15.5 Write property test for biometric consent
     - **Property 22: Biometric Consent Required for Try-On**
     - **Validates: Requirements 4.1, 4.2**
   
-  - [ ] 16.6 Write unit tests for virtual try-on
+  - [ ] 15.6 Write unit tests for virtual try-on
     - Test try-on generation
     - Test photo deletion
     - Test caching behavior
     - Test throttling
     - _Requirements: 4.6, 4.10, 4.11, 4.14, 4.15, 4.16, 4.17_
 
-- [ ] 17. Implement rate limit and quota management
-  - [ ] 17.1 Create RateLimitHandler
+- [ ] 16. Implement rate limit and quota management
+  - [ ] 16.1 Create RateLimitHandler
     - Implement daily usage counter per API key
     - Implement quota estimation based on usage patterns
     - Implement 80% threshold warning
@@ -394,14 +384,14 @@ This implementation plan breaks down the StyleSync feature into discrete, increm
     - Implement automatic feature re-enablement after reset
     - _Requirements: 5.1, 5.2, 5.3, 5.4, 5.5, 5.6, 5.7, 5.8, 5.16_
   
-  - [ ] 17.2 Create QuotaTracker
+  - [ ] 16.2 Create QuotaTracker
     - Store quota tracking in Firestore with random UUID (not API key)
     - Implement usage increment on API calls
     - Implement reset time calculation (midnight UTC)
     - Implement timezone-aware display (local time + UTC)
     - _Requirements: 5.1, 5.2, 5.3, 5.4_
   
-  - [ ] 17.3 Create UsageHistoryService
+  - [ ] 16.3 Create UsageHistoryService
     - Log quota events with timestamps
     - Provide usage history view in settings
     - _Requirements: 5.17, 5.18_
@@ -428,44 +418,44 @@ This implementation plan breaks down the StyleSync feature into discrete, increm
     - **Property 14: Rate Limit Error Handling**
     - **Validates: Requirements 5.7, 5.8, 5.9, 5.10, 5.15**
 
-- [ ] 18. Checkpoint - Ensure all tests pass
+- [ ] 17. Checkpoint - Ensure all tests pass
   - [ ] All unit tests pass with >80% coverage
   - [ ] Property tests run for 100+ iterations without failures
   - [ ] Security tests validate API key protection and encryption round-trips
   - [ ] Manual verification of onboarding flow completed
 
-- [ ] 19. Implement outfit brainstorming canvas
-  - [ ] 19.1 Create OutfitCanvasController
+- [ ] 18. Implement outfit brainstorming canvas
+  - [ ] 18.1 Create OutfitCanvasController
     - Implement layering interface (base, mid, outer, accessories)
     - Implement drag-and-drop positioning
     - Implement layer reordering with invariant preservation
     - Implement outfit saving with custom names
     - _Requirements: 6.1, 6.2, 6.3, 6.4_
   
-  - [ ] 19.2 Create OutfitRepository
+  - [ ] 18.2 Create OutfitRepository
     - Implement CRUD operations for outfits
     - Store outfits in Firestore
     - Generate outfit thumbnails
     - _Requirements: 6.4, 6.5_
   
-  - [ ] 19.3 Create AIOutfitSuggestionService
+  - [ ] 18.3 Create AIOutfitSuggestionService
     - Implement AI-powered missing piece suggestions
     - Use Gemini models for recommendations
     - Display suggestions with reasoning
     - _Requirements: 6.6, 6.7, 6.8_
   
-  - [ ] 19.4 Write property test for outfit layer ordering invariant
+  - [ ] 18.4 Write property test for outfit layer ordering invariant
     - **Property 15: Outfit Layer Ordering Invariant**
     - **Validates: Requirements 6.3**
   
-  - [ ] 19.5 Write unit tests for outfit canvas
+  - [ ] 18.5 Write unit tests for outfit canvas
     - Test layering operations
     - Test outfit saving
     - Test AI suggestions
     - _Requirements: 6.1, 6.2, 6.3, 6.4, 6.5, 6.6, 6.7, 6.8_
 
-- [ ] 20. Implement account deletion and data management
-  - [ ] 20.1 Create account deletion flow
+- [ ] 19. Implement account deletion and data management
+  - [ ] 19.1 Create account deletion flow
     - Display confirmation dialog with timestamp and timeline explanation
     - Implement immediate primary data deletion (Firebase Storage, Firestore, Auth, local cache, logs, analytics)
     - Implement 30-day retention for backup archives and disaster-recovery replicas
@@ -473,65 +463,65 @@ This implementation plan breaks down the StyleSync feature into discrete, increm
     - Provide deletion confirmation with completion timestamp
     - _Requirements: 7.8, 7.9, 7.10, 7.11, 7.12_
   
-  - [ ] 20.2 Write property test for immediate primary data removal
+  - [ ] 19.2 Write property test for immediate primary data removal
     - **Property 16: Account Deletion Immediate Primary Data Removal**
     - **Validates: Requirements 7.9, 7.10**
   
-  - [ ] 20.3 Write property test for backup data inaccessibility
+  - [ ] 19.3 Write property test for backup data inaccessibility
     - **Property 17: Backup Data Inaccessibility During Retention**
     - **Validates: Requirements 7.11**
   
-  - [ ] 20.4 Write unit tests for account deletion
+  - [ ] 19.4 Write unit tests for account deletion
     - Test confirmation dialog
     - Test primary data deletion
     - Test backup retention
     - Test deletion confirmation
     - _Requirements: 7.8, 7.9, 7.10, 7.11, 7.12_
 
-- [ ] 21. Implement error handling and reporting
-  - [ ] 21.1 Create error handling infrastructure
+- [ ] 20. Implement error handling and reporting
+  - [ ] 20.1 Create error handling infrastructure
     - Implement Result<T> type with Success and Failure
     - Implement AppError hierarchy (NetworkError, APIError, ValidationError, etc.)
     - Implement error recovery strategies (retry, fallback, user notification)
     - _Requirements: 8.1, 8.2, 8.3, 8.4, 8.5_
   
-  - [ ] 21.2 Create ErrorReporter with allow-list/deny-list
+  - [ ] 20.2 Create ErrorReporter with allow-list/deny-list
     - Implement diagnostic data collection with allow-list (app version, OS version, device model, error codes, sanitized stack traces, timestamp, anonymized crash IDs)
     - Implement deny-list enforcement (no user IDs, emails, API keys, tokens, image data, file paths, location, device serials)
     - Implement stack trace sanitization (strip emails, UUIDs, file paths)
     - Validate all fields against allow-list before transmission
     - _Requirements: 8.7, 8.8, 8.9, 8.10, 8.11_
   
-  - [ ] 21.3 Write property test for error report allow-list enforcement
+  - [ ] 20.3 Write property test for error report allow-list enforcement
     - **Property 18: Error Report Allow-List Enforcement**
     - **Validates: Requirements 8.8, 8.9, 8.10, 8.11**
   
-  - [ ] 21.4 Write unit tests for error handling
+  - [ ] 20.4 Write unit tests for error handling
     - Test error recovery strategies
     - Test error reporting
     - Test allow-list/deny-list enforcement
     - _Requirements: 8.1, 8.2, 8.3, 8.4, 8.5, 8.7, 8.8, 8.9, 8.10, 8.11_
 
-- [ ] 22. Implement performance optimizations
-  - [ ] 22.1 Implement image loading with timeouts and fallbacks
+- [ ] 21. Implement performance optimizations
+  - [ ] 21.1 Implement image loading with timeouts and fallbacks
     - Display cached images within 500ms
     - Show loading state if not rendered within 500ms
     - Fall back to low-res placeholders after 10 seconds
     - Surface retry control
     - _Requirements: 9.1, 9.2, 9.3_
   
-  - [ ] 22.2 Implement image compression and caching
+  - [ ] 21.2 Implement image compression and caching
     - Compress images before upload
     - Implement lazy loading for lists
     - Implement image caching (try-ons: 24h, thumbnails: 7 days, clothing: indefinite)
     - Implement LRU eviction (100MB cache limit)
     - _Requirements: 9.4, 9.5, 9.6, 9.8_
   
-  - [ ] 22.3 Write property test for image load timeout with fallback
+  - [ ] 21.3 Write property test for image load timeout with fallback
     - **Property 19: Image Load Timeout with Fallback**
     - **Validates: Requirements 9.1, 9.2, 9.3**
   
-  - [ ] 22.4 Write performance tests
+  - [ ] 21.4 Write performance tests
     - Test image upload time (p50 < 3s, p95 < 5s)
     - Test background removal time (p50 < 3s, p95 < 5s)
     - Test closet load time (p50 < 300ms, p95 < 500ms)
@@ -539,63 +529,62 @@ This implementation plan breaks down the StyleSync feature into discrete, increm
     - Note: Performance targets are initial goals and may be adjusted based on device variance, network conditions, and image complexity.
     - _Requirements: 9.1, 9.2, 9.3, 9.4, 9.5, 9.6, 9.7, 9.8_
 
-- [ ] 23. Checkpoint - Ensure all tests pass
+- [ ] 22. Checkpoint - Ensure all tests pass
   - [ ] All unit tests pass with >80% coverage
   - [ ] Property tests run for 100+ iterations without failures
   - [ ] Security tests validate API key protection and encryption round-trips
   - [ ] Manual verification of onboarding flow completed
 
-- [ ] 24. Implement UI screens and navigation
-  - [ ] 24.1 Create main app screens
+- [ ] 23. Implement UI screens and navigation
+  - [ ] 23.1 Create main app screens
     - Digital Closet screen with grid view and filters
     - Virtual Try-On screen with photo selection and generation
     - Outfit Canvas screen with layering interface
-    - Settings screen with API key management and parental controls
+    - Settings screen with API key management
     - Usage History screen with quota events
-    - Parental Dashboard screen (view/correct child data)
-    - _Requirements: 3.17, 4.16, 4.23, 4.24, 6.1, 6.5_
+    - _Requirements: 3.17, 4.16, 6.1, 6.5_
   
-  - [ ] 24.2 Implement navigation with go_router
+  - [ ] 23.2 Implement navigation with go_router
     - Set up declarative routing
     - Implement deep linking
-    - Handle authentication-based routing (including COPPA redirection)
-    - _Requirements: 1.6, 7.1, 4.19_
+    - Handle authentication-based routing (including 18+ gate)
+    - _Requirements: 1.6, 7.1_
   
-  - [ ] 24.3 Write widget tests for main screens
+  - [ ] 23.3 Write widget tests for main screens
     - Test screen rendering
     - Test user interactions
     - Test navigation flows
-    - Test COPPA-restricted access
-    - _Requirements: 3.17, 4.16, 4.23, 4.24, 6.1, 6.5_
+    - Test 18+ gate enforcement
+    - _Requirements: 3.17, 4.16, 6.1, 6.5_
 
-- [ ] 25. Implement Firebase Remote Config integration
-  - [ ] 25.1 Set up Remote Config
+- [ ] 24. Implement Firebase Remote Config integration
+  - [ ] 24.1 Set up Remote Config
     - Configure certificate pins
     - Configure cache TTLs per generation mode
     - Configure force update settings
-    - Configure feature flags (including COPPA-specific flags)
+    - Configure feature flags
     - _Requirements: 4.9, 4.10, 4.11, 4.12_
   
-  - [ ] 25.2 Implement Remote Config fetching
+  - [ ] 24.2 Implement Remote Config fetching
     - Fetch on app startup
     - Implement periodic refresh
     - Handle fetch failures gracefully
     - _Requirements: 4.9, 4.10, 4.11, 4.12_
   
-  - [ ] 25.3 Write unit tests for Remote Config
+  - [ ] 24.3 Write unit tests for Remote Config
     - Test config fetching
     - Test default values
     - Test update handling
     - _Requirements: 4.9, 4.10, 4.11, 4.12_
 
-- [ ] 26. Implement monitoring and analytics with COPPA constraints
-  - [ ] 26.1 Set up Firebase Crashlytics
+- [ ] 25. Implement monitoring and analytics
+  - [ ] 25.1 Set up Firebase Crashlytics
     - Configure crash reporting
     - Implement custom error logging
     - Add breadcrumbs for debugging
     - _Requirements: 8.6_
   
-  - [ ] 26.2 Set up Firebase Performance Monitoring
+  - [ ] 25.2 Set up Firebase Performance Monitoring
     - Track image upload time
     - Track background removal time
     - Track closet load time
@@ -604,60 +593,44 @@ This implementation plan breaks down the StyleSync feature into discrete, increm
     - Set up performance alerts (p95 regressions > 20%)
     - _Requirements: 9.1, 9.2, 9.3, 9.4, 9.5, 9.6, 9.7, 9.8_
   
-  - [ ] 26.3 Set up Firebase Analytics with COPPA constraints
-    - Track user flows (anonymized for child accounts)
-    - Track feature usage (restricted for child accounts)
+  - [ ] 25.3 Set up Firebase Analytics
+    - Track user flows
+    - Track feature usage
     - Track quota events
     - Track secure storage backend selection
     - Track KDF selection
-    - Disable behavioral tracking for child accounts
-    - _Requirements: 5.17, 5.18, 4.24_
+    - _Requirements: 5.17, 5.18_
   
-  - [ ] 26.4 Write unit tests for monitoring
+  - [ ] 25.4 Write unit tests for monitoring
     - Test event logging
     - Test performance tracking
     - Test analytics events
-    - Test COPPA-compliant tracking restrictions
-    - _Requirements: 5.17, 5.18, 8.6, 9.1, 9.2, 9.3, 4.24_
+    - _Requirements: 5.17, 5.18, 8.6, 9.1, 9.2, 9.3_
 
-- [ ] 27. Implement parental access and revocation interfaces
-  - [ ] 27.1 Create ParentalAccessService
-    - Implement viewChildData with verifiable parent link
-    - Implement correctChildData workflow
-    - Implement revokeConsent and identifying deletion workflow
-    - _Requirements: 4.23, 4.24_
-  
-  - [ ] 27.2 Write unit tests for parental controls
-    - Test data access validation
-    - Test correction flow
-    - Test revocation and cascading deletion
-    - _Requirements: 4.23, 4.24_
-
-- [ ] 28. Final integration and end-to-end testing
-  - [ ] 28.1 Implement end-to-end user flows
-    - Test complete onboarding flow including COPPA age-gating
-    - Test complete upload and try-on flow with parental consent
+- [ ] 26. Final integration and end-to-end testing
+  - [ ] 26.1 Implement end-to-end user flows
+    - Test complete onboarding flow including 18+ age-gating
+    - Test complete upload and try-on flow
     - Test complete outfit creation flow
     - Test complete account deletion flow
     - _Requirements: All_
   
-  - [ ] 28.2 Write integration tests
+  - [ ] 26.2 Write integration tests
     - Test Firebase integration
     - Test Vertex AI integration
     - Test secure storage integration
-    - **Property 21: COPPA Age Verification and Parental Consent** (validates Requirements 4.19–4.24)
-    - _Requirements: All, 4.19-4.24_
+    - **Property 21: 18+ Age Verification** (validates requirement for strict age gating)
+    - _Requirements: All_
   
-  - [ ] 28.3 Perform security audit
+  - [ ] 26.3 Perform security audit
     - Verify API key protection
     - Verify photo ephemeral processing
     - Verify EXIF stripping
     - Verify certificate pinning
     - Verify encryption implementation
-    - Verify COPPA data isolation and deletion compliance
-    - _Requirements: 2.5, 2.8, 2.9, 3.4, 4.4, 4.8, 4.9, 4.10, 4.11, 4.12, 4.19-4.24_
+    - _Requirements: 2.5, 2.8, 2.9, 3.4, 4.4, 4.8, 4.9, 4.10, 4.11, 4.12_
 
-- [ ] 29. Final checkpoint - Ensure all tests pass
+- [ ] 27. Final checkpoint - Ensure all tests pass
   - [ ] All unit tests pass with >80% coverage
   - [ ] Property tests run for 100+ iterations without failures
   - [ ] Security tests validate API key protection and encryption round-trips
@@ -669,6 +642,5 @@ This implementation plan breaks down the StyleSync feature into discrete, increm
 - Checkpoints ensure incremental validation
 - Property tests validate universal correctness properties
 - Unit tests validate specific examples and edge cases
-- COPPA compliance is now integrated into early design (Task 2) and implementation (Tasks 9, 10, 13, 26, 27)
 - All property tests should run minimum 100 iterations
 - Use Firebase Performance Monitoring for continuous performance tracking
