@@ -1,6 +1,16 @@
 import 'dart:typed_data';
 import 'package:cryptography/cryptography.dart';
 
+/// Exception thrown when decryption fails due to authentication/MAC verification failure.
+/// This typically indicates a wrong passphrase or corrupted ciphertext.
+class AuthenticationException implements Exception {
+  final String message;
+  AuthenticationException([this.message = 'Authentication failed during decryption']);
+
+  @override
+  String toString() => 'AuthenticationException: $message';
+}
+
 abstract class EncryptionService {
   /// Encrypts [data] using [key] (32-byte). Returns [nonce + ciphertext + mac].
   Future<Uint8List> encrypt(Uint8List data, Uint8List key);
@@ -48,11 +58,17 @@ class AESGCMEncryptionService implements EncryptionService {
       macLength: 16,
     );
     
-    final clearText = await _algorithm.decrypt(
-       secretBox,
-       secretKey: secretKey,
-    );
-    
-    return Uint8List.fromList(clearText);
+    try {
+      final clearText = await _algorithm.decrypt(
+         secretBox,
+         secretKey: secretKey,
+      );
+      
+      return Uint8List.fromList(clearText);
+    } on SecretBoxAuthenticationError catch (e) {
+      throw AuthenticationException(
+        'MAC verification failed: ${e.toString()}',
+      );
+    }
   }
 }

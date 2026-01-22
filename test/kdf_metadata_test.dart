@@ -182,7 +182,6 @@ void main() {
       final metadata = KdfMetadata.fromJson(json);
 
       expect(metadata.salt, isEmpty);
-      expect(metadata.salt.length, 0);
     });
 
     test('throws FormatException for null algorithm field', () {

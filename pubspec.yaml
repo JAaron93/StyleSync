@@ -40,6 +40,8 @@ dependencies:
   flutter_riverpod: ^2.6.1
   cryptography: ^2.9.0
   argon2: ^1.0.1
+  http: ^1.2.2
+  uuid: ^4.5.1
 
 dev_dependencies:
   flutter_test:
