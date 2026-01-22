@@ -32,7 +32,8 @@ class ValidationSuccess extends ValidationResult {
   /// Performs deep equality comparison of two maps.
   ///
   /// Handles nested Maps and Lists recursively, comparing primitives by ==.
-  static bool _mapEquals(Map<String, dynamic>? a, Map<String, dynamic>? b) {
+  /// Accepts any Map type to support nested maps with non-String keys.
+  static bool _mapEquals(Map? a, Map? b) {
     if (a == null && b == null) return true;
     if (a == null || b == null) return false;
     if (a.length != b.length) return false;
@@ -50,8 +51,8 @@ class ValidationSuccess extends ValidationResult {
     if (identical(a, b)) return true;
     if (a == null || b == null) return a == b;
 
-    // Handle Map comparison
-    if (a is Map<String, dynamic> && b is Map<String, dynamic>) {
+    // Handle Map comparison (any key type)
+    if (a is Map && b is Map) {
       return _mapEquals(a, b);
     }
 
@@ -76,23 +77,27 @@ class ValidationSuccess extends ValidationResult {
   static int _deepHashCode(dynamic value) {
     if (value == null) return 0;
 
-    // Handle Map hashing
-    if (value is Map<String, dynamic>) {
-      var hash = 0;
-      // Sort keys to ensure consistent ordering
-      final sortedKeys = value.keys.toList()..sort();
+    // Handle Map hashing (any key type)
+    if (value is Map) {
+      var hash = 1;
+      // Sort keys by hashCode to ensure consistent ordering for any key type
+      final sortedKeys = value.keys.toList()..sort((a, b) => a.hashCode.compareTo(b.hashCode));
       for (final key in sortedKeys) {
-        hash = hash ^ key.hashCode ^ _deepHashCode(value[key]);
+        // Use rolling hash with multiplication to reduce collisions
+        hash = hash * 31 + key.hashCode;
+        hash = hash * 31 + _deepHashCode(value[key]);
       }
       return hash;
     }
 
     // Handle List hashing
     if (value is List) {
-      var hash = 0;
+      var hash = 1;
       for (var i = 0; i < value.length; i++) {
-        // Include index in hash to distinguish [a, b] from [b, a]
-        hash = hash ^ (i.hashCode ^ _deepHashCode(value[i]));
+        // Use rolling hash with multiplication for position-sensitivity
+        // This ensures [a, b] produces a different hash than [b, a]
+        final elementHash = _deepHashCode(value[i]);
+        hash = hash * 31 + elementHash;
       }
       return hash;
     }

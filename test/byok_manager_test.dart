@@ -132,8 +132,9 @@ class MockCloudBackupService implements CloudBackupService {
   @override
   Future<Result<void>> createOrUpdateBackup(
     APIKeyConfig config,
-    String passphrase,
-  ) async {
+    String passphrase, {
+    DateTime? createdAt,
+  }) async {
     createCallCount++;
     if (shouldFailOnCreate) {
       return Failure(BackupError('Backup creation failed', failureType));
@@ -1045,8 +1046,8 @@ void main() {
 
         // Make backup creation fail
         mockBackup.shouldFailOnCreate = true;
-        // Also make storage write fail during cleanup
-        // (This tests the catch block at line 362-364)
+        // Also make storage write fail during cleanup to test error handling
+        mockStorage.shouldThrowOnWrite = true;
 
         // Update key with passphrase
         final result = await manager.updateAPIKey(

@@ -125,17 +125,97 @@ void main() {
         updatedAt: now,
       );
 
+      // Test copyWith(updatedAt:)
       final later = DateTime.utc(2025, 1, 22, 10, 0, 0);
-      final updated = blob.copyWith(updatedAt: later);
+      final updatedWithTime = blob.copyWith(updatedAt: later);
 
-      expect(updated.version, equals(blob.version));
-      expect(updated.encryptedData, equals(blob.encryptedData));
-      expect(updated.createdAt, equals(blob.createdAt));
-      expect(updated.updatedAt, equals(later));
+      expect(updatedWithTime.version, equals(blob.version),
+          reason: 'version should remain unchanged');
+      expect(updatedWithTime.encryptedData, equals(blob.encryptedData),
+          reason: 'encryptedData should remain unchanged');
+      expect(updatedWithTime.createdAt, equals(blob.createdAt),
+          reason: 'createdAt should remain unchanged');
+      expect(updatedWithTime.kdfMetadata, equals(blob.kdfMetadata),
+          reason: 'kdfMetadata should remain unchanged');
+      expect(updatedWithTime.updatedAt, equals(later),
+          reason: 'updatedAt should be updated to new value');
+
+      // Test copyWith(encryptedData:)
+      final newEncryptedData = base64Encode([10, 20, 30, 40, 50]);
+      final updatedWithData = blob.copyWith(encryptedData: newEncryptedData);
+
+      expect(updatedWithData.encryptedData, equals(newEncryptedData),
+          reason: 'encryptedData should be updated to new value');
+      expect(updatedWithData.version, equals(blob.version),
+          reason: 'version should remain unchanged');
+      expect(updatedWithData.createdAt, equals(blob.createdAt),
+          reason: 'createdAt should remain unchanged');
+      expect(updatedWithData.updatedAt, equals(blob.updatedAt),
+          reason: 'updatedAt should remain unchanged');
+      expect(updatedWithData.kdfMetadata, equals(blob.kdfMetadata),
+          reason: 'kdfMetadata should remain unchanged');
+
+      // Test copyWith(version:)
+      const newVersion = 2;
+      final updatedWithVersion = blob.copyWith(version: newVersion);
+
+      expect(updatedWithVersion.version, equals(newVersion),
+          reason: 'version should be updated to new value');
+      expect(updatedWithVersion.encryptedData, equals(blob.encryptedData),
+          reason: 'encryptedData should remain unchanged');
+      expect(updatedWithVersion.createdAt, equals(blob.createdAt),
+          reason: 'createdAt should remain unchanged');
+      expect(updatedWithVersion.updatedAt, equals(blob.updatedAt),
+          reason: 'updatedAt should remain unchanged');
+      expect(updatedWithVersion.kdfMetadata, equals(blob.kdfMetadata),
+          reason: 'kdfMetadata should remain unchanged');
+
+      // Test copyWith(kdfMetadata:)
+      final newSalt = Uint8List.fromList(List.generate(16, (i) => i + 100));
+      final newMetadata = KdfMetadata(
+        algorithm: KdfAlgorithm.pbkdf2,
+        salt: newSalt,
+        iterations: 100000,
+        memory: 0,
+        parallelism: 1,
+      );
+      final updatedWithMetadata = blob.copyWith(kdfMetadata: newMetadata);
+
+      expect(updatedWithMetadata.kdfMetadata, equals(newMetadata),
+          reason: 'kdfMetadata should be updated to new value');
+      expect(updatedWithMetadata.kdfMetadata.algorithm, equals(KdfAlgorithm.pbkdf2),
+          reason: 'kdfMetadata.algorithm should be updated');
+      expect(updatedWithMetadata.kdfMetadata.salt, equals(newSalt),
+          reason: 'kdfMetadata.salt should be updated');
+      expect(updatedWithMetadata.kdfMetadata.iterations, equals(100000),
+          reason: 'kdfMetadata.iterations should be updated');
+      expect(updatedWithMetadata.version, equals(blob.version),
+          reason: 'version should remain unchanged');
+      expect(updatedWithMetadata.encryptedData, equals(blob.encryptedData),
+          reason: 'encryptedData should remain unchanged');
+      expect(updatedWithMetadata.createdAt, equals(blob.createdAt),
+          reason: 'createdAt should remain unchanged');
+      expect(updatedWithMetadata.updatedAt, equals(blob.updatedAt),
+          reason: 'updatedAt should remain unchanged');
+
+      // Test copyWith(createdAt:) - though typically createdAt shouldn't change
+      final newCreatedAt = DateTime.utc(2024, 12, 1, 0, 0, 0);
+      final updatedWithCreatedAt = blob.copyWith(createdAt: newCreatedAt);
+
+      expect(updatedWithCreatedAt.createdAt, equals(newCreatedAt),
+          reason: 'createdAt should be updated to new value');
+      expect(updatedWithCreatedAt.version, equals(blob.version),
+          reason: 'version should remain unchanged');
+      expect(updatedWithCreatedAt.encryptedData, equals(blob.encryptedData),
+          reason: 'encryptedData should remain unchanged');
+      expect(updatedWithCreatedAt.updatedAt, equals(blob.updatedAt),
+          reason: 'updatedAt should remain unchanged');
+      expect(updatedWithCreatedAt.kdfMetadata, equals(blob.kdfMetadata),
+          reason: 'kdfMetadata should remain unchanged');
     });
   });
 
-  group('CloudBackupService integration', () {
+  group('Result type', () {
     test('Result type works correctly', () {
       const success = Success<int>(42);
       expect(success.isSuccess, isTrue);

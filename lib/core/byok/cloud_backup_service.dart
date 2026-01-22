@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:firebase_auth/firebase_auth.dart';
@@ -24,12 +25,18 @@ abstract class CloudBackupService {
   /// encrypts the configuration using [EncryptionService], and uploads to
   /// Firebase Storage at `users/{userId}/api_key_backup.json`.
   ///
+  /// If [createdAt] is provided, it will be used as the backup's creation
+  /// timestamp. This is useful during passphrase rotation to preserve the
+  /// original creation timestamp. If not provided, the existing backup's
+  /// createdAt will be used (if one exists), otherwise the current time.
+  ///
   /// Returns [Success] if the backup was created/updated successfully.
   /// Returns [Failure] with [BackupError] if the operation fails.
   Future<Result<void>> createOrUpdateBackup(
     APIKeyConfig config,
-    String passphrase,
-  );
+    String passphrase, {
+    DateTime? createdAt,
+  });
 
   /// Restores an API key configuration from cloud backup.
   ///
@@ -129,11 +136,39 @@ class CloudBackupServiceImpl implements CloudBackupService {
     return 'users/$userId/api_key_backup_temp.json';
   }
 
+  /// Checks if the given error is a network-related error.
+  ///
+  /// Returns `true` for:
+  /// - [SocketException] (connection failures, DNS errors, etc.)
+  /// - [HttpException] (HTTP protocol errors)
+  /// - [FirebaseException] with network-related codes:
+  ///   - `'network-request-failed'`
+  ///   - `'unavailable'`
+  ///
+  /// Returns `false` for all other error types.
+  bool _isNetworkError(Object error) {
+    if (error is SocketException) {
+      return true;
+    }
+    if (error is HttpException) {
+      return true;
+    }
+    if (error is FirebaseException) {
+      const networkErrorCodes = {
+        'network-request-failed',
+        'unavailable',
+      };
+      return networkErrorCodes.contains(error.code);
+    }
+    return false;
+  }
+
   @override
   Future<Result<void>> createOrUpdateBackup(
     APIKeyConfig config,
-    String passphrase,
-  ) async {
+    String passphrase, {
+    DateTime? createdAt,
+  }) async {
     try {
       // Validate user is authenticated
       if (_auth.currentUser == null) {
@@ -162,8 +197,8 @@ class CloudBackupServiceImpl implements CloudBackupService {
         encryptionKey,
       );
 
-      // Step 5: Fetch existing blob to preserve createdAt timestamp
-      final existingBlob = await _tryGetExistingBlob();
+      // Step 5: Fetch existing blob to preserve createdAt timestamp (if not provided)
+      final existingBlob = createdAt == null ? await _tryGetExistingBlob() : null;
 
       // Step 6: Create CloudBackupBlob
       final now = DateTime.now().toUtc();
@@ -171,11 +206,11 @@ class CloudBackupServiceImpl implements CloudBackupService {
         version: CloudBackupBlob.currentVersion,
         kdfMetadata: kdfMetadata,
         encryptedData: base64Encode(encryptedData),
-        createdAt: existingBlob?.createdAt ?? now,
+        createdAt: createdAt ?? existingBlob?.createdAt ?? now,
         updatedAt: now,
       );
 
-      // Step 6: Upload to Firebase Storage
+      // Step 7: Upload to Firebase Storage
       final blobJson = jsonEncode(blob.toJson());
       final ref = _storage.ref(_getBackupPath());
       await ref.putString(
@@ -198,8 +233,7 @@ class CloudBackupServiceImpl implements CloudBackupService {
       ));
     } catch (e) {
       // Check for network-related errors
-      if (e.toString().contains('network') ||
-          e.toString().contains('connection')) {
+      if (_isNetworkError(e)) {
         return Failure(BackupError(
           'Network error during backup: ${e.toString()}',
           BackupErrorType.networkError,
@@ -267,8 +301,7 @@ class CloudBackupServiceImpl implements CloudBackupService {
         ));
       }
     } catch (e) {
-      if (e.toString().contains('network') ||
-          e.toString().contains('connection')) {
+      if (_isNetworkError(e)) {
         return Failure(BackupError(
           'Network error during restore: ${e.toString()}',
           BackupErrorType.networkError,
@@ -314,8 +347,7 @@ class CloudBackupServiceImpl implements CloudBackupService {
         originalError: e,
       ));
     } catch (e) {
-      if (e.toString().contains('network') ||
-          e.toString().contains('connection')) {
+      if (_isNetworkError(e)) {
         return Failure(BackupError(
           'Network error during deletion: ${e.toString()}',
           BackupErrorType.networkError,
@@ -363,8 +395,7 @@ class CloudBackupServiceImpl implements CloudBackupService {
       ));
     } catch (e) {
       // Check for network-related errors
-      if (e.toString().contains('network') ||
-          e.toString().contains('connection')) {
+      if (_isNetworkError(e)) {
         return Failure(BackupError(
           'Network error while checking backup existence: ${e.toString()}',
           BackupErrorType.networkError,
@@ -386,10 +417,11 @@ class CloudBackupServiceImpl implements CloudBackupService {
   ) async {
     // This method implements a safe passphrase rotation using a temporary backup:
     // 1. Restore the existing backup with the old passphrase
-    // 2. Upload re-encrypted data to a temporary path
-    // 3. Verify the temp backup can be decrypted with the new passphrase
-    // 4. Perform atomic swap: delete old backup, then rename temp to final
-    // 5. Clean up temp on any failure
+    // 2. Capture the original createdAt timestamp before deletion
+    // 3. Upload re-encrypted data to a temporary path
+    // 4. Verify the temp backup can be decrypted with the new passphrase
+    // 5. Perform atomic swap: delete old backup, then rename temp to final
+    // 6. Clean up temp on any failure
     //
     // WARNING: Firebase Storage does not support atomic rename/move operations.
     // There is a brief window between deleting the old backup and the temp backup
@@ -405,14 +437,18 @@ class CloudBackupServiceImpl implements CloudBackupService {
         ));
       }
 
-      // Step 1: Restore backup with old passphrase to get the config
+      // Step 1: Capture the original createdAt timestamp before any modifications
+      final existingBlob = await _tryGetExistingBlob();
+      final originalCreatedAt = existingBlob?.createdAt;
+
+      // Step 2: Restore backup with old passphrase to get the config
       final restoreResult = await restoreBackup(oldPassphrase);
       if (restoreResult.isFailure) {
         return Failure(restoreResult.errorOrNull!);
       }
       final config = restoreResult.valueOrNull!;
 
-      // Step 2: Create re-encrypted backup at temporary path
+      // Step 3: Create re-encrypted backup at temporary path
       final uploadTempResult = await _uploadToPath(
         config,
         newPassphrase,
@@ -422,7 +458,7 @@ class CloudBackupServiceImpl implements CloudBackupService {
         return Failure(uploadTempResult.errorOrNull!);
       }
 
-      // Step 3: Verify the temp backup can be decrypted with new passphrase
+      // Step 4: Verify the temp backup can be decrypted with new passphrase
       final verifyResult = await _verifyBackupAtPath(
         newPassphrase,
         _getTempBackupPath(),
@@ -445,7 +481,7 @@ class CloudBackupServiceImpl implements CloudBackupService {
         ));
       }
 
-      // Step 4: Atomic swap - delete old backup first, then copy temp to final
+      // Step 5: Atomic swap - delete old backup first, then copy temp to final
       // Note: Firebase Storage doesn't support atomic rename, so we:
       // a) Delete the original backup
       // b) Upload the temp content to the final path
@@ -454,7 +490,7 @@ class CloudBackupServiceImpl implements CloudBackupService {
       // If failure occurs between (a) and (b), the temp backup still exists
       // and can be manually recovered or rotation can be retried.
 
-      // 4a: Delete the original backup
+      // 5a: Delete the original backup
       final deleteOriginalResult = await deleteBackup();
       if (deleteOriginalResult.isFailure) {
         // Keep temp backup for recovery, but report the error
@@ -467,8 +503,12 @@ class CloudBackupServiceImpl implements CloudBackupService {
         ));
       }
 
-      // 4b: Upload to final path (re-encrypt again to ensure fresh data)
-      final uploadFinalResult = await createOrUpdateBackup(config, newPassphrase);
+      // 5b: Upload to final path, preserving the original createdAt timestamp
+      final uploadFinalResult = await createOrUpdateBackup(
+        config,
+        newPassphrase,
+        createdAt: originalCreatedAt,
+      );
       if (uploadFinalResult.isFailure) {
         // CRITICAL: Original is deleted but final upload failed
         // Temp backup still exists - caller should be notified
@@ -482,7 +522,7 @@ class CloudBackupServiceImpl implements CloudBackupService {
         ));
       }
 
-      // Step 5: Clean up temp backup
+      // Step 6: Clean up temp backup
       // Failure here is non-critical - the rotation succeeded
       await _deleteBackupAtPath(_getTempBackupPath());
 
@@ -495,8 +535,7 @@ class CloudBackupServiceImpl implements CloudBackupService {
         // Ignore cleanup errors
       }
 
-      if (e.toString().contains('network') ||
-          e.toString().contains('connection')) {
+      if (_isNetworkError(e)) {
         return Failure(BackupError(
           'Network error during passphrase rotation: ${e.toString()}',
           BackupErrorType.networkError,
@@ -566,8 +605,7 @@ class CloudBackupServiceImpl implements CloudBackupService {
         originalError: e,
       ));
     } catch (e) {
-      if (e.toString().contains('network') ||
-          e.toString().contains('connection')) {
+      if (_isNetworkError(e)) {
         return Failure(BackupError(
           'Network error during upload: ${e.toString()}',
           BackupErrorType.networkError,
@@ -643,8 +681,7 @@ class CloudBackupServiceImpl implements CloudBackupService {
         originalError: e,
       ));
     } catch (e) {
-      if (e.toString().contains('network') ||
-          e.toString().contains('connection')) {
+      if (_isNetworkError(e)) {
         return Failure(BackupError(
           'Network error: ${e.toString()}',
           BackupErrorType.networkError,
@@ -679,8 +716,7 @@ class CloudBackupServiceImpl implements CloudBackupService {
         originalError: e,
       ));
     } catch (e) {
-      if (e.toString().contains('network') ||
-          e.toString().contains('connection')) {
+      if (_isNetworkError(e)) {
         return Failure(BackupError(
           'Network error during deletion: ${e.toString()}',
           BackupErrorType.networkError,
@@ -794,8 +830,7 @@ class CloudBackupServiceImpl implements CloudBackupService {
         originalError: e,
       ));
     } catch (e) {
-      if (e.toString().contains('network') ||
-          e.toString().contains('connection')) {
+      if (_isNetworkError(e)) {
         return Failure(BackupError(
           'Network error: ${e.toString()}',
           BackupErrorType.networkError,
@@ -812,43 +847,9 @@ class CloudBackupServiceImpl implements CloudBackupService {
 
   @override
   Future<Result<bool>> verifyPassphrase(String passphrase) async {
-    // Step 1: Fetch and parse the backup blob
-    final blobResult = await _fetchAndParseBlob();
-    if (blobResult.isFailure) {
-      return Failure(blobResult.errorOrNull!);
-    }
-    final blob = blobResult.valueOrNull!;
-
-    // Step 2: Derive decryption key and attempt decryption
-    try {
-      final decryptionKey = await _keyDerivationService.deriveKey(
-        passphrase,
-        blob.kdfMetadata,
-      );
-
-      try {
-        final encryptedBytes = base64Decode(blob.encryptedData);
-        await _encryptionService.decrypt(encryptedBytes, decryptionKey);
-        return const Success(true);
-      } catch (_) {
-        // Decryption failed - wrong passphrase
-        return const Success(false);
-      }
-    } catch (e) {
-      if (e.toString().contains('network') ||
-          e.toString().contains('connection')) {
-        return Failure(BackupError(
-          'Network error: ${e.toString()}',
-          BackupErrorType.networkError,
-          originalError: e,
-        ));
-      }
-      return Failure(BackupError(
-        'Failed to verify passphrase: ${e.toString()}',
-        BackupErrorType.storageError,
-        originalError: e,
-      ));
-    }
+    // Delegate to _verifyBackupAtPath with the default backup path.
+    // This eliminates duplicate blob fetching and decryption/error-mapping logic.
+    return _verifyBackupAtPath(passphrase, _getBackupPath());
   }
 }
 

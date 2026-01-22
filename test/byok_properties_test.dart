@@ -70,26 +70,65 @@ Generator<String> invalidAPIKeyGenerator() {
 }
 
 /// Generator function for valid project IDs (alphanumeric with hyphens, 6-30 chars)
+///
+/// Google Cloud project IDs must:
+/// - Be 6-30 characters long
+/// - Start with a lowercase letter
+/// - Contain only lowercase letters, digits, and hyphens
+/// - Not end with a hyphen
 Generator<String> validProjectIdGenerator() {
   return (random, size) {
-    const validChars = 'abcdefghijklmnopqrstuvwxyz0123456789';
-    final length = random.nextInt(25) + 6; // 6-30 chars
-    final parts = <String>[];
-    var currentPart = '';
-    
-    for (var i = 0; i < length; i++) {
-      if (random.nextInt(5) == 0 && currentPart.isNotEmpty && i < length - 1) {
-        parts.add(currentPart);
-        currentPart = '';
-      } else {
-        currentPart += validChars[random.nextInt(validChars.length)];
+    const letters = 'abcdefghijklmnopqrstuvwxyz';
+    const alphanumeric = 'abcdefghijklmnopqrstuvwxyz0123456789';
+
+    // Step 1: Choose target final length (6-30 inclusive)
+    final finalLength = random.nextInt(25) + 6;
+
+    // Step 2: Choose hyphen count (0 to min(finalLength - 2, 5))
+    // We need at least 1 letter at start and 1 alphanumeric at end
+    // So max hyphens = finalLength - 2
+    // But we also cap at 5 for reasonable upper bound
+    final maxHyphens = (finalLength - 2).clamp(0, 5);
+    final hyphenCount = maxHyphens > 0 ? random.nextInt(maxHyphens + 1) : 0;
+
+    // Step 3: Compute remaining character count (excluding hyphens)
+    final remainingCharCount = finalLength - hyphenCount;
+
+    // Step 4: Split remainingCharCount into (hyphenCount + 1) segments
+    // Each segment must have at least 1 character to avoid empty parts
+    final segmentCount = hyphenCount + 1;
+    final segmentLengths = List<int>.filled(segmentCount, 1);
+    var charsToDistribute = remainingCharCount - segmentCount;
+
+    // Distribute remaining chars randomly across segments
+    for (var i = 0; i < charsToDistribute; i++) {
+      final segmentIndex = random.nextInt(segmentCount);
+      segmentLengths[segmentIndex]++;
+    }
+
+    // Step 5: Generate each segment
+    final segments = <String>[];
+    for (var segmentIndex = 0; segmentIndex < segmentLengths.length; segmentIndex++) {
+      final segmentLength = segmentLengths[segmentIndex];
+      final segment = StringBuffer();
+      
+      for (var charIndex = 0; charIndex < segmentLength; charIndex++) {
+        if (segmentIndex == 0 && charIndex == 0) {
+          // First character of first segment must be a letter
+          segment.write(letters[random.nextInt(letters.length)]);
+        } else if (segmentIndex == segmentLengths.length - 1 && charIndex == segmentLength - 1) {
+          // Last character of last segment must be alphanumeric (not hyphen)
+          segment.write(alphanumeric[random.nextInt(alphanumeric.length)]);
+        } else {
+          // All other characters can be alphanumeric
+          segment.write(alphanumeric[random.nextInt(alphanumeric.length)]);
+        }
       }
+      segments.add(segment.toString());
     }
-    if (currentPart.isNotEmpty) {
-      parts.add(currentPart);
-    }
-    
-    final projectId = parts.join('-');
+
+    // Step 6: Join segments with hyphens
+    final projectId = segments.join('-');
     return Shrinkable(projectId, () sync* {});
   };
 }
@@ -295,6 +334,7 @@ void main() {
             responseBody: '{"models": [{"name": "test-model"}]}',
           );
           final validator = APIKeyValidatorImpl(httpClient: mockClient);
+          addTearDown(validator.dispose);
 
           final result = await validator.validateFunctionality(apiKey, projectId);
           
@@ -302,8 +342,6 @@ void main() {
               reason: 'HTTP 200 should result in ValidationSuccess');
           expect(mockClient.callCount, equals(1),
               reason: 'Should make exactly one HTTP call');
-          
-          validator.dispose();
         },
       );
 
@@ -315,6 +353,7 @@ void main() {
             responseBody: '{"error": {"message": "Invalid API key"}}',
           );
           final validator = APIKeyValidatorImpl(httpClient: mockClient);
+          addTearDown(validator.dispose);
 
           final result = await validator.validateFunctionality(apiKey, projectId);
           
@@ -326,8 +365,6 @@ void main() {
                 reason: 'HTTP 401 should be unauthorized type');
             expect(result.errorCode, equals('401'));
           }
-          
-          validator.dispose();
         },
       );
 
@@ -339,6 +376,7 @@ void main() {
             responseBody: '{"error": {"message": "API not enabled for project"}}',
           );
           final validator = APIKeyValidatorImpl(httpClient: mockClient);
+          addTearDown(validator.dispose);
 
           final result = await validator.validateFunctionality(apiKey, projectId);
           
@@ -349,8 +387,6 @@ void main() {
             expect(result.type, equals(ValidationFailureType.apiNotEnabled),
                 reason: 'HTTP 403 with API not enabled message should be apiNotEnabled type');
           }
-          
-          validator.dispose();
         },
       );
 
@@ -362,6 +398,7 @@ void main() {
             responseBody: '{"error": {"message": "Access denied"}}',
           );
           final validator = APIKeyValidatorImpl(httpClient: mockClient);
+          addTearDown(validator.dispose);
 
           final result = await validator.validateFunctionality(apiKey, projectId);
           
@@ -372,8 +409,6 @@ void main() {
             expect(result.type, equals(ValidationFailureType.invalidProject),
                 reason: 'HTTP 403 without API not enabled should be invalidProject type');
           }
-          
-          validator.dispose();
         },
       );
 
@@ -385,6 +420,7 @@ void main() {
             responseBody: '{"error": {"message": "Project not found"}}',
           );
           final validator = APIKeyValidatorImpl(httpClient: mockClient);
+          addTearDown(validator.dispose);
 
           final result = await validator.validateFunctionality(apiKey, projectId);
           
@@ -396,8 +432,6 @@ void main() {
                 reason: 'HTTP 404 should be invalidProject type');
             expect(result.errorCode, equals('404'));
           }
-          
-          validator.dispose();
         },
       );
 
@@ -409,6 +443,7 @@ void main() {
             responseBody: '{"error": {"message": "Rate limit exceeded"}}',
           );
           final validator = APIKeyValidatorImpl(httpClient: mockClient);
+          addTearDown(validator.dispose);
 
           final result = await validator.validateFunctionality(apiKey, projectId);
           
@@ -420,8 +455,6 @@ void main() {
                 reason: 'HTTP 429 should be rateLimited type');
             expect(result.errorCode, equals('429'));
           }
-          
-          validator.dispose();
         },
       );
 
@@ -430,6 +463,7 @@ void main() {
         (apiKey, projectId) async {
           final mockClient = MockHttpClient(shouldTimeout: true);
           final validator = APIKeyValidatorImpl(httpClient: mockClient);
+          addTearDown(validator.dispose);
 
           final result = await validator.validateFunctionality(apiKey, projectId);
           
@@ -440,8 +474,6 @@ void main() {
             expect(result.type, equals(ValidationFailureType.networkError),
                 reason: 'Timeout should be networkError type');
           }
-          
-          validator.dispose();
         },
       );
 
@@ -450,6 +482,7 @@ void main() {
         (apiKey, projectId) async {
           final mockClient = MockHttpClient(shouldThrowSocketException: true);
           final validator = APIKeyValidatorImpl(httpClient: mockClient);
+          addTearDown(validator.dispose);
 
           final result = await validator.validateFunctionality(apiKey, projectId);
           
@@ -460,8 +493,6 @@ void main() {
             expect(result.type, equals(ValidationFailureType.networkError),
                 reason: 'Socket exception should be networkError type');
           }
-          
-          validator.dispose();
         },
       );
     });
@@ -477,6 +508,7 @@ void main() {
           final mockClient = MockHttpClient(statusCode: 200);
           final mockStorage = MockSecureStorage();
           final validator = APIKeyValidatorImpl(httpClient: mockClient);
+          addTearDown(validator.dispose);
           final manager = BYOKManagerImpl(
             secureStorage: mockStorage,
             apiKeyValidator: validator,
@@ -488,8 +520,6 @@ void main() {
               reason: 'Valid key should be stored successfully');
           expect(await manager.hasStoredKey(), isTrue,
               reason: 'Key should be present in storage');
-          
-          validator.dispose();
         },
       );
 
@@ -499,6 +529,7 @@ void main() {
           final mockClient = MockHttpClient(statusCode: 200);
           final mockStorage = MockSecureStorage();
           final validator = APIKeyValidatorImpl(httpClient: mockClient);
+          addTearDown(validator.dispose);
           final manager = BYOKManagerImpl(
             secureStorage: mockStorage,
             apiKeyValidator: validator,
@@ -512,8 +543,6 @@ void main() {
               reason: 'No HTTP call should be made for invalid format (fail-fast)');
           expect(await manager.hasStoredKey(), isFalse,
               reason: 'Invalid key should not be stored');
-          
-          validator.dispose();
         },
       );
 
@@ -523,6 +552,7 @@ void main() {
           final mockClient = MockHttpClient(statusCode: 401);
           final mockStorage = MockSecureStorage();
           final validator = APIKeyValidatorImpl(httpClient: mockClient);
+          addTearDown(validator.dispose);
           final manager = BYOKManagerImpl(
             secureStorage: mockStorage,
             apiKeyValidator: validator,
@@ -536,8 +566,6 @@ void main() {
               reason: 'HTTP call should be made for valid format key');
           expect(await manager.hasStoredKey(), isFalse,
               reason: 'Key with failed API validation should not be stored');
-          
-          validator.dispose();
         },
       );
 
@@ -547,6 +575,7 @@ void main() {
           final mockClient = MockHttpClient(statusCode: errorCode);
           final mockStorage = MockSecureStorage();
           final validator = APIKeyValidatorImpl(httpClient: mockClient);
+          addTearDown(validator.dispose);
           final manager = BYOKManagerImpl(
             secureStorage: mockStorage,
             apiKeyValidator: validator,
@@ -558,8 +587,6 @@ void main() {
               reason: 'HTTP error $errorCode should result in failure');
           expect(await manager.hasStoredKey(), isFalse,
               reason: 'Key should not be stored on HTTP error');
-          
-          validator.dispose();
         },
       );
     });
@@ -575,6 +602,7 @@ void main() {
           final mockClient = MockHttpClient(statusCode: 200);
           final mockStorage = MockSecureStorage();
           final validator = APIKeyValidatorImpl(httpClient: mockClient);
+          addTearDown(validator.dispose);
           final manager = BYOKManagerImpl(
             secureStorage: mockStorage,
             apiKeyValidator: validator,
@@ -592,8 +620,6 @@ void main() {
               reason: 'Retrieved key should match stored key');
           expect(config.projectId, equals(projectId),
               reason: 'Retrieved project ID should match stored project ID');
-          
-          validator.dispose();
         },
       );
 
@@ -603,6 +629,7 @@ void main() {
           final mockClient = MockHttpClient(statusCode: 200);
           final mockStorage = MockSecureStorage();
           final validator = APIKeyValidatorImpl(httpClient: mockClient);
+          addTearDown(validator.dispose);
           final manager = BYOKManagerImpl(
             secureStorage: mockStorage,
             apiKeyValidator: validator,
@@ -616,20 +643,55 @@ void main() {
               reason: 'Deleted key should not be retrievable');
           expect(await manager.hasStoredKey(), isFalse,
               reason: 'hasStoredKey should return false after deletion');
-          
-          validator.dispose();
+        },
+      );
+
+      Glados2(any.validAPIKey, any.validProjectId).test(
+        'Updating with identical key succeeds and preserves value',
+        (apiKey, projectId) async {
+          final mockClient = MockHttpClient(statusCode: 200);
+          final mockStorage = MockSecureStorage();
+          final validator = APIKeyValidatorImpl(httpClient: mockClient);
+          addTearDown(validator.dispose);
+          final manager = BYOKManagerImpl(
+            secureStorage: mockStorage,
+            apiKeyValidator: validator,
+          );
+
+          // Store the key initially
+          await manager.storeAPIKey(apiKey, projectId);
+
+          // Update with identical key
+          final result = await manager.updateAPIKey(apiKey, projectId);
+
+          // Assert success
+          expect(result, isA<Success<void>>(),
+              reason: 'Updating with identical key should succeed');
+
+          // Assert key is unchanged
+          final retrieved = await manager.getAPIKey();
+          expect(retrieved, isA<Success<APIKeyConfig>>(),
+              reason: 'Key should still be retrievable after idempotent update');
+
+          final config = retrieved.valueOrNull;
+          expect(config, isNotNull);
+          expect(config!.apiKey, equals(apiKey.trim()),
+              reason: 'Retrieved key should match the original key');
+          expect(config.projectId, equals(projectId),
+              reason: 'Retrieved project ID should match the original project ID');
         },
       );
 
       Glados3(any.validAPIKey, any.validAPIKey, any.validProjectId).test(
         'Updated key replaces old key',
         (oldKey, newKey, projectId) async {
-          // Skip if keys are the same
+          // Skip if keys are the same - that case is covered by the idempotent update test
           if (oldKey == newKey) return;
-          
+
           final mockClient = MockHttpClient(statusCode: 200);
           final mockStorage = MockSecureStorage();
           final validator = APIKeyValidatorImpl(httpClient: mockClient);
+          addTearDown(validator.dispose);
           final manager = BYOKManagerImpl(
             secureStorage: mockStorage,
             apiKeyValidator: validator,
@@ -638,16 +700,14 @@ void main() {
           await manager.storeAPIKey(oldKey, projectId);
           await manager.updateAPIKey(newKey, projectId);
           final retrieveResult = await manager.getAPIKey();
-          
+
           expect(retrieveResult, isA<Success<APIKeyConfig>>(),
               reason: 'Updated key should be retrievable');
-          
+
           final config = retrieveResult.valueOrNull;
           expect(config, isNotNull);
           expect(config!.apiKey, equals(newKey.trim()),
               reason: 'Retrieved key should be the new key');
-          
-          validator.dispose();
         },
       );
     });
@@ -663,6 +723,7 @@ void main() {
           final mockClient = MockHttpClient(statusCode: 200);
           final mockStorage = MockSecureStorage();
           final validator = APIKeyValidatorImpl(httpClient: mockClient);
+          addTearDown(validator.dispose);
           final manager = BYOKManagerImpl(
             secureStorage: mockStorage,
             apiKeyValidator: validator,
@@ -680,8 +741,6 @@ void main() {
           final config = retrieveResult.valueOrNull;
           expect(config, isNotNull);
           expect(config!.apiKey, equals(apiKey.trim()));
-          
-          validator.dispose();
         },
       );
     });
@@ -694,43 +753,41 @@ void main() {
   group('Edge Cases', () {
     test('Empty API key fails format validation', () {
       final validator = APIKeyValidatorImpl();
+      addTearDown(validator.dispose);
       final result = validator.validateFormat('');
       
       expect(result, isA<ValidationFailure>());
       if (result is ValidationFailure) {
         expect(result.type, equals(ValidationFailureType.invalidFormat));
       }
-      
-      validator.dispose();
     });
 
     test('Whitespace-only API key fails format validation', () {
       final validator = APIKeyValidatorImpl();
+      addTearDown(validator.dispose);
       final result = validator.validateFormat('   ');
       
       expect(result, isA<ValidationFailure>());
       if (result is ValidationFailure) {
         expect(result.type, equals(ValidationFailureType.invalidFormat));
       }
-      
-      validator.dispose();
     });
 
     test('API key with leading/trailing whitespace is trimmed', () {
       final validator = APIKeyValidatorImpl();
+      addTearDown(validator.dispose);
       final validKey = 'AIza${'a' * 35}';
       final keyWithWhitespace = '  $validKey  ';
       
       final result = validator.validateFormat(keyWithWhitespace);
       expect(result, isA<ValidationSuccess>());
-      
-      validator.dispose();
     });
 
     test('Retrieving non-existent key returns NotFoundError', () async {
       final mockClient = MockHttpClient(statusCode: 200);
       final mockStorage = MockSecureStorage();
       final validator = APIKeyValidatorImpl(httpClient: mockClient);
+      addTearDown(validator.dispose);
       final manager = BYOKManagerImpl(
         secureStorage: mockStorage,
         apiKeyValidator: validator,
@@ -739,14 +796,13 @@ void main() {
       final result = await manager.getAPIKey();
       
       expect(result, isA<Failure<APIKeyConfig>>());
-      
-      validator.dispose();
     });
 
     test('Deleting non-existent key returns NotFoundError', () async {
       final mockClient = MockHttpClient(statusCode: 200);
       final mockStorage = MockSecureStorage();
       final validator = APIKeyValidatorImpl(httpClient: mockClient);
+      addTearDown(validator.dispose);
       final manager = BYOKManagerImpl(
         secureStorage: mockStorage,
         apiKeyValidator: validator,
@@ -755,13 +811,12 @@ void main() {
       final result = await manager.deleteAPIKey();
       
       expect(result, isA<Failure<void>>());
-      
-      validator.dispose();
     });
 
     test('HTTP 500 returns unknown failure type', () async {
       final mockClient = MockHttpClient(statusCode: 500);
       final validator = APIKeyValidatorImpl(httpClient: mockClient);
+      addTearDown(validator.dispose);
       final validKey = 'AIza${'a' * 35}';
 
       final result = await validator.validateFunctionality(validKey, 'test-project');
@@ -770,8 +825,6 @@ void main() {
       if (result is ValidationFailure) {
         expect(result.type, equals(ValidationFailureType.unknown));
       }
-      
-      validator.dispose();
     });
 
     test('Malformed JSON response still returns success for HTTP 200', () async {
@@ -780,14 +833,13 @@ void main() {
         responseBody: 'not valid json',
       );
       final validator = APIKeyValidatorImpl(httpClient: mockClient);
+      addTearDown(validator.dispose);
       final validKey = 'AIza${'a' * 35}';
 
       final result = await validator.validateFunctionality(validKey, 'test-project');
       
       // Even if JSON parsing fails, HTTP 200 means the key is valid
       expect(result, isA<ValidationSuccess>());
-      
-      validator.dispose();
     });
   });
 }

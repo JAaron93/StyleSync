@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:logging/logging.dart';
 import 'package:uuid/uuid.dart';
 
 import '../storage/secure_storage_service.dart';
@@ -11,6 +12,9 @@ import 'cloud_backup_service.dart';
 import 'models/api_key_config.dart';
 import 'models/byok_error.dart';
 import 'models/validation_result.dart';
+
+/// Logger for BYOKManager operations.
+final Logger _logger = Logger('BYOKManager');
 
 /// Result type for BYOK operations.
 ///
@@ -202,7 +206,7 @@ class BYOKManagerImpl implements BYOKManager {
     }
 
     // Step 3: Create API key configuration
-    final now = DateTime.now();
+    final now = DateTime.now().toUtc();
     final idempotencyKey = _generateIdempotencyKey();
     final config = APIKeyConfig(
       apiKey: trimmedApiKey,
@@ -275,6 +279,8 @@ class BYOKManagerImpl implements BYOKManager {
           if (deleteResult.isFailure) {
             // Log the error but don't fail the operation
             // The local key is already deleted
+            _logger.warning('Failed to delete cloud backup during API key '
+                'deletion. Error: ${deleteResult.errorOrNull?.message}');
           }
         }
       }
@@ -362,14 +368,14 @@ class BYOKManagerImpl implements BYOKManager {
           } catch (_) {
             // Ignore storage errors during cleanup
           }
-          print('[BYOKManager] WARNING: Cloud backup re-encryption failed during '
-              'key update. Cloud backup has been disabled. '
+          _logger.severe('Cloud backup re-encryption failed during key update. '
+              'Cloud backup has been disabled. '
               'Error: ${backupResult.errorOrNull?.message}');
         }
       } else {
         // No passphrase provided but backup is enabled
-        print('[BYOKManager] WARNING: Cloud backup is enabled but no passphrase '
-            'provided for key update. Cloud backup was not updated with the new key.');
+        _logger.warning('Cloud backup is enabled but no passphrase provided '
+            'for key update. Cloud backup was not updated with the new key.');
       }
     }
 
@@ -445,6 +451,8 @@ class BYOKManagerImpl implements BYOKManager {
         if (deleteResult.isFailure) {
           // Log the error but don't fail the operation
           // The local state is already updated
+          _logger.warning('Failed to delete cloud backup during '
+              'disableCloudBackup. Error: ${deleteResult.errorOrNull?.message}');
         }
       }
 

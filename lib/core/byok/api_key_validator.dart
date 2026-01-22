@@ -90,18 +90,36 @@ class APIKeyValidatorImpl implements APIKeyValidator {
   /// Expected length for Google API keys.
   static const int _expectedLength = 39;
 
+  /// Regular expression pattern for valid Google Cloud region format.
+  ///
+  /// Regions follow the pattern: `continent-location + number`
+  /// (e.g., us-central1, europe-west4, asia-northeast1)
+  static final RegExp _validRegionPattern =
+      RegExp(r'^[a-z]+-[a-z]+[0-9]+$');
+
+  /// Regular expression pattern for valid Google Cloud project IDs.
+  ///
+  /// Project IDs must:
+  /// - Be 6-30 characters long
+  /// - Start with a lowercase letter
+  /// - Contain only lowercase letters, digits, and hyphens
+  /// - Not end with a hyphen
+  /// See: https://cloud.google.com/resource-manager/docs/creating-managing-projects
+  static final RegExp _validProjectIdPattern =
+      RegExp(r'^[a-z][a-z0-9-]{4,28}[a-z0-9]$');
+
   @override
   ValidationResult validateFormat(String apiKey) {
+    // Trim whitespace once at the start
+    final trimmedKey = apiKey.trim();
+
     // Check for empty or whitespace-only input
-    if (apiKey.trim().isEmpty) {
+    if (trimmedKey.isEmpty) {
       return const ValidationFailure(
         type: ValidationFailureType.invalidFormat,
         message: 'API key cannot be empty',
       );
     }
-
-    // Trim whitespace
-    final trimmedKey = apiKey.trim();
 
     // Check prefix (Google API keys typically start with 'AIza')
     if (!trimmedKey.startsWith(_expectedPrefix)) {
@@ -137,6 +155,29 @@ class APIKeyValidatorImpl implements APIKeyValidator {
     String projectId, {
     String region = 'us-central1',
   }) async {
+    // Validate region format before constructing URL
+    // Prevents URL injection and ensures valid endpoint construction
+    if (!_validRegionPattern.hasMatch(region)) {
+      return ValidationFailure(
+        type: ValidationFailureType.invalidFormat,
+        message: 'Invalid region format "$region". '
+            'Expected format: <continent>-<location><number> (e.g., us-central1)',
+      );
+    }
+
+    // Validate project ID format before constructing URL
+    // Google Cloud project IDs: 6-30 chars, lowercase letters/digits/hyphens,
+    // must start with letter and not end with hyphen
+    if (!_validProjectIdPattern.hasMatch(projectId)) {
+      return ValidationFailure(
+        type: ValidationFailureType.invalidProject,
+        message: 'Invalid project ID format "$projectId". '
+            'Project IDs must be 6-30 characters, start with a lowercase letter, '
+            'contain only lowercase letters, digits, and hyphens, '
+            'and not end with a hyphen.',
+      );
+    }
+
     // Construct the Vertex AI models list endpoint URL
     final url = Uri.parse(
       'https://$region-aiplatform.googleapis.com/v1/'
@@ -237,6 +278,13 @@ class APIKeyValidatorImpl implements APIKeyValidator {
       final body = jsonDecode(response.body) as Map<String, dynamic>;
       final errorMessage = body['error']?['message'] as String? ?? '';
 
+      // BRITTLE: These string patterns are based on observed Google Cloud API
+      // error messages as of 2024 and may change without notice. Google does
+      // not provide structured error codes for distinguishing "API not enabled"
+      // from other 403 errors. If these patterns stop working, check the
+      // current error message format in Google Cloud API responses.
+      // TODO: Consider refactoring to use structured error codes if/when
+      // Google provides them (e.g., via error.status or error.details).
       if (errorMessage.contains('API not enabled') ||
           errorMessage.contains('has not been used') ||
           errorMessage.contains('is disabled')) {
