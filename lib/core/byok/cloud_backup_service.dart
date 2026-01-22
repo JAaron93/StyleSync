@@ -438,8 +438,12 @@ class CloudBackupServiceImpl implements CloudBackupService {
       }
 
       // Step 1: Capture the original createdAt timestamp before any modifications
-      final existingBlob = await _tryGetExistingBlob();
-      final originalCreatedAt = existingBlob?.createdAt;
+      final existingBlobResult = await _fetchAndParseBlob();
+      if (existingBlobResult.isFailure) {
+        return Failure(existingBlobResult.errorOrNull!);
+      }
+      final existingBlob = existingBlobResult.valueOrNull!;
+      final originalCreatedAt = existingBlob.createdAt;
 
       // Step 2: Restore backup with old passphrase to get the config
       final restoreResult = await restoreBackup(oldPassphrase);

@@ -81,7 +81,12 @@ class ValidationSuccess extends ValidationResult {
     if (value is Map) {
       var hash = 1;
       // Sort keys by hashCode to ensure consistent ordering for any key type
-      final sortedKeys = value.keys.toList()..sort((a, b) => a.hashCode.compareTo(b.hashCode));
+      final sortedKeys = value.keys.toList()..sort((a, b) {
+        final hashCmp = a.hashCode.compareTo(b.hashCode);
+        if (hashCmp != 0) return hashCmp;
+        // Fallback to string comparison for stable ordering on hash collision
+        return a.toString().compareTo(b.toString());
+      });
       for (final key in sortedKeys) {
         // Use rolling hash with multiplication to reduce collisions
         hash = hash * 31 + key.hashCode;

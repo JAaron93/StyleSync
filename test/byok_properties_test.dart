@@ -84,11 +84,13 @@ Generator<String> validProjectIdGenerator() {
     // Step 1: Choose target final length (6-30 inclusive)
     final finalLength = random.nextInt(25) + 6;
 
-    // Step 2: Choose hyphen count (0 to min(finalLength - 2, 5))
-    // We need at least 1 letter at start and 1 alphanumeric at end
-    // So max hyphens = finalLength - 2
-    // But we also cap at 5 for reasonable upper bound
-    final maxHyphens = (finalLength - 2).clamp(0, 5);
+    // Step 2: Choose hyphen count (0 to min((finalLength - 1) ~/ 2, 5))
+    // With hyphenCount hyphens, we have segmentCount = hyphenCount + 1 segments.
+    // Each segment needs at least 1 character, so we need:
+    // finalLength >= segmentCount + hyphenCount = 2 * hyphenCount + 1
+    // Therefore: hyphenCount <= (finalLength - 1) ~/ 2
+    // We also cap at 5 for reasonable upper bound
+    final maxHyphens = ((finalLength - 1) ~/ 2).clamp(0, 5);
     final hyphenCount = maxHyphens > 0 ? random.nextInt(maxHyphens + 1) : 0;
 
     // Step 3: Compute remaining character count (excluding hyphens)

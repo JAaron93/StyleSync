@@ -106,7 +106,7 @@ void main() {
       );
     });
 
-    test('copyWith creates a copy with updated fields', () {
+    test('copyWith(updatedAt:) only updates updatedAt', () {
       final salt = Uint8List.fromList(List.generate(16, (i) => i));
       final metadata = KdfMetadata(
         algorithm: KdfAlgorithm.argon2id,
@@ -125,7 +125,6 @@ void main() {
         updatedAt: now,
       );
 
-      // Test copyWith(updatedAt:)
       final later = DateTime.utc(2025, 1, 22, 10, 0, 0);
       final updatedWithTime = blob.copyWith(updatedAt: later);
 
@@ -139,8 +138,27 @@ void main() {
           reason: 'kdfMetadata should remain unchanged');
       expect(updatedWithTime.updatedAt, equals(later),
           reason: 'updatedAt should be updated to new value');
+    });
 
-      // Test copyWith(encryptedData:)
+    test('copyWith(encryptedData:) only updates encryptedData', () {
+      final salt = Uint8List.fromList(List.generate(16, (i) => i));
+      final metadata = KdfMetadata(
+        algorithm: KdfAlgorithm.argon2id,
+        salt: salt,
+        iterations: 3,
+        memory: 65536,
+        parallelism: 4,
+      );
+
+      final now = DateTime.utc(2025, 1, 21, 22, 0, 0);
+      final blob = CloudBackupBlob(
+        version: 1,
+        kdfMetadata: metadata,
+        encryptedData: base64Encode([1, 2, 3, 4, 5]),
+        createdAt: now,
+        updatedAt: now,
+      );
+
       final newEncryptedData = base64Encode([10, 20, 30, 40, 50]);
       final updatedWithData = blob.copyWith(encryptedData: newEncryptedData);
 
@@ -154,8 +172,27 @@ void main() {
           reason: 'updatedAt should remain unchanged');
       expect(updatedWithData.kdfMetadata, equals(blob.kdfMetadata),
           reason: 'kdfMetadata should remain unchanged');
+    });
 
-      // Test copyWith(version:)
+    test('copyWith(version:) only updates version', () {
+      final salt = Uint8List.fromList(List.generate(16, (i) => i));
+      final metadata = KdfMetadata(
+        algorithm: KdfAlgorithm.argon2id,
+        salt: salt,
+        iterations: 3,
+        memory: 65536,
+        parallelism: 4,
+      );
+
+      final now = DateTime.utc(2025, 1, 21, 22, 0, 0);
+      final blob = CloudBackupBlob(
+        version: 1,
+        kdfMetadata: metadata,
+        encryptedData: base64Encode([1, 2, 3, 4, 5]),
+        createdAt: now,
+        updatedAt: now,
+      );
+
       const newVersion = 2;
       final updatedWithVersion = blob.copyWith(version: newVersion);
 
@@ -169,8 +206,27 @@ void main() {
           reason: 'updatedAt should remain unchanged');
       expect(updatedWithVersion.kdfMetadata, equals(blob.kdfMetadata),
           reason: 'kdfMetadata should remain unchanged');
+    });
 
-      // Test copyWith(kdfMetadata:)
+    test('copyWith(kdfMetadata:) only updates kdfMetadata', () {
+      final salt = Uint8List.fromList(List.generate(16, (i) => i));
+      final metadata = KdfMetadata(
+        algorithm: KdfAlgorithm.argon2id,
+        salt: salt,
+        iterations: 3,
+        memory: 65536,
+        parallelism: 4,
+      );
+
+      final now = DateTime.utc(2025, 1, 21, 22, 0, 0);
+      final blob = CloudBackupBlob(
+        version: 1,
+        kdfMetadata: metadata,
+        encryptedData: base64Encode([1, 2, 3, 4, 5]),
+        createdAt: now,
+        updatedAt: now,
+      );
+
       final newSalt = Uint8List.fromList(List.generate(16, (i) => i + 100));
       final newMetadata = KdfMetadata(
         algorithm: KdfAlgorithm.pbkdf2,
@@ -197,8 +253,28 @@ void main() {
           reason: 'createdAt should remain unchanged');
       expect(updatedWithMetadata.updatedAt, equals(blob.updatedAt),
           reason: 'updatedAt should remain unchanged');
+    });
 
-      // Test copyWith(createdAt:) - though typically createdAt shouldn't change
+    test('copyWith(createdAt:) only updates createdAt', () {
+      final salt = Uint8List.fromList(List.generate(16, (i) => i));
+      final metadata = KdfMetadata(
+        algorithm: KdfAlgorithm.argon2id,
+        salt: salt,
+        iterations: 3,
+        memory: 65536,
+        parallelism: 4,
+      );
+
+      final now = DateTime.utc(2025, 1, 21, 22, 0, 0);
+      final blob = CloudBackupBlob(
+        version: 1,
+        kdfMetadata: metadata,
+        encryptedData: base64Encode([1, 2, 3, 4, 5]),
+        createdAt: now,
+        updatedAt: now,
+      );
+
+      // Though typically createdAt shouldn't change
       final newCreatedAt = DateTime.utc(2024, 12, 1, 0, 0, 0);
       final updatedWithCreatedAt = blob.copyWith(createdAt: newCreatedAt);
 

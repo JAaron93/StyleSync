@@ -59,20 +59,20 @@ This implementation plan breaks down the StyleSync feature into discrete, increm
     - **Property 23: Argon2id Key Derivation Consistency**
     - **Validates: Requirements 2.12**
 
-- [ ] 4. Implement BYOK system (API key management)
-  - [ ] 4.1 Create BYOKManager service
+- [x] 4. Implement BYOK system (API key management)
+  - [x] 4.1 Create BYOKManager service
     - Implement API key storage/retrieval from SecureStorage
     - Generate idempotency keys for operations
     - Implement device-specific storage by default
     - _Requirements: 2.1, 2.7, 2.10, 2.15_
   
-  - [ ] 4.2 Create APIKeyValidator service
+  - [x] 4.2 Create APIKeyValidator service
     - Implement format validation (check key structure)
     - Implement functional verification (test API call to Vertex AI models list endpoint)
     - Return specific error messages for validation failures
     - _Requirements: 2.3, 2.4, 2.5, 2.6_
   
-  - [ ] 4.3 Create CloudBackupService
+  - [x] 4.3 Create CloudBackupService
     - Implement backup encryption with user passphrase
     - Store encrypted backup in Firebase Storage (users/{userId}/api_key_backup.json)
     - Include salt, KDF metadata, encrypted data, nonce in backup blob
@@ -80,11 +80,11 @@ This implementation plan breaks down the StyleSync feature into discrete, increm
     - Implement backup deletion
     - _Requirements: 2.11, 2.12, 2.13, 2.14, 2.16, 2.17, 2.18, 2.19_
   
-  - [ ] 4.4 Write property test for API key validation pipeline
+  - [x] 4.4 Write property test for API key validation pipeline
     - **Property 2: API Key Validation Pipeline**
     - **Validates: Requirements 2.3, 2.4, 2.5, 2.6, 2.7**
   
-  - [ ] 4.5 Write unit tests for BYOK operations
+  - [x] 4.5 Write unit tests for BYOK operations
     - Test API key storage and retrieval
     - Test cloud backup enable/disable
     - Test sign-out options
