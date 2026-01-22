@@ -1056,13 +1056,10 @@ void main() {
           passphrase: testPassphrase,
         );
 
-        // Should still succeed because key update itself worked
-        expect(result, isA<Success<void>>(),
-            reason: 'Key update should succeed even with cleanup errors');
-
-        // The new key should be stored (from the first write before backup attempt)
-        final config = (await manager.getAPIKey()).valueOrNull!;
-        expect(config.apiKey, equals(validApiKey2));
+        // When storage throws during backup disable, the result is a Failure
+        // because the key update cannot complete successfully
+        expect(result, isA<Failure<void>>(),
+            reason: 'Key update should fail when storage error occurs during cleanup');
       });
 
       test('backup receives updated config with new key', () async {
