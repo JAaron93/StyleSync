@@ -25,6 +25,14 @@ final onboardingControllerProvider = Provider<OnboardingController>((ref) {
 /// completion status. It's useful for determining the initial route
 /// during app startup.
 ///
+/// **Important:** This provider is intended for **initial app routing only**.
+/// It is cached after the first read and is **not reactive** to runtime
+/// onboarding state changes (e.g., when [OnboardingStateNotifier.nextStep]
+/// completes the onboarding flow).
+///
+/// For reactive updates during the onboarding flow, use [onboardingStateProvider]
+/// instead, which provides real-time state changes via [OnboardingStateNotifier].
+///
 /// Example usage:
 /// ```dart
 /// final isComplete = ref.watch(isOnboardingCompleteProvider);
@@ -34,6 +42,10 @@ final onboardingControllerProvider = Provider<OnboardingController>((ref) {
 ///   error: (e, s) => ErrorScreen(error: e),
 /// );
 /// ```
+///
+/// See also:
+/// - [onboardingStateProvider] for reactive onboarding state during the flow
+/// - [OnboardingStateNotifier] for managing onboarding state transitions
 final isOnboardingCompleteProvider = FutureProvider<bool>((ref) async {
   final controller = ref.read(onboardingControllerProvider);
   return controller.isOnboardingComplete();
@@ -75,8 +87,13 @@ class OnboardingStateNotifier extends StateNotifier<OnboardingState> {
         state = state.copyWith(currentStep: OnboardingStep.apiKeyInput);
         break;
       case OnboardingStep.apiKeyInput:
-        await _controller.markOnboardingComplete();
-        state = const OnboardingState.completed();
+        try {
+          await _controller.markOnboardingComplete();
+          state = const OnboardingState.completed();
+        } catch (e) {
+          // Handle error - possibly expose error state or rethrow
+          rethrow;
+        }
         break;
       case OnboardingStep.complete:
         // Already complete, no action needed
@@ -104,13 +121,19 @@ class OnboardingStateNotifier extends StateNotifier<OnboardingState> {
     }
   }
 
-  /// Resets the onboarding state to the beginning.
+  /// Resets the onboarding state to the initial welcome step.
   ///
-  /// This clears the persisted completion status and returns
-  /// to the welcome step.
+  /// This clears the persisted onboarding completion status and returns
+  /// the state to the welcome step. Useful for testing or allowing users
+  /// to re-experience the onboarding flow.
   Future<void> reset() async {
-    await _controller.resetOnboarding();
-    state = const OnboardingState.initial();
+    try {
+      await _controller.resetOnboarding();
+      state = const OnboardingState.initial();
+    } catch (e) {
+      // Handle persistence error
+      rethrow;
+    }
   }
 
   /// Skips directly to a specific step.

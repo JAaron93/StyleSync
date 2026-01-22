@@ -72,9 +72,7 @@ class OnboardingControllerImpl implements OnboardingController {
   @override
   Future<void> resetOnboarding() async {
     final prefs = await _getPrefs();
-    final success = await prefs.remove(_kOnboardingCompleteKey);
-    if (!success) {
-      throw StateError('Failed to reset onboarding state');
-    }
+    // remove() returns false if key doesn't exist, which is fine for reset
+    await prefs.remove(_kOnboardingCompleteKey);
   }
 }

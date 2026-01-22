@@ -167,16 +167,10 @@ void main() {
         ));
         await tester.pumpAndSettle();
 
-        // Scroll to make the button visible
-        await tester.drag(
-          find.byType(SingleChildScrollView),
-          const Offset(0, -500),
-        );
+        // Ensure button is visible and tap it
+        await tester.ensureVisible(find.text('Get Started'));
         await tester.pumpAndSettle();
-
-        // Tap the Get Started button
         await tester.tap(find.text('Get Started'));
-        await tester.pumpAndSettle();
 
         expect(callbackCalled, isTrue,
             reason: 'onGetStarted callback should be called when button is tapped');
@@ -217,10 +211,13 @@ void main() {
         ));
         await tester.pumpAndSettle();
 
-        // Find the Column that contains the main content
-        final columnFinder = find.byType(Column);
-        expect(columnFinder, findsWidgets,
-            reason: 'Should have Column for layout');
+        // Verify the main content Column has center alignment
+        final columns = tester.widgetList<Column>(find.byType(Column));
+        final hasCenteredColumn = columns.any(
+          (col) => col.crossAxisAlignment == CrossAxisAlignment.center,
+        );
+        expect(hasCenteredColumn, isTrue,
+            reason: 'Content should be horizontally centered');
       });
 
       testWidgets('has proper padding', (WidgetTester tester) async {
@@ -243,38 +240,127 @@ void main() {
     // =========================================================================
 
     group('Accessibility', () {
-      testWidgets('all text is readable', (WidgetTester tester) async {
-        await tester.pumpWidget(createTestWidget(
-          onGetStarted: () {},
-        ));
-        await tester.pumpAndSettle();
-
-        // Verify key text elements are present and readable
-        expect(find.text('Welcome to StyleSync'), findsOneWidget);
-        expect(find.text('Your AI-powered personal stylist'), findsOneWidget);
-        expect(find.text('Get Started'), findsOneWidget);
-      });
-
-      testWidgets('button is tappable', (WidgetTester tester) async {
-        await tester.pumpWidget(createTestWidget(
-          onGetStarted: () {},
-        ));
-        await tester.pumpAndSettle();
-
-        // Verify button can be found and tapped
-        final buttonFinder = find.text('Get Started');
-        expect(buttonFinder, findsOneWidget);
+      testWidgets('has proper accessibility semantics', (WidgetTester tester) async {
+        final SemanticsHandle handle = tester.ensureSemantics();
         
-        // Scroll to make the button visible before tapping
+        await tester.pumpWidget(createTestWidget(
+          onGetStarted: () {},
+        ));
+        await tester.pumpAndSettle();
+
+        // Verify headline text has semantics label
+        expect(
+          tester.getSemantics(find.text('Welcome to StyleSync')),
+          matchesSemantics(
+            label: 'Welcome to StyleSync',
+          ),
+          reason: 'Welcome headline should have proper semantics label',
+        );
+
+        // Verify subtitle text has semantics label
+        expect(
+          tester.getSemantics(find.text('Your AI-powered personal stylist')),
+          matchesSemantics(
+            label: 'Your AI-powered personal stylist',
+          ),
+          reason: 'Subtitle should have proper semantics label',
+        );
+
+        // Scroll to make the button visible
         await tester.drag(
           find.byType(SingleChildScrollView),
           const Offset(0, -500),
         );
         await tester.pumpAndSettle();
+
+        // Verify Get Started button has proper button semantics
+        // FilledButton provides: isButton, hasEnabledState, isEnabled, isFocusable,
+        // hasTapAction, and hasFocusAction
+        expect(
+          tester.getSemantics(find.widgetWithText(FilledButton, 'Get Started')),
+          matchesSemantics(
+            label: 'Get Started',
+            isButton: true,
+            isFocusable: true,
+            hasEnabledState: true,
+            isEnabled: true,
+            hasTapAction: true,
+            hasFocusAction: true,
+          ),
+          reason: 'Get Started button should have proper button semantics with tap action',
+        );
+
+        handle.dispose();
+      });
+
+      testWidgets('feature cards have accessible text', (WidgetTester tester) async {
+        final SemanticsHandle handle = tester.ensureSemantics();
         
-        // Ensure button is in the widget tree and tappable
+        await tester.pumpWidget(createTestWidget(
+          onGetStarted: () {},
+        ));
+        await tester.pumpAndSettle();
+
+        // Verify first two feature card titles have semantics labels (visible without scrolling)
+        expect(
+          tester.getSemantics(find.text('Digital Wardrobe')),
+          matchesSemantics(
+            label: 'Digital Wardrobe',
+          ),
+          reason: 'Digital Wardrobe title should have proper semantics label',
+        );
+
+        expect(
+          tester.getSemantics(find.text('Virtual Try-On')),
+          matchesSemantics(
+            label: 'Virtual Try-On',
+          ),
+          reason: 'Virtual Try-On title should have proper semantics label',
+        );
+
+        // Scroll down to make Outfit Brainstorming visible
+        await tester.drag(
+          find.byType(SingleChildScrollView),
+          const Offset(0, -200),
+        );
+        await tester.pumpAndSettle();
+
+        // Verify third feature card title has semantics label (now visible after scrolling)
+        expect(
+          tester.getSemantics(find.text('Outfit Brainstorming')),
+          matchesSemantics(
+            label: 'Outfit Brainstorming',
+          ),
+          reason: 'Outfit Brainstorming title should have proper semantics label',
+        );
+
+        handle.dispose();
+      });
+
+      testWidgets('button is tappable', (WidgetTester tester) async {
+        bool callbackInvoked = false;
+
+        await tester.pumpWidget(createTestWidget(
+          onGetStarted: () {
+            callbackInvoked = true;
+          },
+        ));
+        await tester.pumpAndSettle();
+
+        // Verify button can be found
+        final buttonFinder = find.text('Get Started');
+        expect(buttonFinder, findsOneWidget);
+
+        // Use ensureVisible to reliably bring the button into view
+        await tester.ensureVisible(buttonFinder);
+        await tester.pumpAndSettle();
+
+        // Tap the button and verify callback was invoked
         await tester.tap(buttonFinder);
         await tester.pump();
+
+        expect(callbackInvoked, isTrue,
+            reason: 'onGetStarted callback should be invoked when button is tapped');
       });
     });
   });

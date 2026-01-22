@@ -13,3 +13,6 @@ android/key.properties
 *.jks
 *.keystore
 .kilocode/
+
+# Coverage
+coverage/

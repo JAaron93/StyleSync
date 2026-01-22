@@ -126,29 +126,17 @@ class MockSecureStorageService implements SecureStorageService {
   bool get requiresBiometric => false;
 }
 
-/// Mock APIKeyValidator for testing
+/// Mock APIKeyValidator for testing.
+///
+/// Delegates [validateFormat] to the real [APIKeyValidatorImpl] to ensure
+/// tests use canonical validation rules. Only [validateFunctionality] is
+/// stubbed for async test control.
 class MockAPIKeyValidator implements APIKeyValidator {
+  final APIKeyValidatorImpl _realValidator = APIKeyValidatorImpl();
+
   @override
   ValidationResult validateFormat(String apiKey) {
-    if (apiKey.isEmpty) {
-      return const ValidationFailure(
-        type: ValidationFailureType.invalidFormat,
-        message: 'API key cannot be empty',
-      );
-    }
-    if (!apiKey.startsWith('AIza')) {
-      return const ValidationFailure(
-        type: ValidationFailureType.invalidFormat,
-        message: 'API key must start with "AIza"',
-      );
-    }
-    if (apiKey.length != 39) {
-      return const ValidationFailure(
-        type: ValidationFailureType.invalidFormat,
-        message: 'API key must be exactly 39 characters',
-      );
-    }
-    return const ValidationSuccess();
+    return _realValidator.validateFormat(apiKey);
   }
 
   @override
@@ -161,7 +149,9 @@ class MockAPIKeyValidator implements APIKeyValidator {
   }
 
   @override
-  void dispose() {}
+  void dispose() {
+    _realValidator.dispose();
+  }
 }
 
 // =============================================================================
@@ -173,6 +163,14 @@ const String validApiKey = 'AIzaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa';
 
 /// Valid project ID for testing
 const String validProjectId = 'test-project-123';
+
+/// Semantic finder for the API Key TextFormField (by hint text).
+Finder findApiKeyField() =>
+    find.widgetWithText(TextFormField, 'AIza...');
+
+/// Semantic finder for the Project ID TextFormField (by hint text).
+Finder findProjectIdField() =>
+    find.widgetWithText(TextFormField, 'my-project-id');
 
 /// Creates a testable ApiKeyInputPage widget with mock providers.
 Widget createTestWidget({
@@ -346,11 +344,11 @@ void main() {
 
         // Enter invalid API key
         await tester.enterText(
-          find.byType(TextFormField).first,
+          findApiKeyField(),
           'invalid-key',
         );
         await tester.enterText(
-          find.byType(TextFormField).last,
+          findProjectIdField(),
           validProjectId,
         );
         await tester.pumpAndSettle();
@@ -373,7 +371,7 @@ void main() {
 
         // Enter valid API key but no project ID
         await tester.enterText(
-          find.byType(TextFormField).first,
+          findApiKeyField(),
           validApiKey,
         );
         await tester.pumpAndSettle();
@@ -396,11 +394,11 @@ void main() {
 
         // Enter short API key
         await tester.enterText(
-          find.byType(TextFormField).first,
+          findApiKeyField(),
           'AIzashort',
         );
         await tester.enterText(
-          find.byType(TextFormField).last,
+          findProjectIdField(),
           validProjectId,
         );
         await tester.pumpAndSettle();
@@ -435,11 +433,11 @@ void main() {
 
         // Enter valid credentials
         await tester.enterText(
-          find.byType(TextFormField).first,
+          findApiKeyField(),
           validApiKey,
         );
         await tester.enterText(
-          find.byType(TextFormField).last,
+          findProjectIdField(),
           validProjectId,
         );
         await tester.pumpAndSettle();
@@ -473,11 +471,11 @@ void main() {
 
         // Enter valid credentials
         await tester.enterText(
-          find.byType(TextFormField).first,
+          findApiKeyField(),
           validApiKey,
         );
         await tester.enterText(
-          find.byType(TextFormField).last,
+          findProjectIdField(),
           validProjectId,
         );
         await tester.pumpAndSettle();
@@ -488,7 +486,10 @@ void main() {
 
         // Back button should be disabled
         final backButton = tester.widget<OutlinedButton>(
-          find.byType(OutlinedButton),
+          find.ancestor(
+            of: find.text('Back'),
+            matching: find.byType(OutlinedButton),
+          ),
         );
         expect(backButton.onPressed, isNull,
             reason: 'Back button should be disabled during loading');
@@ -519,11 +520,11 @@ void main() {
 
         // Enter valid format credentials
         await tester.enterText(
-          find.byType(TextFormField).first,
+          findApiKeyField(),
           validApiKey,
         );
         await tester.enterText(
-          find.byType(TextFormField).last,
+          findProjectIdField(),
           validProjectId,
         );
         await tester.pumpAndSettle();
@@ -553,11 +554,11 @@ void main() {
 
         // Enter valid format credentials
         await tester.enterText(
-          find.byType(TextFormField).first,
+          findApiKeyField(),
           validApiKey,
         );
         await tester.enterText(
-          find.byType(TextFormField).last,
+          findProjectIdField(),
           validProjectId,
         );
         await tester.pumpAndSettle();
@@ -593,11 +594,11 @@ void main() {
 
         // Enter valid credentials
         await tester.enterText(
-          find.byType(TextFormField).first,
+          findApiKeyField(),
           validApiKey,
         );
         await tester.enterText(
-          find.byType(TextFormField).last,
+          findProjectIdField(),
           validProjectId,
         );
         await tester.pumpAndSettle();

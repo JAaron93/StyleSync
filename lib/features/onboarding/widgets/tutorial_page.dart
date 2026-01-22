@@ -492,8 +492,8 @@ class _BottomNavigation extends StatelessWidget {
           // Next button
           FilledButton.icon(
             onPressed: onNext,
-            icon: const Text('Next'),
-            label: const Icon(Icons.arrow_forward_rounded, size: 18),
+            icon: const Icon(Icons.arrow_forward_rounded, size: 18),
+            label: const Text('Next'),
             style: FilledButton.styleFrom(
               padding: const EdgeInsets.symmetric(
                 horizontal: 24,
