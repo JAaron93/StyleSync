@@ -41,7 +41,9 @@ Note: 4 pre-existing test failures were fixed during checkpoint:
 
 test/crypto_properties_test.dart - Fixed empty passphrase edge cases
 test/byok_manager_test.dart - Fixed storage error expectation
-Manual Verification: The onboarding flow requires manual testing by running flutter run and navigating through Welcome → Tutorial → API Key Input screens.
+Manual Verification:
+
+The onboarding flow requires manual testing by running flutter run and navigating through Welcome → Tutorial → API Key Input screens.
 
 
 Summary

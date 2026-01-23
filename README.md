@@ -1,21 +1,100 @@
 # StyleSync
 
-## Prerequisites
+A Flutter application for managing Vertex AI API keys with secure storage and encrypted cloud backup.
 
+## Quick Start
+
+### Prerequisites
 - **Flutter SDK**: `^3.10.7`
-- **Dart SDK**: Compatible with the above Flutter version
-- **Homebrew** (optional, for easy SDK installation on macOS)
+- **Dart SDK**: Compatible with Flutter version
+- **Homebrew** (optional, for macOS installation)
 
-## Getting Started
+### Installation
 
-1. Install the Flutter SDK.
-2. Run `flutter pub get` to install dependencies.
-3. Use `flutter run` to launch the application.
+```bash
+# Install dependencies
+flutter pub get
 
-## Development Environment
+# Run the app
+flutter run
+```
 
-### Gradle Configuration
-The project is configured with optimized Gradle settings in `android/gradle.properties`:
-- `org.gradle.jvmargs`: Set to `-Xmx4G` to balance build performance and system resource usage.
-- `org.gradle.parallel`: Enabled for faster builds on multi-core systems.
-- `org.gradle.caching`: Enabled to reuse build artifacts across runs.
+## Documentation
+
+📚 **[Complete Documentation](./docs/)** - Comprehensive guides and references
+
+### Quick Links
+- [Project Overview](./docs/project/overview.md) - What is StyleSync?
+- [Getting Started Guide](./docs/project/getting-started.md) - Detailed setup instructions
+- [Architecture Overview](./docs/architecture/overview.md) - System design
+- [Development Guidelines](./docs/guidelines/development-guidelines.md) - Coding standards
+- [Testing Strategy](./docs/testing/strategy.md) - Testing approach
+- [Troubleshooting & FAQ](./docs/troubleshooting/faq.md) - Common issues
+
+## Key Features
+
+- 🔐 **Secure API Key Management** - Platform-native secure storage (Keychain/Keystore)
+- ☁️ **Encrypted Cloud Backup** - Client-side encryption with user-controlled passphrase
+- 🔒 **Strong Cryptography** - AES-256-GCM encryption, Argon2id/PBKDF2 key derivation
+- ✅ **Comprehensive Testing** - Unit tests and property-based testing with Glados
+- 📱 **Cross-Platform** - Android, iOS, Web, macOS, Linux, Windows
+
+## Development
+
+### Common Commands
+
+```bash
+# Run tests
+flutter test
+
+# Format code
+dart format .
+
+# Analyze code
+flutter analyze
+
+# Generate code (mocks, etc.)
+dart run build_runner build --delete-conflicting-outputs
+```
+
+### Development Environment
+
+#### Gradle Configuration (Android)
+Optimized settings in `android/gradle.properties`:
+- `org.gradle.jvmargs`: `-Xmx4G` for balanced performance
+- `org.gradle.parallel`: Enabled for faster builds
+- `org.gradle.caching`: Enabled to reuse build artifacts
+
+## Project Structure
+
+```
+lib/
+├── core/              # Core services and infrastructure
+│   ├── byok/         # API key management
+│   ├── crypto/       # Encryption and key derivation
+│   ├── onboarding/   # Onboarding controller
+│   └── storage/      # Secure storage service
+├── features/         # Feature implementations
+│   └── onboarding/   # Onboarding UI
+└── main.dart         # App entry point
+
+test/                 # Test suites
+├── core/            # Core service tests
+├── features/        # Feature tests
+└── *_test.dart      # Unit and property tests
+
+docs/                # Documentation
+```
+
+## Contributing
+
+Before contributing:
+1. Read [Development Guidelines](./docs/guidelines/development-guidelines.md)
+2. Check [Testing Strategy](./docs/testing/strategy.md)
+3. Review [Architecture Overview](./docs/architecture/overview.md)
+
+## Additional Resources
+
+- **[AGENTS.md](./AGENTS.md)** - Guidance for AI agents
+- **[docs/](./docs/)** - Complete documentation hub
+- **Design Specs** - See `lib/core/byok/byok_design.md` and `plans/`
