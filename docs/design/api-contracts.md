@@ -53,8 +53,16 @@ class UserProfile {
       faceDetectionConsentGranted: json['faceDetectionConsentGranted'] as bool,
       biometricConsentGranted: json['biometricConsentGranted'] as bool,
       is18PlusVerified: json['is18PlusVerified'] as bool,
-      verificationMethod: AgeVerificationMethod.values.firstWhere(
-        (e) => e.toString() == 'AgeVerificationMethod.${json['verificationMethod']}',
+      verificationMethod: _parseAgeVerificationMethod(json['verificationMethod'] as String),
+    );
+  }
+
+  static AgeVerificationMethod _parseAgeVerificationMethod(String value) {
+    return AgeVerificationMethod.values.firstWhere(
+      (e) => e.toString() == 'AgeVerificationMethod.$value',
+      orElse: () => throw FormatException(
+        'Unknown AgeVerificationMethod: $value. '
+        'Valid values are: ${AgeVerificationMethod.values.map((e) => e.toString().split(".").last).join(", ")}'
       ),
     );
   }
@@ -77,6 +85,7 @@ class UserProfile {
 enum AgeVerificationMethod {
   selfReported,
   thirdPartyVerified,
+  unknown,
 }
 ```
 
@@ -125,14 +134,18 @@ class ClothingItem {
       uploadedAt: DateTime.parse(json['uploadedAt'] as String),
       updatedAt: json['updatedAt'] != null 
           ? DateTime.parse(json['updatedAt'] as String) 
-          : null,
       processingState: ItemProcessingState.values.firstWhere(
         (e) => e.toString() == 'ItemProcessingState.${json['processingState']}',
+        orElse: () => throw FormatException('Unknown processing state: ${json['processingState']}'),
+      ),
+        orElse: () => ItemProcessingState.unknown,
       ),
       failureReason: json['failureReason'] as String?,
       retryCount: json['retryCount'] as int,
       idempotencyKey: json['idempotencyKey'] as String,
-      metadata: json['metadata'] as Map<String, dynamic>,
+      metadata: (json['metadata'] is Map) 
+          ? Map<String, dynamic>.from(json['metadata'] as Map)
+          : {},
     );
   }
   
@@ -160,6 +173,7 @@ enum ItemProcessingState {
   processing,
   completed,
   processingFailed,
+  unknown,
 }
 
 class ClothingTags {
@@ -179,11 +193,16 @@ class ClothingTags {
     return ClothingTags(
       category: ClothingCategory.values.firstWhere(
         (e) => e.toString() == 'ClothingCategory.${json['category']}',
+        orElse: () => ClothingCategory.unknown,
       ),
-      colors: List<String>.from(json['colors'] as List),
+      colors: (json['colors'] as List?)
+          ?.where((c) => c is String)
+          .cast<String>()
+          .toList() ?? [],
       seasons: (json['seasons'] as List)
           .map((s) => Season.values.firstWhere(
                 (e) => e.toString() == 'Season.$s',
+                orElse: () => Season.unknown,
               ))
           .toList(),
       additionalAttributes: json['additionalAttributes'] as Map<String, dynamic>,
@@ -206,6 +225,7 @@ enum ClothingCategory {
   shoes,
   accessories,
   outerwear,
+  unknown,
 }
 
 enum Season {
@@ -214,6 +234,7 @@ enum Season {
   fall,
   winter,
   allSeason,
+  unknown,
 }
 ```
 
@@ -239,6 +260,19 @@ class Outfit {
     required this.updatedAt,
   });
 
+  factory Outfit.fromJson(Map<String, dynamic> json) {
+    return Outfit(
+      id: json['id'] as String,
+      userId: json['userId'] as String,
+      name: json['name'] as String,
+      layers: (json['layers'] as List)
+          .map((layerJson) => OutfitLayer.fromJson(layerJson as Map<String, dynamic>))
+          .toList(),
+      thumbnailUrl: json['thumbnailUrl'] as String?,
+      createdAt: DateTime.parse(json['createdAt'] as String),
+      updatedAt: DateTime.parse(json['updatedAt'] as String),
+    );
+  }
   
   Map<String, dynamic> toJson() {
     return {
@@ -251,6 +285,73 @@ class Outfit {
       'updatedAt': updatedAt.toIso8601String(),
     };
   }
+}
+
+class OutfitLayer {
+  final String id;
+  final String name;
+  final LayerType type;
+  final String clothingItemId;
+  final int index;
+  final bool isVisible;
+  final double opacity;
+  final String? assetReference;
+  final Map<String, dynamic> metadata;
+  final Map<String, dynamic>? positioning;
+  
+  OutfitLayer({
+    required this.id,
+    required this.name,
+    required this.type,
+    required this.clothingItemId,
+    required this.index,
+    required this.isVisible,
+    required this.opacity,
+    this.assetReference,
+    required this.metadata,
+    this.positioning,
+  });
+  
+  factory OutfitLayer.fromJson(Map<String, dynamic> json) {
+    return OutfitLayer(
+      id: json['id'] as String,
+      name: json['name'] as String,
+      type: LayerType.values.firstWhere(
+        (e) => e.toString() == 'LayerType.${json['type']}',
+        orElse: () => LayerType.unknown,
+      ),
+      clothingItemId: json['clothingItemId'] as String,
+      index: json['index'] as int,
+      isVisible: json['isVisible'] as bool,
+      opacity: (json['opacity'] as num).toDouble(),
+      assetReference: json['assetReference'] as String?,
+      metadata: json['metadata'] as Map<String, dynamic>,
+      positioning: json['positioning'] as Map<String, dynamic>?,
+    );
+  }
+  
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'name': name,
+      'type': type.toString().split('.').last,
+      'clothingItemId': clothingItemId,
+      'index': index,
+      'isVisible': isVisible,
+      'opacity': opacity,
+      'assetReference': assetReference,
+      'metadata': metadata,
+      'positioning': positioning,
+    };
+  }
+}
+
+enum LayerType {
+  base,
+  mid,
+  outer,
+  accessories,
+  unknown,
 }
 ```
 

@@ -15,11 +15,64 @@ class UserProfile {
   final bool biometricConsentGranted;
   final bool is18PlusVerified;
   final AgeVerificationMethod verificationMethod;
+
+  const UserProfile({
+    required this.userId,
+    required this.email,
+    required this.createdAt,
+    this.lastLoginAt,
+    required this.onboardingComplete,
+    required this.faceDetectionConsentGranted,
+    required this.biometricConsentGranted,
+    required this.is18PlusVerified,
+    required this.verificationMethod,
+  });
+
+  factory UserProfile.fromJson(Map<String, dynamic> json) {
+    return UserProfile(
+      userId: json['userId'] as String,
+      email: json['email'] as String,
+      createdAt: DateTime.parse(json['createdAt'] as String),
+      lastLoginAt: json['lastLoginAt'] != null 
+          ? DateTime.parse(json['lastLoginAt'] as String) 
+          : null,
+      onboardingComplete: json['onboardingComplete'] as bool,
+      faceDetectionConsentGranted: json['faceDetectionConsentGranted'] as bool,
+      biometricConsentGranted: json['biometricConsentGranted'] as bool,
+      is18PlusVerified: json['is18PlusVerified'] as bool,
+      verificationMethod: _parseAgeVerificationMethod(json['verificationMethod'] as String),
+    );
+  }
+
+  static AgeVerificationMethod _parseAgeVerificationMethod(String value) {
+    return AgeVerificationMethod.values.firstWhere(
+      (e) => e.toString() == 'AgeVerificationMethod.$value',
+      orElse: () => throw FormatException(
+        'Unknown AgeVerificationMethod: $value. '
+        'Valid values are: ${AgeVerificationMethod.values.map((e) => e.toString().split(".").last).join(", ")}'
+      ),
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'userId': userId,
+      'email': email,
+      'createdAt': createdAt.toIso8601String(),
+      'lastLoginAt': lastLoginAt?.toIso8601String(),
+      'onboardingComplete': onboardingComplete,
+      'faceDetectionConsentGranted': faceDetectionConsentGranted,
+      'biometricConsentGranted': biometricConsentGranted,
+      'is18PlusVerified': is18PlusVerified,
+      'verificationMethod': verificationMethod.toString().split('.').last,
+    };
+  }
 }
 
 enum AgeVerificationMethod {
   selfReported,
   thirdPartyVerified,
+  unknown,
 }
 
 // ============================================================================
@@ -40,6 +93,63 @@ class ClothingItem {
   final int retryCount;
   final String idempotencyKey;
   final Map<String, dynamic> metadata;
+
+  const ClothingItem({
+    required this.id,
+    required this.userId,
+    required this.imageUrl,
+    required this.thumbnailUrl,
+    this.processedImageUrl,
+    required this.tags,
+    required this.uploadedAt,
+    this.updatedAt,
+    required this.processingState,
+    this.failureReason,
+    required this.retryCount,
+    required this.idempotencyKey,
+    required this.metadata,
+  });
+
+  factory ClothingItem.fromJson(Map<String, dynamic> json) {
+    return ClothingItem(
+      id: json['id'] as String,
+      userId: json['userId'] as String,
+      imageUrl: json['imageUrl'] as String,
+      thumbnailUrl: json['thumbnailUrl'] as String,
+      processedImageUrl: json['processedImageUrl'] as String?,
+      tags: ClothingTags.fromJson(json['tags'] as Map<String, dynamic>),
+      uploadedAt: DateTime.parse(json['uploadedAt'] as String),
+      updatedAt: json['updatedAt'] != null 
+          ? DateTime.parse(json['updatedAt'] as String) 
+          : null,
+      processingState: ItemProcessingState.values.firstWhere(
+        (e) => e.toString() == 'ItemProcessingState.${json['processingState']}',
+        orElse: () => ItemProcessingState.unknown,
+      ),
+      failureReason: json['failureReason'] as String?,
+      retryCount: json['retryCount'] as int,
+      idempotencyKey: json['idempotencyKey'] as String,
+      metadata: json['metadata'] as Map<String, dynamic>,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'userId': userId,
+      'imageUrl': imageUrl,
+      'thumbnailUrl': thumbnailUrl,
+      'processedImageUrl': processedImageUrl,
+      'tags': tags.toJson(),
+      'uploadedAt': uploadedAt.toIso8601String(),
+      'updatedAt': updatedAt?.toIso8601String(),
+      'processingState': processingState.toString().split('.').last,
+      'failureReason': failureReason,
+      'retryCount': retryCount,
+      'idempotencyKey': idempotencyKey,
+      'metadata': metadata,
+    };
+  }
 }
 
 enum ItemProcessingState {
@@ -47,6 +157,7 @@ enum ItemProcessingState {
   processing,
   completed,
   processingFailed,
+  unknown,
 }
 
 class ClothingTags {
@@ -54,6 +165,39 @@ class ClothingTags {
   final List<String> colors;
   final List<Season> seasons;
   final Map<String, dynamic> additionalAttributes;
+
+  const ClothingTags({
+    required this.category,
+    required this.colors,
+    required this.seasons,
+    required this.additionalAttributes,
+  });
+
+  factory ClothingTags.fromJson(Map<String, dynamic> json) {
+    return ClothingTags(
+      category: ClothingCategory.values.firstWhere(
+        (e) => e.toString() == 'ClothingCategory.${json['category']}',
+        orElse: () => ClothingCategory.unknown,
+      ),
+      colors: List<String>.from(json['colors'] as List),
+      seasons: (json['seasons'] as List)
+          .map((s) => Season.values.firstWhere(
+                (e) => e.toString() == 'Season.$s',
+                orElse: () => Season.unknown,
+              ))
+          .toList(),
+      additionalAttributes: json['additionalAttributes'] as Map<String, dynamic>,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'category': category.toString().split('.').last,
+      'colors': colors,
+      'seasons': seasons.map((s) => s.toString().split('.').last).toList(),
+      'additionalAttributes': additionalAttributes,
+    };
+  }
 }
 
 enum ClothingCategory {
@@ -62,6 +206,7 @@ enum ClothingCategory {
   shoes,
   accessories,
   outerwear,
+  unknown,
 }
 
 enum Season {
@@ -70,6 +215,7 @@ enum Season {
   fall,
   winter,
   allSeason,
+  unknown,
 }
 
 // ============================================================================
@@ -84,13 +230,101 @@ class Outfit {
   final String? thumbnailUrl;
   final DateTime createdAt;
   final DateTime updatedAt;
+
+  const Outfit({
+    required this.id,
+    required this.userId,
+    required this.name,
+    required this.layers,
+    this.thumbnailUrl,
+    required this.createdAt,
+    required this.updatedAt,
+  });
+
+  factory Outfit.fromJson(Map<String, dynamic> json) {
+    return Outfit(
+      id: json['id'] as String,
+      userId: json['userId'] as String,
+      name: json['name'] as String,
+      layers: (json['layers'] as List)
+          .map((l) => OutfitLayer.fromJson(l as Map<String, dynamic>))
+          .toList(),
+      thumbnailUrl: json['thumbnailUrl'] as String?,
+      createdAt: DateTime.parse(json['createdAt'] as String),
+      updatedAt: DateTime.parse(json['updatedAt'] as String),
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'userId': userId,
+      'name': name,
+      'layers': layers.map((l) => l.toJson()).toList(),
+      'thumbnailUrl': thumbnailUrl,
+      'createdAt': createdAt.toIso8601String(),
+      'updatedAt': updatedAt.toIso8601String(),
+    };
+  }
 }
 
 class OutfitLayer {
+  final String id;
+  final String name;
   final LayerType type;
   final String clothingItemId;
-  final int zIndex;
+  final int index;
+  final bool isVisible;
+  final double opacity;
+  final String? assetReference;
+  final Map<String, dynamic> metadata;
   final Map<String, dynamic>? positioning; // For canvas positioning
+
+  const OutfitLayer({
+    required this.id,
+    required this.name,
+    required this.type,
+    required this.clothingItemId,
+    required this.index,
+    required this.isVisible,
+    required this.opacity,
+    this.assetReference,
+    required this.metadata,
+    this.positioning,
+  });
+
+  factory OutfitLayer.fromJson(Map<String, dynamic> json) {
+    return OutfitLayer(
+      id: json['id'] as String,
+      name: json['name'] as String,
+      type: LayerType.values.firstWhere(
+        (e) => e.toString() == 'LayerType.${json['type']}',
+        orElse: () => LayerType.unknown,
+      ),
+      clothingItemId: json['clothingItemId'] as String,
+      index: json['index'] as int,
+      isVisible: json['isVisible'] as bool,
+      opacity: (json['opacity'] as num).toDouble(),
+      assetReference: json['assetReference'] as String?,
+      metadata: Map<String, dynamic>.from(json['metadata'] as Map),
+      positioning: json['positioning'] != null ? Map<String, dynamic>.from(json['positioning'] as Map) : null,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'name': name,
+      'type': type.toString().split('.').last,
+      'clothingItemId': clothingItemId,
+      'index': index,
+      'isVisible': isVisible,
+      'opacity': opacity,
+      'assetReference': assetReference,
+      'metadata': metadata,
+      'positioning': positioning,
+    };
+  }
 }
 
 enum LayerType {
@@ -98,12 +332,12 @@ enum LayerType {
   mid,
   outer,
   accessories,
+  unknown,
 }
 
 // ============================================================================
 // API Key & Storage Models
 // ============================================================================
-
 class APIKeyConfig {
   final String apiKey;
   final String projectId;
@@ -111,12 +345,50 @@ class APIKeyConfig {
   final DateTime lastValidated;
   final bool cloudBackupEnabled;
   final SecureStorageBackend storageBackend;
+
+  const APIKeyConfig({
+    required this.apiKey,
+    required this.projectId,
+    required this.createdAt,
+    required this.lastValidated,
+    required this.cloudBackupEnabled,
+    required this.storageBackend,
+  });
+
+  @override
+  String toString() => 'APIKeyConfig(projectId: $projectId, cloudBackupEnabled: $cloudBackupEnabled)';
+
+  factory APIKeyConfig.fromJson(Map<String, dynamic> json) {
+    return APIKeyConfig(
+      apiKey: json['apiKey'] as String,
+      projectId: json['projectId'] as String,
+      createdAt: DateTime.parse(json['createdAt'] as String),
+      lastValidated: DateTime.parse(json['lastValidated'] as String),
+      cloudBackupEnabled: json['cloudBackupEnabled'] as bool,
+      storageBackend: SecureStorageBackend.values.firstWhere(
+        (e) => e.toString() == 'SecureStorageBackend.${json['storageBackend']}',
+        orElse: () => SecureStorageBackend.unknown,
+      ),
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'apiKey': apiKey,
+      'projectId': projectId,
+      'createdAt': createdAt.toIso8601String(),
+      'lastValidated': lastValidated.toIso8601String(),
+      'cloudBackupEnabled': cloudBackupEnabled,
+      'storageBackend': storageBackend.toString().split('.').last,
+    };
+  }
 }
 
 enum SecureStorageBackend {
   strongBox,        // Android 9+ StrongBox
   hardwareBacked,   // iOS Secure Enclave, Android Keystore
   software,         // Software-only fallback
+  unknown,
 }
 
 class CloudBackupMetadata {
@@ -126,17 +398,74 @@ class CloudBackupMetadata {
   final KDFMetadata kdfMetadata;
   final String encryptedData;
   final String nonce;
+
+  const CloudBackupMetadata({
+    required this.userId,
+    required this.createdAt,
+    required this.lastUpdated,
+    required this.kdfMetadata,
+    required this.encryptedData,
+    required this.nonce,
+  });
+
+  factory CloudBackupMetadata.fromJson(Map<String, dynamic> json) {
+    return CloudBackupMetadata(
+      userId: json['userId'] as String,
+      createdAt: DateTime.parse(json['createdAt'] as String),
+      lastUpdated: DateTime.parse(json['lastUpdated'] as String),
+      kdfMetadata: KDFMetadata.fromJson(json['kdfMetadata'] as Map<String, dynamic>),
+      encryptedData: json['encryptedData'] as String,
+      nonce: json['nonce'] as String,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'userId': userId,
+      'createdAt': createdAt.toIso8601String(),
+      'lastUpdated': lastUpdated.toIso8601String(),
+      'kdfMetadata': kdfMetadata.toJson(),
+      'encryptedData': encryptedData,
+      'nonce': nonce,
+    };
+  }
 }
 
 class KDFMetadata {
   final KDFAlgorithm algorithm;
   final String salt; // Base64 encoded
   final Map<String, dynamic> params;
+
+  const KDFMetadata({
+    required this.algorithm,
+    required this.salt,
+    required this.params,
+  });
+
+  factory KDFMetadata.fromJson(Map<String, dynamic> json) {
+    return KDFMetadata(
+      algorithm: KDFAlgorithm.values.firstWhere(
+        (e) => e.toString() == 'KDFAlgorithm.${json['algorithm']}',
+        orElse: () => KDFAlgorithm.unknown,
+      ),
+      salt: json['salt'] as String,
+      params: json['params'] as Map<String, dynamic>,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'algorithm': algorithm.toString().split('.').last,
+      'salt': salt,
+      'params': params,
+    };
+  }
 }
 
 enum KDFAlgorithm {
   argon2id,
   pbkdf2,
+  unknown,
 }
 
 // ============================================================================
@@ -150,6 +479,37 @@ class QuotaStatus {
   final bool isExceeded;
   final double usagePercentage;
   final String quotaTrackingId; // Random UUID, not linked to API key
+
+  const QuotaStatus({
+    required this.usedToday,
+    required this.estimatedRemaining,
+    required this.resetTimeUTC,
+    required this.isExceeded,
+    required this.usagePercentage,
+    required this.quotaTrackingId,
+  });
+
+  factory QuotaStatus.fromJson(Map<String, dynamic> json) {
+    return QuotaStatus(
+      usedToday: json['usedToday'] as int,
+      estimatedRemaining: json['estimatedRemaining'] as int,
+      resetTimeUTC: DateTime.parse(json['resetTimeUTC'] as String),
+      isExceeded: json['isExceeded'] as bool,
+      usagePercentage: (json['usagePercentage'] as num).toDouble(),
+      quotaTrackingId: json['quotaTrackingId'] as String,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'usedToday': usedToday,
+      'estimatedRemaining': estimatedRemaining,
+      'resetTimeUTC': resetTimeUTC.toIso8601String(),
+      'isExceeded': isExceeded,
+      'usagePercentage': usagePercentage,
+      'quotaTrackingId': quotaTrackingId,
+    };
+  }
 }
 
 class UsageHistoryEntry {
@@ -159,6 +519,40 @@ class UsageHistoryEntry {
   final DateTime timestamp;
   final int requestCount;
   final Map<String, dynamic> metadata;
+
+  const UsageHistoryEntry({
+    required this.id,
+    required this.userId,
+    required this.eventType,
+    required this.timestamp,
+    required this.requestCount,
+    required this.metadata,
+  });
+
+  factory UsageHistoryEntry.fromJson(Map<String, dynamic> json) {
+    return UsageHistoryEntry(
+      id: json['id'] as String,
+      userId: json['userId'] as String,
+      eventType: QuotaEventType.values.firstWhere(
+        (e) => e.toString() == 'QuotaEventType.${json['eventType']}',
+        orElse: () => QuotaEventType.unknown,
+      ),
+      timestamp: DateTime.parse(json['timestamp'] as String),
+      requestCount: json['requestCount'] as int,
+      metadata: json['metadata'] as Map<String, dynamic>,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'userId': userId,
+      'eventType': eventType.toString().split('.').last,
+      'timestamp': timestamp.toIso8601String(),
+      'requestCount': requestCount,
+      'metadata': metadata,
+    };
+  }
 }
 
 enum QuotaEventType {
@@ -167,6 +561,7 @@ enum QuotaEventType {
   warning80Percent,
   limitReached,
   apiKeyUpdated,
+  unknown,
 }
 
 class StorageQuota {
@@ -175,6 +570,34 @@ class StorageQuota {
   final int bytesUsed;
   final int maxBytes; // 2GB
   final bool isExceeded;
+
+  const StorageQuota({
+    required this.itemCount,
+    required this.maxItems,
+    required this.bytesUsed,
+    required this.maxBytes,
+    required this.isExceeded,
+  });
+
+  factory StorageQuota.fromJson(Map<String, dynamic> json) {
+    return StorageQuota(
+      itemCount: json['itemCount'] as int,
+      maxItems: json['maxItems'] as int,
+      bytesUsed: json['bytesUsed'] as int,
+      maxBytes: json['maxBytes'] as int,
+      isExceeded: json['isExceeded'] as bool,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'itemCount': itemCount,
+      'maxItems': maxItems,
+      'bytesUsed': bytesUsed,
+      'maxBytes': maxBytes,
+      'isExceeded': isExceeded,
+    };
+  }
 }
 
 // ============================================================================
@@ -186,16 +609,59 @@ class GeneratedImage {
   final String userId;
   final String imageUrl;
   final String modelUsed;
-  final GenerationMode mode;
+  final String modeName; // References GenerationMode.name
   final DateTime generatedAt;
   final String clothingItemId;
   final Map<String, dynamic> metadata;
+
+  const GeneratedImage({
+    required this.id,
+    required this.userId,
+    required this.imageUrl,
+    required this.modelUsed,
+    required this.modeName,
+    required this.generatedAt,
+    required this.clothingItemId,
+    required this.metadata,
+  });
+
+  factory GeneratedImage.fromJson(Map<String, dynamic> json) {
+    return GeneratedImage(
+      id: json['id'] as String,
+      userId: json['userId'] as String,
+      imageUrl: json['imageUrl'] as String,
+      modelUsed: json['modelUsed'] as String,
+      modeName: json['modeName'] as String,
+      generatedAt: DateTime.parse(json['generatedAt'] as String),
+      clothingItemId: json['clothingItemId'] as String,
+      metadata: json['metadata'] as Map<String, dynamic>,
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'userId': userId,
+      'imageUrl': imageUrl,
+      'modelUsed': modelUsed,
+      'modeName': modeName,
+      'generatedAt': generatedAt.toIso8601String(),
+      'clothingItemId': clothingItemId,
+      'metadata': metadata,
+    };
+  }
 }
 
 class GenerationMode {
   final String name;
   final String primaryModelId;
   final List<String> fallbackModelIds;
+
+  const GenerationMode({
+    required this.name,
+    required this.primaryModelId,
+    required this.fallbackModelIds,
+  });
   
   static const quality = GenerationMode(
     name: 'quality',
@@ -224,30 +690,58 @@ sealed class AppError {
   final String message;
   final String? code;
   final dynamic originalError;
+
+  const AppError({
+    required this.message,
+    this.code,
+    this.originalError,
+  });
 }
 
 class NetworkError extends AppError {
-  NetworkError(super.message, {super.code, super.originalError});
+  const NetworkError({
+    required super.message,
+    super.code,
+    super.originalError,
+  });
 }
 
 class APIError extends AppError {
   final int? statusCode;
-  APIError(super.message, {this.statusCode, super.code, super.originalError});
+  const APIError({
+    required super.message,
+    this.statusCode,
+    super.code,
+    super.originalError,
+  });
 }
 
 class QuotaExceededError extends APIError {
   final DateTime resetTime;
-  QuotaExceededError(super.message, this.resetTime, {super.statusCode, super.code});
+  const QuotaExceededError({
+    required super.message,
+    required this.resetTime,
+    super.statusCode,
+    super.code,
+  });
 }
 
 class ValidationError extends AppError {
   final Map<String, String> fieldErrors;
-  ValidationError(super.message, this.fieldErrors, {super.code});
+  const ValidationError({
+    required super.message,
+    required this.fieldErrors,
+    super.code,
+  });
 }
 
 class StorageQuotaError extends AppError {
   final StorageQuota currentQuota;
-  StorageQuotaError(super.message, this.currentQuota, {super.code});
+  const StorageQuotaError({
+    required super.message,
+    required this.currentQuota,
+    super.code,
+  });
 }
 
 // ============================================================================

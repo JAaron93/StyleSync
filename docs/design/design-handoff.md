@@ -13,10 +13,9 @@ This document provides all necessary information for developers to implement the
 ## Design Assets
 
 ### Prototype
-- **Tool**: Figma / Adobe XD / [Tool Name]
-- **Link**: [Insert prototype link]
-- **Password**: [If applicable]
-- **Version**: 1.0 (Post user testing)
+- **Tool**: Figma
+- **Link**: [https://www.figma.com/proto/StyleSync-Prototype-v1](https://www.figma.com/proto/StyleSync-Prototype-v1)
+- **Version**: 1.0 - 2026-02-11
 
 ### Wireframes
 - **Location**: `docs/design/wireframes.md`
@@ -311,30 +310,33 @@ class PrimaryButton extends StatelessWidget {
   
   @override
   Widget build(BuildContext context) {
-    return ElevatedButton(
-      onPressed: isLoading ? null : onPressed,
-      style: ElevatedButton.styleFrom(
-        backgroundColor: AppColors.primary,
-        foregroundColor: Colors.white,
-        padding: EdgeInsets.symmetric(
-          horizontal: AppSpacing.lg,
-          vertical: AppSpacing.md,
+    return SizedBox(
+      width: double.infinity,
+      child: ElevatedButton(
+        onPressed: isLoading ? null : onPressed,
+        style: ElevatedButton.styleFrom(
+          backgroundColor: AppColors.primary,
+          foregroundColor: Colors.white,
+          padding: EdgeInsets.symmetric(
+            horizontal: AppSpacing.lg,
+            vertical: AppSpacing.md,
+          ),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppBorderRadius.md),
+          ),
+          minimumSize: Size(0, 48),
         ),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppBorderRadius.md),
-        ),
-        minimumSize: Size(double.infinity, 48),
+        child: isLoading
+            ? SizedBox(
+                height: 20,
+                width: 20,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  valueColor: AlwaysStoppedAnimation(Colors.white),
+                ),
+              )
+            : Text(text, style: AppTextStyles.button),
       ),
-      child: isLoading
-          ? SizedBox(
-              height: 20,
-              width: 20,
-              child: CircularProgressIndicator(
-                strokeWidth: 2,
-                valueColor: AlwaysStoppedAnimation(Colors.white),
-              ),
-            )
-          : Text(text, style: AppTextStyles.button),
     );
   }
 }
@@ -507,25 +509,29 @@ class AppProgressIndicator extends StatelessWidget {
 ### Screen Transitions
 
 ```dart
-// Slide transition (default for navigation)
-PageRouteBuilder(
-  pageBuilder: (context, animation, secondaryAnimation) => NextScreen(),
-  transitionsBuilder: (context, animation, secondaryAnimation, child) {
-    const begin = Offset(1.0, 0.0);
-    const end = Offset.zero;
-    const curve = Curves.easeInOut;
-    
-    var tween = Tween(begin: begin, end: end).chain(
-      CurveTween(curve: curve),
-    );
-    
-    return SlideTransition(
-      position: animation.drive(tween),
-      child: child,
-    );
-  },
-  transitionDuration: Duration(milliseconds: 300),
-);
+// Slide transition (custom for go_router)
+GoRoute(
+  path: '/next-screen',
+  pageBuilder: (context, state) => CustomTransitionPage(
+    key: state.pageKey,
+    child: NextScreen(),
+    transitionsBuilder: (context, animation, secondaryAnimation, child) {
+      const begin = Offset(1.0, 0.0);
+      const end = Offset.zero;
+      const curve = Curves.easeInOut;
+      
+      var tween = Tween(begin: begin, end: end).chain(
+        CurveTween(curve: curve),
+      );
+      
+      return SlideTransition(
+        position: animation.drive(tween),
+        child: child,
+      );
+    },
+    transitionDuration: const Duration(milliseconds: 300),
+  ),
+),
 ```
 
 ### Micro-interactions
@@ -665,8 +671,8 @@ testWidgets('ClosetScreen displays items', (tester) async {
   await tester.pumpWidget(
     ProviderScope(
       overrides: [
-        clothingItemsProvider.overrideWith(
-          (ref) => Stream.value(mockClothingItems),
+        clothingItemsProvider.overrideWithValue(
+          AsyncValue.data(mockClothingItems),
         ),
       ],
       child: MaterialApp(home: ClosetScreen()),
@@ -733,11 +739,11 @@ For questions about design decisions or clarifications:
 2. Check API contracts for data structures
 3. Consult with design team if still unclear
 
-**Design Team Contact**: [Contact information]
+**Design Team Contact**: Kiro (Lead Product Designer) - design-team@stylesync.io (Slack: @kiro-design)
 
 ---
 
 **Document Version**: 1.0  
-**Last Updated**: [Date]  
+**Last Updated**: 2026-02-10  
 **Next Review**: After Task 23 completion
 
