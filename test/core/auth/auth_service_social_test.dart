@@ -20,8 +20,8 @@ void main() {
     });
 
     test('signInWithGoogle throws AuthError.notImplemented', () async {
-      expect(
-        () => authService.signInWithGoogle(),
+      await expectLater(
+        authService.signInWithGoogle(),
         throwsA(isA<AuthError>().having(
           (e) => e.code,
           'code',
@@ -31,8 +31,8 @@ void main() {
     });
 
     test('signInWithApple throws AuthError.notImplemented', () async {
-      expect(
-        () => authService.signInWithApple(),
+      await expectLater(
+        authService.signInWithApple(),
         throwsA(isA<AuthError>().having(
           (e) => e.code,
           'code',

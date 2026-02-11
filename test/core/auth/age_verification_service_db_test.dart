@@ -70,7 +70,7 @@ void main() {
       const userId = 'user123';
       fakeFirestore.fakeCollection.fakeDoc.shouldThrow = true;
 
-      expect(
+      await expectLater(
         () => service.clearCooldown(userId),
         throwsA(isA<AuthError>()),
       );
@@ -92,7 +92,8 @@ void main() {
 
     test('should return true for 18+ and not record cooldown', () async {
       const userId = 'user123';
-      final dob = DateTime.now().subtract(const Duration(days: 365 * 20));
+      final now = DateTime.now();
+      final dob = DateTime(now.year - 20, now.month, now.day);
 
       final result = await service.verify18PlusSelfReported(userId, dob);
 

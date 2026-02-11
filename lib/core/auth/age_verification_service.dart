@@ -1,6 +1,10 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:logging/logging.dart';
 
 import 'models/auth_error.dart';
+
+/// Logger for age verification operations.
+final Logger _logger = Logger('AgeVerificationService');
 
 /// Abstract interface for age verification services.
 ///
@@ -28,8 +32,6 @@ abstract class AgeVerificationService {
   /// Clears the cooldown for a user (e.g., after 24 hours).
   Future<void> clearCooldown(String userId);
 
-  /// Calculates the age based on date of birth and an optional reference date (defaults to now).
-  int calculateAge(DateTime dateOfBirth, {DateTime? referenceDate});
 
   /// Marks a user as verified in Firestore.
   Future<void> markUserAsVerified(String userId);
@@ -69,7 +71,7 @@ class AgeVerificationServiceImpl implements AgeVerificationService {
     }
 
     // 3. Calculate age
-    final age = calculateAge(dateOfBirth);
+    final age = _calculateAge(dateOfBirth);
 
     if (age >= 18) {
       return true;
@@ -84,8 +86,8 @@ class AgeVerificationServiceImpl implements AgeVerificationService {
     );
   }
 
-  @override
-  int calculateAge(DateTime dateOfBirth, {DateTime? referenceDate}) {
+  /// Calculates the age based on date of birth and an optional reference date (defaults to now).
+  int _calculateAge(DateTime dateOfBirth, {DateTime? referenceDate}) {
     final now = referenceDate ?? DateTime.now();
     return now.year -
         dateOfBirth.year -
@@ -103,6 +105,8 @@ class AgeVerificationServiceImpl implements AgeVerificationService {
       }, SetOptions(merge: true));
     } catch (e) {
       // Fail silent on recording cooldown to avoid blocking verification results
+      // but log for observability
+      _logger.warning('Failed to record cooldown for user $userId', e);
     }
   }
 
@@ -114,8 +118,9 @@ class AgeVerificationServiceImpl implements AgeVerificationService {
         'thirdPartyVerificationRequestedAt': FieldValue.serverTimestamp(),
       }, SetOptions(merge: true));
     } catch (e) {
+      _logger.warning('Failed to initiate third-party verification for user $userId', e);
       throw AuthError(
-        'Failed to initiate third-party verification: ${e.toString()}',
+        'Failed to initiate third-party verification',
         AuthErrorCode.verificationInitiationFailed,
       );
     }
@@ -135,7 +140,8 @@ class AgeVerificationServiceImpl implements AgeVerificationService {
       }
 
       if (cooldownTimestamp is! Timestamp) {
-        return false;
+        // Fail closed: if timestamp exists but is corrupted, assume cooldown is active
+        return true;
       }
       final cooldownTime = cooldownTimestamp.toDate();
       final now = DateTime.now();
@@ -145,6 +151,8 @@ class AgeVerificationServiceImpl implements AgeVerificationService {
     } catch (e) {
       // Fail closed: assume cooldown is active if we can't verify
       // This prevents brute-force during transient failures
+      // Log for observability
+      _logger.warning('Failed to check cooldown status for user $userId, assuming active', e);
       return true;
     }
   }
@@ -163,9 +171,9 @@ class AgeVerificationServiceImpl implements AgeVerificationService {
   @override
   Future<void> markUserAsVerified(String userId) async {
     try {
-      await _firestore.collection('users').doc(userId).update({
+      await _firestore.collection('users').doc(userId).set({
         _kVerifiedKey: true,
-      });
+      }, SetOptions(merge: true));
     } catch (e) {
       throw AuthError('Failed to mark user as verified');
     }

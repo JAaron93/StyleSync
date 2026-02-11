@@ -16,16 +16,6 @@ class _AgeGateDialogState extends State<AgeGateDialog> {
   DateTime? _selectedDate;
   String? _error;
 
-  bool _is18Plus(DateTime dateOfBirth) {
-    final now = DateTime.now();
-    final age = now.year - dateOfBirth.year -
-        (now.month < dateOfBirth.month ||
-                (now.month == dateOfBirth.month && now.day < dateOfBirth.day)
-            ? 1
-            : 0);
-    return age >= 18;
-  }
-
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
@@ -40,9 +30,9 @@ class _AgeGateDialogState extends State<AgeGateDialog> {
             ),
             const SizedBox(height: 24),
             DatePickerWidget(
-              initialDate: DateTime.now().subtract(const Duration(days: 365 * 25)),
+              initialDate: DateUtils.dateOnly(DateTime.now().subtract(const Duration(days: 365 * 25))),
               firstDate: DateTime(1900),
-              lastDate: DateTime.now(),
+              lastDate: DateUtils.dateOnly(DateTime.now()),
               onChanged: (date) {
                 setState(() {
                   _selectedDate = date;
@@ -76,11 +66,10 @@ class _AgeGateDialogState extends State<AgeGateDialog> {
           child: const Text('Cancel'),
         ),
         ElevatedButton(
-        ElevatedButton(
           onPressed: _selectedDate == null
               ? null
               : () {
-                  if (_is18Plus(_selectedDate!)) {
+                  if (is18Plus(_selectedDate!)) {
                     Navigator.pop(context, _selectedDate);
                   } else {
                     setState(() {
@@ -152,4 +141,12 @@ class _DatePickerWidgetState extends State<DatePickerWidget> {
       },
     );
   }
+}
+
+/// Checks if the given date of birth corresponds to a user who is 18 years or older.
+bool is18Plus(DateTime dateOfBirth) {
+  final now = DateTime.now();
+  final age = now.year - dateOfBirth.year -
+      (now.month < dateOfBirth.month || (now.month == dateOfBirth.month && now.day < dateOfBirth.day) ? 1 : 0);
+  return age >= 18;
 }

@@ -58,14 +58,13 @@ class UserProfile {
   }
 
   static AgeVerificationMethod _parseAgeVerificationMethod(String value) {
-    final result = AgeVerificationMethod.values.firstWhereOrNull(
-      (e) => e.toString() == 'AgeVerificationMethod.$value',
-    );
-    if (result == null) {
+    try {
+      return AgeVerificationMethod.values.byName(value);
+    } catch (e) {
       // Log invalid value for monitoring
       print('Warning: Unknown AgeVerificationMethod value: $value');
+      return AgeVerificationMethod.unknown;
     }
-    return result ?? AgeVerificationMethod.unknown;
   }
   
   Map<String, dynamic> toJson() {

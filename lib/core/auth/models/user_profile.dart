@@ -83,7 +83,7 @@ class UserProfile {
 
     if (userId is! String ||
         email is! String ||
-        createdAt is! String ||
+        (createdAt is! String && createdAt is! Timestamp) ||
         onboardingComplete is! bool ||
         faceDetectionConsentGranted is! bool ||
         biometricConsentGranted is! bool ||
@@ -91,10 +91,21 @@ class UserProfile {
       throw FormatException('Invalid UserProfile data: $map');
     }
 
+    DateTime createdAtDateTime;
+    if (createdAt is Timestamp) {
+      createdAtDateTime = createdAt.toDate();
+    } else {
+      try {
+        createdAtDateTime = DateTime.parse(createdAt);
+      } catch (e) {
+        throw FormatException('Invalid UserProfile data: $map');
+      }
+    }
+
     return UserProfile(
       userId: userId,
       email: email,
-      createdAt: DateTime.parse(createdAt),
+      createdAt: createdAtDateTime,
       onboardingComplete: onboardingComplete,
       faceDetectionConsentGranted: faceDetectionConsentGranted,
       biometricConsentGranted: biometricConsentGranted,
@@ -111,7 +122,6 @@ class UserProfile {
         other.createdAt == createdAt &&
         other.onboardingComplete == onboardingComplete &&
         other.faceDetectionConsentGranted == faceDetectionConsentGranted &&
-        other.biometricConsentGranted == biometricConsentGranted &&
         other.biometricConsentGranted == biometricConsentGranted &&
         other.is18PlusVerified == is18PlusVerified;
   }

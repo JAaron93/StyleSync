@@ -310,25 +310,39 @@ class AuthServiceImpl implements AuthService {
   /// Gets the user profile from a Firebase User object.
   Future<UserProfile> _getUserProfileFromUser(User user) async {
     try {
-      final doc = await _firestore.collection('users').doc(user.uid).get();
-      if (doc.exists) {
-        return UserProfile.fromMap(doc.data()!);
-      }
+      return await _firestore.runTransaction<UserProfile>((transaction) async {
+        final docRef = _firestore.collection('users').doc(user.uid);
+        final doc = await transaction.get(docRef);
+        
+        if (doc.exists) {
+          return UserProfile.fromMap(doc.data()!);
+        }
 
-      // Create a minimal profile if it doesn't exist
-      final userProfile = UserProfile(
-        userId: user.uid,
-        email: user.email ?? '',
-        createdAt: DateTime.now(),
-        onboardingComplete: false,
-        faceDetectionConsentGranted: false,
-        biometricConsentGranted: false,
-        is18PlusVerified: false,
-      );
+        // Create a minimal profile if it doesn't exist
+        final userProfileData = {
+          'userId': user.uid,
+          'email': user.email ?? '',
+          'createdAt': FieldValue.serverTimestamp(),
+          'onboardingComplete': false,
+          'faceDetectionConsentGranted': false,
+          'biometricConsentGranted': false,
+          'is18PlusVerified': false,
+        };
 
-      await _firestore.collection('users').doc(user.uid).set(userProfile.toMap());
+        transaction.set(docRef, userProfileData);
 
-      return userProfile;
+        // Create UserProfile object with current time for local use
+        // (server timestamp will be used in Firestore)
+        return UserProfile(
+          userId: user.uid,
+          email: user.email ?? '',
+          createdAt: DateTime.now(),
+          onboardingComplete: false,
+          faceDetectionConsentGranted: false,
+          biometricConsentGranted: false,
+          is18PlusVerified: false,
+        );
+      });
     } catch (e) {
       throw AuthError('Failed to retrieve user profile');
     }

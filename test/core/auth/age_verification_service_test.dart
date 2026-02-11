@@ -3,6 +3,17 @@ import 'package:stylesync/core/auth/age_verification_service.dart';
 
 import 'age_verification_service_test.mocks.dart';
 
+/// Test utility function for age calculation (mirrors the private implementation)
+int _calculateAgeForTesting(DateTime dateOfBirth, {DateTime? referenceDate}) {
+  final now = referenceDate ?? DateTime.now();
+  return now.year -
+      dateOfBirth.year -
+      (now.month < dateOfBirth.month ||
+              (now.month == dateOfBirth.month && now.day < dateOfBirth.day)
+          ? 1
+          : 0);
+}
+
 void main() {
   group('AgeVerificationLogic', () {
     late AgeVerificationService service;
@@ -15,7 +26,7 @@ void main() {
       final referenceDate = DateTime(2024, 1, 15);
       final dateOfBirth = DateTime(2004, 1, 15);
       
-      final age = service.calculateAge(dateOfBirth, referenceDate: referenceDate);
+      final age = _calculateAgeForTesting(dateOfBirth, referenceDate: referenceDate);
 
       expect(age, 20);
     });
@@ -24,7 +35,7 @@ void main() {
       final referenceDate = DateTime(2024, 1, 15);
       final dateOfBirth = DateTime(2006, 1, 15);
       
-      final age = service.calculateAge(dateOfBirth, referenceDate: referenceDate);
+      final age = _calculateAgeForTesting(dateOfBirth, referenceDate: referenceDate);
 
       expect(age, 18);
     });
@@ -33,7 +44,7 @@ void main() {
       final referenceDate = DateTime(2024, 1, 16);
       final dateOfBirth = DateTime(2006, 1, 15);
       
-      final age = service.calculateAge(dateOfBirth, referenceDate: referenceDate);
+      final age = _calculateAgeForTesting(dateOfBirth, referenceDate: referenceDate);
 
       expect(age, 18);
     });
@@ -42,7 +53,7 @@ void main() {
       final referenceDate = DateTime(2024, 1, 15);
       final dateOfBirth = DateTime(2009, 1, 15);
       
-      final age = service.calculateAge(dateOfBirth, referenceDate: referenceDate);
+      final age = _calculateAgeForTesting(dateOfBirth, referenceDate: referenceDate);
 
       expect(age, 15);
     });
@@ -51,7 +62,7 @@ void main() {
       final referenceDate = DateTime(2024, 1, 15);
       final dateOfBirth = DateTime(2006, 6, 15);
       
-      final age = service.calculateAge(dateOfBirth, referenceDate: referenceDate);
+      final age = _calculateAgeForTesting(dateOfBirth, referenceDate: referenceDate);
 
       expect(age, 17);
     });

@@ -1,6 +1,11 @@
 // StyleSync Data Models
 // This file contains all data model definitions for the application
 
+import 'package:logging/logging.dart';
+
+/// Logger for data model parsing operations.
+final Logger _logger = Logger('DataModels');
+
 // ============================================================================
 // User Models
 // ============================================================================
@@ -45,10 +50,12 @@ class UserProfile {
   }
 
   static AgeVerificationMethod _parseAgeVerificationMethod(String value) {
-    return AgeVerificationMethod.values.firstWhere(
-      (e) => e.toString() == 'AgeVerificationMethod.$value',
-      orElse: () => AgeVerificationMethod.unknown,
-    );
+    try {
+      return AgeVerificationMethod.values.byName(value);
+    } catch (e) {
+      _logger.warning('Unknown AgeVerificationMethod value: $value', e);
+      return AgeVerificationMethod.unknown;
+    }
   }
 
   Map<String, dynamic> toJson() {
@@ -119,10 +126,7 @@ class ClothingItem {
       updatedAt: json['updatedAt'] != null 
           ? DateTime.parse(json['updatedAt'] as String) 
           : null,
-      processingState: ItemProcessingState.values.firstWhere(
-        (e) => e.toString() == 'ItemProcessingState.${json['processingState']}',
-        orElse: () => ItemProcessingState.unknown,
-      ),
+      processingState: _parseItemProcessingState(json['processingState'] as String),
       failureReason: json['failureReason'] as String?,
       retryCount: json['retryCount'] as int,
       idempotencyKey: json['idempotencyKey'] as String,
@@ -146,6 +150,15 @@ class ClothingItem {
       'idempotencyKey': idempotencyKey,
       'metadata': metadata,
     };
+  }
+
+  static ItemProcessingState _parseItemProcessingState(String value) {
+    try {
+      return ItemProcessingState.values.byName(value);
+    } catch (e) {
+      _logger.warning('Unknown ItemProcessingState value: $value', e);
+      return ItemProcessingState.unknown;
+    }
   }
 }
 
@@ -172,16 +185,10 @@ class ClothingTags {
 
   factory ClothingTags.fromJson(Map<String, dynamic> json) {
     return ClothingTags(
-      category: ClothingCategory.values.firstWhere(
-        (e) => e.toString() == 'ClothingCategory.${json['category']}',
-        orElse: () => ClothingCategory.unknown,
-      ),
+      category: _parseClothingCategory(json['category'] as String),
       colors: List<String>.from(json['colors'] as List),
       seasons: (json['seasons'] as List)
-          .map((s) => Season.values.firstWhere(
-                (e) => e.toString() == 'Season.$s',
-                orElse: () => Season.unknown,
-              ))
+          .map((s) => _parseSeason(s as String))
           .toList(),
       additionalAttributes: json['additionalAttributes'] as Map<String, dynamic>,
     );
@@ -194,6 +201,24 @@ class ClothingTags {
       'seasons': seasons.map((s) => s.toString().split('.').last).toList(),
       'additionalAttributes': additionalAttributes,
     };
+  }
+
+  static ClothingCategory _parseClothingCategory(String value) {
+    try {
+      return ClothingCategory.values.byName(value);
+    } catch (e) {
+      _logger.warning('Unknown ClothingCategory value: $value', e);
+      return ClothingCategory.unknown;
+    }
+  }
+
+  static Season _parseSeason(String value) {
+    try {
+      return Season.values.byName(value);
+    } catch (e) {
+      _logger.warning('Unknown Season value: $value', e);
+      return Season.unknown;
+    }
   }
 }
 
@@ -294,10 +319,7 @@ class OutfitLayer {
     return OutfitLayer(
       id: json['id'] as String,
       name: json['name'] as String,
-      type: LayerType.values.firstWhere(
-        (e) => e.toString() == 'LayerType.${json['type']}',
-        orElse: () => LayerType.unknown,
-      ),
+      type: _parseLayerType(json['type'] as String),
       clothingItemId: json['clothingItemId'] as String,
       index: json['index'] as int,
       isVisible: json['isVisible'] as bool,
@@ -321,6 +343,15 @@ class OutfitLayer {
       'metadata': metadata,
       'positioning': positioning,
     };
+  }
+
+  static LayerType _parseLayerType(String value) {
+    try {
+      return LayerType.values.byName(value);
+    } catch (e) {
+      _logger.warning('Unknown LayerType value: $value', e);
+      return LayerType.unknown;
+    }
   }
 }
 
@@ -362,16 +393,10 @@ class APIKeyConfig {
       createdAt: DateTime.parse(json['createdAt'] as String),
       lastValidated: DateTime.parse(json['lastValidated'] as String),
       cloudBackupEnabled: json['cloudBackupEnabled'] as bool,
-      storageBackend: SecureStorageBackend.values.firstWhere(
-        (e) => e.toString() == 'SecureStorageBackend.${json['storageBackend']}',
-        orElse: () => SecureStorageBackend.unknown,
-      ),
+      storageBackend: _parseSecureStorageBackend(json['storageBackend'] as String),
     );
   }
 
-  Map<String, dynamic> toJson() {
-    return {
-      'apiKey': apiKey,
   Map<String, dynamic> toJson() {
     return {
       'projectId': projectId,
@@ -389,6 +414,18 @@ class APIKeyConfig {
       'apiKey': apiKey,
     };
   }
+
+  static SecureStorageBackend _parseSecureStorageBackend(String value) {
+    try {
+      return SecureStorageBackend.values.byName(value);
+    } catch (e) {
+      _logger.warning('Unknown SecureStorageBackend value: $value', e);
+      return SecureStorageBackend.unknown;
+    }
+  }
+}
+
+enum SecureStorageBackend {
   strongBox,        // Android 9+ StrongBox
   hardwareBacked,   // iOS Secure Enclave, Android Keystore
   software,         // Software-only fallback
@@ -448,10 +485,7 @@ class KDFMetadata {
 
   factory KDFMetadata.fromJson(Map<String, dynamic> json) {
     return KDFMetadata(
-      algorithm: KDFAlgorithm.values.firstWhere(
-        (e) => e.toString() == 'KDFAlgorithm.${json['algorithm']}',
-        orElse: () => KDFAlgorithm.unknown,
-      ),
+      algorithm: _parseKDFAlgorithm(json['algorithm'] as String),
       salt: json['salt'] as String,
       params: json['params'] as Map<String, dynamic>,
     );
@@ -463,6 +497,15 @@ class KDFMetadata {
       'salt': salt,
       'params': params,
     };
+  }
+
+  static KDFAlgorithm _parseKDFAlgorithm(String value) {
+    try {
+      return KDFAlgorithm.values.byName(value);
+    } catch (e) {
+      _logger.warning('Unknown KDFAlgorithm value: $value', e);
+      return KDFAlgorithm.unknown;
+    }
   }
 }
 
@@ -537,10 +580,7 @@ class UsageHistoryEntry {
     return UsageHistoryEntry(
       id: json['id'] as String,
       userId: json['userId'] as String,
-      eventType: QuotaEventType.values.firstWhere(
-        (e) => e.toString() == 'QuotaEventType.${json['eventType']}',
-        orElse: () => QuotaEventType.unknown,
-      ),
+      eventType: _parseQuotaEventType(json['eventType'] as String),
       timestamp: DateTime.parse(json['timestamp'] as String),
       requestCount: json['requestCount'] as int,
       metadata: json['metadata'] as Map<String, dynamic>,
@@ -556,6 +596,15 @@ class UsageHistoryEntry {
       'requestCount': requestCount,
       'metadata': metadata,
     };
+  }
+
+  static QuotaEventType _parseQuotaEventType(String value) {
+    try {
+      return QuotaEventType.values.byName(value);
+    } catch (e) {
+      _logger.warning('Unknown QuotaEventType value: $value', e);
+      return QuotaEventType.unknown;
+    }
   }
 }
 

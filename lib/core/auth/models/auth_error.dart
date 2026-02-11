@@ -57,7 +57,7 @@ class AuthErrorCode {
   static const String invalidInput = 'invalid-input';
 
   /// Failed to initiate third-party verification.
-  static const String verificationInitiationFailed = 'third-party-initiation-failed';
+  static const String thirdPartyInitiationFailed = 'third-party-initiation-failed';
 
   /// The requested feature is not implemented.
   static const String notImplemented = 'not-implemented';

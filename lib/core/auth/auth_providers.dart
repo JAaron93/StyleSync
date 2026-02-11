@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'auth_service.dart';
@@ -116,6 +117,11 @@ class AuthStateNotifier extends StateNotifier<AuthState> {
   Future<void> signOut() async {
     try {
       await _authService.signOut();
+      state = const AuthState.unauthenticated();
+    } catch (e) {
+      state = AuthState.error(e.toString());
+    }
+  }
   /// Updates the user's face detection consent.
   Future<void> updateFaceDetectionConsent(bool granted) async {
     try {
