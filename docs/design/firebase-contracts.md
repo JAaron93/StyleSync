@@ -23,11 +23,27 @@
 
 match /users/{userId} {
   allow read: if request.auth != null && request.auth.uid == userId;
-  allow write: if request.auth != null && request.auth.uid == userId
+  allow create: if request.auth != null && request.auth.uid == userId
     && request.resource.data.keys().hasAll(['userId', 'email', 'createdAt', 'onboardingComplete'])
     && request.resource.data.userId is string
     && request.resource.data.email is string
-    && request.resource.data.onboardingComplete is bool;
+    && request.resource.data.createdAt is timestamp
+    && request.resource.data.onboardingComplete is bool
+    && (!request.resource.data.keys().hasAny(['lastLoginAt']) || request.resource.data.lastLoginAt is timestamp)
+    && (!request.resource.data.keys().hasAny(['faceDetectionConsentGranted']) || request.resource.data.faceDetectionConsentGranted is bool)
+    && (!request.resource.data.keys().hasAny(['biometricConsentGranted']) || request.resource.data.biometricConsentGranted is bool)
+    && (!request.resource.data.keys().hasAny(['is18PlusVerified']) || request.resource.data.is18PlusVerified is bool)
+    && (!request.resource.data.keys().hasAny(['verificationMethod']) || request.resource.data.verificationMethod is string);
+  allow update: if request.auth != null && request.auth.uid == userId
+    && request.resource.data.userId == resource.data.userId
+    && request.resource.data.email == resource.data.email
+    && request.resource.data.createdAt == resource.data.createdAt
+    && request.resource.data.onboardingComplete is bool
+    && (!request.resource.data.keys().hasAny(['lastLoginAt']) || request.resource.data.lastLoginAt is timestamp)
+    && (!request.resource.data.keys().hasAny(['faceDetectionConsentGranted']) || request.resource.data.faceDetectionConsentGranted is bool)
+    && (!request.resource.data.keys().hasAny(['biometricConsentGranted']) || request.resource.data.biometricConsentGranted is bool)
+    && (!request.resource.data.keys().hasAny(['is18PlusVerified']) || request.resource.data.is18PlusVerified is bool)
+    && (!request.resource.data.keys().hasAny(['verificationMethod']) || request.resource.data.verificationMethod is string);
 }
 
 ### Biometric Data Handling
@@ -95,21 +111,33 @@ match /clothing_items/{itemId} {
   allow read: if request.auth != null && resource.data.userId == request.auth.uid;
   allow create: if request.auth != null 
     && request.resource.data.userId == request.auth.uid
-    && request.resource.data.keys().hasAll(['userId', 'name', 'size', 'price', 'createdAt'])
+    && request.resource.data.keys().hasAll(['id', 'userId', 'name', 'size', 'price', 'imageUrl', 'uploadedAt', 'createdAt', 'processingState', 'idempotencyKey'])
+    && request.resource.data.id is string
     && request.resource.data.userId is string
     && request.resource.data.name is string
     && request.resource.data.size is string
-    && request.resource.data.price is number
-    && request.resource.data.createdAt is timestamp;
+    && request.resource.data.price is number && request.resource.data.price >= 0
+    && request.resource.data.imageUrl is string
+    && request.resource.data.uploadedAt is timestamp
+    && request.resource.data.createdAt is timestamp
+    && request.resource.data.processingState in ['uploading', 'processing', 'completed', 'processingFailed']
+    && request.resource.data.idempotencyKey is string
+    && (!request.resource.data.keys().hasAny(['tags']) || request.resource.data.tags is map);
   allow update: if request.auth != null 
     && resource.data.userId == request.auth.uid
-    && request.resource.data.userId == request.auth.uid
-    && request.resource.data.keys().hasAll(['userId', 'name', 'size', 'price', 'createdAt'])
-    && request.resource.data.userId is string
+    && request.resource.data.userId == resource.data.userId
+    && request.resource.data.createdAt == resource.data.createdAt
+    && request.resource.data.keys().hasAll(['id', 'userId', 'name', 'size', 'price', 'imageUrl', 'uploadedAt', 'createdAt', 'processingState', 'idempotencyKey'])
+    && request.resource.data.id is string
     && request.resource.data.name is string
     && request.resource.data.size is string
-    && request.resource.data.price is number
-    && request.resource.data.createdAt is timestamp;
+    && request.resource.data.price is number && request.resource.data.price >= 0
+    && request.resource.data.imageUrl is string
+    && request.resource.data.uploadedAt is timestamp
+    && request.resource.data.processingState in ['uploading', 'processing', 'completed', 'processingFailed']
+    && request.resource.data.idempotencyKey is string
+    && (!request.resource.data.keys().hasAny(['tags']) || request.resource.data.tags is map)
+    && (!request.resource.data.keys().hasAny(['updatedAt']) || request.resource.data.updatedAt is timestamp);
   allow delete: if request.auth != null && resource.data.userId == request.auth.uid;
 }
 ```
@@ -159,23 +187,28 @@ firestore
   "name": "string",
   "layers": [
     {
-      "type": "base | mid | outer | accessories",
-      "clothingItemId": "string",
-      "zIndex": "number",
-      "positioning": {}
-    }
-  ],
-  "thumbnailUrl": "string | null",
-  "createdAt": "timestamp",
-  "updatedAt": "timestamp"
-}
-```
-
-**Security Rules**:
-```javascript
-match /outfits/{outfitId} {
-  allow read: if request.auth != null && resource.data.userId == request.auth.uid;
   allow create: if request.auth != null 
+    && request.resource.data.userId == request.auth.uid
+    && request.resource.data.keys().hasAll(['id', 'userId', 'name', 'layers', 'createdAt', 'updatedAt'])
+    && request.resource.data.id is string
+    && request.resource.data.userId is string
+    && request.resource.data.name is string
+    && request.resource.data.layers is list
+    && request.resource.data.layers.size() > 0
+    && request.resource.data.createdAt is timestamp
+    && request.resource.data.updatedAt is timestamp
+    && (!request.resource.data.keys().hasAny(['thumbnailUrl']) || request.resource.data.thumbnailUrl is string);
+  allow update: if request.auth != null 
+    && resource.data.userId == request.auth.uid
+    && request.resource.data.userId == resource.data.userId
+    && request.resource.data.id == resource.data.id
+    && request.resource.data.createdAt == resource.data.createdAt
+    && request.resource.data.name is string
+    && request.resource.data.layers is list
+    && request.resource.data.layers.size() > 0
+    && request.resource.data.updatedAt is timestamp
+    && (!request.resource.data.keys().hasAny(['thumbnailUrl']) || request.resource.data.thumbnailUrl is string);
+  allow delete: if request.auth != null && resource.data.userId == request.auth.uid;
     && request.resource.data.userId == request.auth.uid
     && request.resource.data.keys().hasAll(['userId', 'name', 'layers', 'createdAt', 'updatedAt'])
     && request.resource.data.userId is string
@@ -379,8 +412,8 @@ match /users/{userId}/outfits/{filename} {
 - **Audit Logging**: All access to this file must be logged via Cloud Audit Logs or a custom logging function for security reviews.
 - **Brute-Force Protection**: 
     - Use Argon2id with high memory cost for the KDF.
-    - Implement rate-limiting and throttling on the client/server side for decryption attempts.
-
+    - Implement server-side rate-limiting and throttling for decryption attempts (client-side controls can be bypassed).
+    - Consider implementing account lockout after N failed decryption attempts within a time window.
 **Content Structure**:
 ```json
 {
@@ -408,7 +441,7 @@ match /users/{userId}/api_key_backup.json {
   // This helps mitigate sessions hijacked via XSS or stolen devices.
   allow read, write: if request.auth != null 
     && request.auth.uid == userId
-    && request.auth.token.auth_time > (duration.value(request.time.toMillis() - duration.value(5, 'm').toMillis()) / 1000);
+    && request.auth.token.auth_time > (request.time.toMillis() / 1000) - (5 * 60);
 }
 ```
 

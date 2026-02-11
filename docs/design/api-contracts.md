@@ -60,10 +60,7 @@ class UserProfile {
   static AgeVerificationMethod _parseAgeVerificationMethod(String value) {
     return AgeVerificationMethod.values.firstWhere(
       (e) => e.toString() == 'AgeVerificationMethod.$value',
-      orElse: () => throw FormatException(
-        'Unknown AgeVerificationMethod: $value. '
-        'Valid values are: ${AgeVerificationMethod.values.map((e) => e.toString().split(".").last).join(", ")}'
-      ),
+      orElse: () => AgeVerificationMethod.unknown,
     );
   }
   
@@ -135,14 +132,13 @@ class ClothingItem {
       updatedAt: json['updatedAt'] != null 
           ? DateTime.parse(json['updatedAt'] as String) 
       processingState: ItemProcessingState.values.firstWhere(
+      updatedAt: json['updatedAt'] != null 
+          ? DateTime.parse(json['updatedAt'] as String) 
+          : null,
+      processingState: ItemProcessingState.values.firstWhere(
         (e) => e.toString() == 'ItemProcessingState.${json['processingState']}',
-        orElse: () => throw FormatException('Unknown processing state: ${json['processingState']}'),
-      ),
         orElse: () => ItemProcessingState.unknown,
       ),
-      failureReason: json['failureReason'] as String?,
-      retryCount: json['retryCount'] as int,
-      idempotencyKey: json['idempotencyKey'] as String,
       metadata: (json['metadata'] is Map) 
           ? Map<String, dynamic>.from(json['metadata'] as Map)
           : {},

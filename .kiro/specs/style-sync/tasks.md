@@ -183,8 +183,8 @@ This implementation plan breaks down the StyleSync feature into discrete, increm
   
   **Note**: This task validates UX assumptions early before backend finalization. Findings may require updates to API designs and data contracts in tasks 9-22. Task 23 will implement the approved designs from this prototyping phase.
 
-- [ ] 8. Implement Firebase Authentication and 18+ Age Gate
-  - [ ] 8.1 Set up Firebase Authentication
+- [x] 8. Implement Firebase Authentication and 18+ Age Gate
+  - [x] 8.1 Set up Firebase Authentication
     - Configure email/password authentication
     - Configure social authentication (Google, Apple)
     - Implement user sign-up and sign-in flows
@@ -193,13 +193,13 @@ This implementation plan breaks down the StyleSync feature into discrete, increm
     - Associate user data with Firebase Auth UID
     - _Requirements: 7.1, 7.2, 7.3_
   
-  - [ ] 8.2 Implement user profile management
+  - [x] 8.2 Implement user profile management
     - Create UserProfile model with age and verification status
     - Store user profile in Firestore (users/{userId})
     - Track onboarding completion and 18+ verification state
     - _Requirements: 7.3_
   
-  - [ ] 8.3 Write unit tests for authentication and age gate
+  - [x] 8.3 Write unit tests for authentication and age gate
     - Test sign-up and sign-in
     - Test 18+ age verification and rejection of minors
     - Test user profile creation

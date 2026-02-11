@@ -1,0 +1,128 @@
+/// Represents a user's profile in the system.
+///
+/// This model stores user-related information including authentication
+/// status, onboarding completion, and age verification state.
+class UserProfile {
+  /// Creates a [UserProfile] instance.
+  const UserProfile({
+    required this.userId,
+    required this.email,
+    required this.createdAt,
+    required this.onboardingComplete,
+    required this.faceDetectionConsentGranted,
+    required this.biometricConsentGranted,
+    required this.is18PlusVerified,
+    this.dateOfBirth,
+  });
+
+  /// The unique Firebase Auth UID for this user.
+  final String userId;
+
+  /// The user's email address.
+  final String email;
+
+  /// When the user account was created.
+  final DateTime createdAt;
+
+  /// Whether the user has completed the onboarding flow.
+  final bool onboardingComplete;
+
+  /// Whether the user has granted face detection consent.
+  final bool faceDetectionConsentGranted;
+
+  /// Whether the user has granted biometric consent for try-on features.
+  final bool biometricConsentGranted;
+
+  /// Whether the user has been verified as 18+ years old.
+  final bool is18PlusVerified;
+
+  /// The user's date of birth (stored only for verification purposes).
+  final DateTime? dateOfBirth;
+
+  /// Creates a copy of this profile with the given fields replaced.
+  UserProfile copyWith({
+    String? userId,
+    String? email,
+    DateTime? createdAt,
+    bool? onboardingComplete,
+    bool? faceDetectionConsentGranted,
+    bool? biometricConsentGranted,
+    bool? is18PlusVerified,
+    DateTime? dateOfBirth,
+  }) {
+    return UserProfile(
+      userId: userId ?? this.userId,
+      email: email ?? this.email,
+      createdAt: createdAt ?? this.createdAt,
+      onboardingComplete: onboardingComplete ?? this.onboardingComplete,
+      faceDetectionConsentGranted:
+          faceDetectionConsentGranted ?? this.faceDetectionConsentGranted,
+      biometricConsentGranted:
+          biometricConsentGranted ?? this.biometricConsentGranted,
+      is18PlusVerified: is18PlusVerified ?? this.is18PlusVerified,
+      dateOfBirth: dateOfBirth ?? this.dateOfBirth,
+    );
+  }
+
+  /// Converts the profile to a map for Firestore storage.
+  Map<String, dynamic> toMap() {
+    return {
+      'userId': userId,
+      'email': email,
+      'createdAt': createdAt.toIso8601String(),
+      'onboardingComplete': onboardingComplete,
+      'faceDetectionConsentGranted': faceDetectionConsentGranted,
+      'biometricConsentGranted': biometricConsentGranted,
+      'is18PlusVerified': is18PlusVerified,
+      if (dateOfBirth != null) 'dateOfBirth': dateOfBirth!.toIso8601String(),
+    };
+  }
+
+  /// Creates a [UserProfile] from a Firestore document map.
+  factory UserProfile.fromMap(Map<String, dynamic> map) {
+    return UserProfile(
+      userId: map['userId'] as String,
+      email: map['email'] as String,
+      createdAt: DateTime.parse(map['createdAt'] as String),
+      onboardingComplete: map['onboardingComplete'] as bool,
+      faceDetectionConsentGranted:
+          map['faceDetectionConsentGranted'] as bool,
+      biometricConsentGranted: map['biometricConsentGranted'] as bool,
+      is18PlusVerified: map['is18PlusVerified'] as bool,
+      dateOfBirth: map['dateOfBirth'] != null
+          ? DateTime.parse(map['dateOfBirth'] as String)
+          : null,
+    );
+  }
+
+  @override
+  bool operator ==(Object other) {
+    if (identical(this, other)) return true;
+    return other is UserProfile &&
+        other.userId == userId &&
+        other.email == email &&
+        other.createdAt == createdAt &&
+        other.onboardingComplete == onboardingComplete &&
+        other.faceDetectionConsentGranted == faceDetectionConsentGranted &&
+        other.biometricConsentGranted == biometricConsentGranted &&
+        other.is18PlusVerified == is18PlusVerified &&
+        other.dateOfBirth == dateOfBirth;
+  }
+
+  @override
+  int get hashCode => Object.hash(
+        userId,
+        email,
+        createdAt,
+        onboardingComplete,
+        faceDetectionConsentGranted,
+        biometricConsentGranted,
+        is18PlusVerified,
+        dateOfBirth,
+      );
+
+  @override
+  String toString() {
+    return 'UserProfile(userId: $userId, email: $email, createdAt: $createdAt, onboardingComplete: $onboardingComplete, faceDetectionConsentGranted: $faceDetectionConsentGranted, biometricConsentGranted: $biometricConsentGranted, is18PlusVerified: $is18PlusVerified, dateOfBirth: $dateOfBirth)';
+  }
+}

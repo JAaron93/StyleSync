@@ -47,10 +47,7 @@ class UserProfile {
   static AgeVerificationMethod _parseAgeVerificationMethod(String value) {
     return AgeVerificationMethod.values.firstWhere(
       (e) => e.toString() == 'AgeVerificationMethod.$value',
-      orElse: () => throw FormatException(
-        'Unknown AgeVerificationMethod: $value. '
-        'Valid values are: ${AgeVerificationMethod.values.map((e) => e.toString().split(".").last).join(", ")}'
-      ),
+      orElse: () => AgeVerificationMethod.unknown,
     );
   }
 
@@ -375,6 +372,8 @@ class APIKeyConfig {
   Map<String, dynamic> toJson() {
     return {
       'apiKey': apiKey,
+  Map<String, dynamic> toJson() {
+    return {
       'projectId': projectId,
       'createdAt': createdAt.toIso8601String(),
       'lastValidated': lastValidated.toIso8601String(),
@@ -382,9 +381,14 @@ class APIKeyConfig {
       'storageBackend': storageBackend.toString().split('.').last,
     };
   }
-}
 
-enum SecureStorageBackend {
+  /// For secure storage only - includes sensitive data
+  Map<String, dynamic> toSecureJson() {
+    return {
+      ...toJson(),
+      'apiKey': apiKey,
+    };
+  }
   strongBox,        // Android 9+ StrongBox
   hardwareBacked,   // iOS Secure Enclave, Android Keystore
   software,         // Software-only fallback
