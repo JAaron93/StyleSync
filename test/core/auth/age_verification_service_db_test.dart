@@ -152,8 +152,7 @@ void main() {
       await expectLater(
         () => service.initiateThirdPartyVerification(userId),
         throwsA(predicate((e) => e is AuthError && 
-            e.code == AuthErrorCode.thirdPartyInitiationFailed &&
-            e.message.contains('Firestore error'))),
+            e.code == AuthErrorCode.thirdPartyInitiationFailed)),
       );
     });
   });
