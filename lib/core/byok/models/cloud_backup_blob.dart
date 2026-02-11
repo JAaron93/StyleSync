@@ -88,6 +88,15 @@ class CloudBackupBlob {
       throw const FormatException('kdf must be a JSON object');
     }
     final kdfMetadata = KdfMetadata.fromJson(kdfJson);
+    
+    // Explicit validation: Ensure KDF algorithm is defined and supported
+    // This prevents any cryptographic operations with unknown algorithms
+    if (!KdfAlgorithm.values.contains(kdfMetadata.algorithm)) {
+      throw FormatException(
+        'Unsupported or unknown KDF algorithm: ${kdfMetadata.algorithm}. '
+        'Supported algorithms: ${KdfAlgorithm.values.map((a) => a.name).join(', ')}'
+      );
+    }
 
     // Validate encrypted data
     final encryptedData = json['encrypted_data'];

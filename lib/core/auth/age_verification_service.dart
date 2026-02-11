@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/foundation.dart';
 import 'package:logging/logging.dart';
 
 import 'models/auth_error.dart';
@@ -29,12 +30,18 @@ abstract class AgeVerificationService {
   /// Checks if a user has an active cooldown period.
   Future<bool> hasActiveCooldown(String userId);
 
-  /// Clears the cooldown for a user (e.g., after 24 hours).
+  /// Clears cooldown for a user (e.g., after 24 hours).
   Future<void> clearCooldown(String userId);
-
 
   /// Marks a user as verified in Firestore.
   Future<void> markUserAsVerified(String userId);
+
+  /// Calculates age based on date of birth and an optional reference date (defaults to now).
+  /// 
+  /// This method is exposed for testing purposes only.
+  /// In production code, use [verify18PlusSelfReported] instead.
+  @visibleForTesting
+  int calculateAgeForTesting(DateTime dateOfBirth, {DateTime? referenceDate});
 }
 
 /// Implementation of [AgeVerificationService].
@@ -86,7 +93,7 @@ class AgeVerificationServiceImpl implements AgeVerificationService {
     );
   }
 
-  /// Calculates the age based on date of birth and an optional reference date (defaults to now).
+  /// Calculates age based on date of birth and an optional reference date (defaults to now).
   int _calculateAge(DateTime dateOfBirth, {DateTime? referenceDate}) {
     final now = referenceDate ?? DateTime.now();
     return now.year -
@@ -121,7 +128,7 @@ class AgeVerificationServiceImpl implements AgeVerificationService {
       _logger.warning('Failed to initiate third-party verification for user $userId', e);
       throw AuthError(
         'Failed to initiate third-party verification',
-        AuthErrorCode.verificationInitiationFailed,
+        AuthErrorCode.thirdPartyInitiationFailed,
       );
     }
   }
@@ -177,5 +184,10 @@ class AgeVerificationServiceImpl implements AgeVerificationService {
     } catch (e) {
       throw AuthError('Failed to mark user as verified');
     }
+  }
+
+  @override
+  int calculateAgeForTesting(DateTime dateOfBirth, {DateTime? referenceDate}) {
+    return _calculateAge(dateOfBirth, referenceDate: referenceDate);
   }
 }

@@ -115,11 +115,18 @@ class AuthStateNotifier extends StateNotifier<AuthState> {
 
   /// Signs out the current user.
   Future<void> signOut() async {
+    final prev = state; // Capture current state before operation
+    state = const AuthState.loading();
     try {
       await _authService.signOut();
       state = const AuthState.unauthenticated();
     } catch (e) {
-      state = AuthState.error(e.toString());
+      // Preserve the prior authenticated state and surface the error
+      if (prev.status == AuthStatus.authenticated) {
+        state = prev.copyWith(errorMessage: e.toString());
+      } else {
+        state = AuthState.error(e.toString());
+      }
     }
   }
   /// Updates the user's face detection consent.

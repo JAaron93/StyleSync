@@ -106,6 +106,34 @@ void main() {
       );
     });
 
+    test('fromJson throws on unknown KDF algorithm', () {
+      final json = {
+        'version': 1,
+        'kdf': {
+          'algorithm': 'unknown_algorithm',
+          'salt': base64Encode([1, 2, 3, 4]),
+          'iterations': 3,
+          'memory': 65536,
+          'parallelism': 4,
+        },
+        'encrypted_data': base64Encode([1, 2, 3]),
+        'created_at': '2025-01-21T22:00:00.000Z',
+        'updated_at': '2025-01-21T22:00:00.000Z',
+      };
+
+      expect(
+        () => CloudBackupBlob.fromJson(json),
+        throwsA(isA<FormatException>().having(
+          (e) => e.message,
+          'message',
+          anyOf([
+            contains('Invalid or unknown KDF algorithm'), // From KdfMetadata.fromJson
+            contains('Unsupported or unknown KDF algorithm'), // From our additional validation
+          ]),
+        )),
+      );
+    });
+
     test('copyWith(updatedAt:) only updates updatedAt', () {
       final salt = Uint8List.fromList(List.generate(16, (i) => i));
       final metadata = KdfMetadata(

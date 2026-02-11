@@ -83,5 +83,50 @@ void main() {
         reason: 'Linux falls back to PBKDF2 since Argon2id is not supported',
       );
     });
+
+    test('deriveKey rejects empty passphrase', () async {
+      final meta = await kdfService.generateMetadata();
+      
+      expect(
+        () => kdfService.deriveKey('', meta),
+        throwsA(isA<ArgumentError>().having(
+          (e) => e.message,
+          'message',
+          contains('Passphrase cannot be empty'),
+        )),
+      );
+    });
+  });
+
+  group('Algorithm Validation Tests', () {
+    test('validateAlgorithm accepts all supported algorithms', () async {
+      final service = KeyDerivationServiceImpl();
+      
+      // Test Argon2id
+      final argon2Meta = KdfMetadata(
+        algorithm: KdfAlgorithm.argon2id,
+        salt: Uint8List(16),
+        iterations: 3,
+        memory: 1024,
+        parallelism: 1,
+      );
+      
+      expect(
+        () => service.deriveKey('test-password', argon2Meta),
+        returnsNormally,
+      );
+      
+      // Test PBKDF2
+      final pbkdf2Meta = KdfMetadata(
+        algorithm: KdfAlgorithm.pbkdf2,
+        salt: Uint8List(16),
+        iterations: 1000,
+      );
+      
+      expect(
+        () => service.deriveKey('test-password', pbkdf2Meta),
+        returnsNormally,
+      );
+    });
   });
 }

@@ -1,3 +1,5 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+
 /// Represents a user's profile in the system.
 ///
 /// This model stores user-related information including authentication

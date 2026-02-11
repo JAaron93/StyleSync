@@ -123,17 +123,28 @@ class AuthServiceImpl implements AuthService {
       final userProfile = UserProfile(
         userId: credential.user!.uid,
         email: email,
-        createdAt: DateTime.now(),
+        createdAt: DateTime.now(), // Local use only
         onboardingComplete: false,
         faceDetectionConsentGranted: false,
         biometricConsentGranted: false,
         is18PlusVerified: true,
       );
 
+      // Create user profile data with server timestamp for consistency
+      final userProfileData = {
+        'userId': credential.user!.uid,
+        'email': email,
+        'createdAt': FieldValue.serverTimestamp(),
+        'onboardingComplete': false,
+        'faceDetectionConsentGranted': false,
+        'biometricConsentGranted': false,
+        'is18PlusVerified': true,
+      };
+
       await _firestore
           .collection('users')
           .doc(credential.user!.uid)
-          .set(userProfile.toMap());
+          .set(userProfileData);
 
       return userProfile;
     } on FirebaseAuthException catch (e) {
@@ -194,7 +205,7 @@ class AuthServiceImpl implements AuthService {
       }
       return null;
     } catch (e) {
-      throw AuthError('Failed to retrieve user profile');
+      throw AuthError('Failed to retrieve user profile: ${e.toString()}');
     }
   }
 
@@ -344,7 +355,7 @@ class AuthServiceImpl implements AuthService {
         );
       });
     } catch (e) {
-      throw AuthError('Failed to retrieve user profile');
+      throw AuthError('Failed to retrieve user profile: ${e.toString()}');
     }
   }
 }
