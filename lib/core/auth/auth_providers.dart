@@ -65,12 +65,20 @@ class AuthStateNotifier extends StateNotifier<AuthState> {
 
   /// Initializes the auth state by checking if a user is signed in.
   Future<void> initialize() async {
-    final signedIn = await _authService.isSignedIn();
-    if (signedIn) {
-      final profile = await _authService.getUserProfile();
-      state = AuthState.authenticated(profile);
-    } else {
-      state = const AuthState.unauthenticated();
+    try {
+      final signedIn = await _authService.isSignedIn();
+      if (signedIn) {
+        final profile = await _authService.getUserProfile();
+        if (profile != null) {
+          state = AuthState.authenticated(profile);
+        } else {
+          state = const AuthState.unauthenticated();
+        }
+      } else {
+        state = const AuthState.unauthenticated();
+      }
+    } catch (e) {
+      state = AuthState.error(e.toString());
     }
   }
 
@@ -106,10 +114,8 @@ class AuthStateNotifier extends StateNotifier<AuthState> {
 
   /// Signs out the current user.
   Future<void> signOut() async {
-    await _authService.signOut();
-    state = const AuthState.unauthenticated();
-  }
-
+    try {
+      await _authService.signOut();
   /// Updates the user's face detection consent.
   Future<void> updateFaceDetectionConsent(bool granted) async {
     try {
@@ -121,7 +127,9 @@ class AuthStateNotifier extends StateNotifier<AuthState> {
         );
       }
     } catch (e) {
-      // Update error state but don't change auth state
+      // Log error but preserve auth state
+      debugPrint('Failed to update face detection consent: $e');
+      state = state.copyWith(errorMessage: e.toString());
     }
   }
 
@@ -136,7 +144,9 @@ class AuthStateNotifier extends StateNotifier<AuthState> {
         );
       }
     } catch (e) {
-      // Update error state but don't change auth state
+      // Log error but preserve auth state
+      debugPrint('Failed to update biometric consent: $e');
+      state = state.copyWith(errorMessage: e.toString());
     }
   }
 }

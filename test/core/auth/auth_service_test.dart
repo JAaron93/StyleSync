@@ -14,7 +14,6 @@ void main() {
         faceDetectionConsentGranted: true,
         biometricConsentGranted: true,
         is18PlusVerified: true,
-        dateOfBirth: DateTime(2000, 1, 1),
       );
 
       expect(profile.userId, 'user123');
@@ -31,7 +30,6 @@ void main() {
         faceDetectionConsentGranted: true,
         biometricConsentGranted: true,
         is18PlusVerified: true,
-        dateOfBirth: DateTime(2000, 1, 1),
       );
 
       final map = profile.toMap();

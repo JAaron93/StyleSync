@@ -44,9 +44,21 @@ class AuthErrorCode {
   /// The user is not 18+ years old.
   static const String underAge = 'under-age';
 
+  /// The user is currently in a cooldown period.
+  static const String cooldownActive = 'cooldown-active';
+
   /// The user's account is pending age verification.
   static const String pendingVerification = 'pending-verification';
 
   /// A general error occurred during authentication.
   static const String generalError = 'general-error';
+
+  /// The provided input is invalid.
+  static const String invalidInput = 'invalid-input';
+
+  /// Failed to initiate third-party verification.
+  static const String verificationInitiationFailed = 'third-party-initiation-failed';
+
+  /// The requested feature is not implemented.
+  static const String notImplemented = 'not-implemented';
 }

@@ -14,6 +14,17 @@ class AgeGateDialog extends StatefulWidget {
 
 class _AgeGateDialogState extends State<AgeGateDialog> {
   DateTime? _selectedDate;
+  String? _error;
+
+  bool _is18Plus(DateTime dateOfBirth) {
+    final now = DateTime.now();
+    final age = now.year - dateOfBirth.year -
+        (now.month < dateOfBirth.month ||
+                (now.month == dateOfBirth.month && now.day < dateOfBirth.day)
+            ? 1
+            : 0);
+    return age >= 18;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -45,18 +56,38 @@ class _AgeGateDialogState extends State<AgeGateDialog> {
                 style: Theme.of(context).textTheme.bodyMedium,
               ),
             ],
+            if (_error != null) ...[
+              const SizedBox(height: 16),
+              Text(
+                _error!,
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.error,
+                  fontWeight: FontWeight.bold,
+                ),
+                textAlign: TextAlign.center,
+              ),
+            ],
           ],
         ),
       ),
       actions: [
         TextButton(
-          onPressed: () => Navigator.pop(context, false),
+          onPressed: () => Navigator.pop(context, null),
           child: const Text('Cancel'),
         ),
         ElevatedButton(
+        ElevatedButton(
           onPressed: _selectedDate == null
               ? null
-              : () => Navigator.pop(context, _selectedDate),
+              : () {
+                  if (_is18Plus(_selectedDate!)) {
+                    Navigator.pop(context, _selectedDate);
+                  } else {
+                    setState(() {
+                      _error = 'You must be 18 years or older to use this application.';
+                    });
+                  }
+                },
           child: const Text('Verify Age'),
         ),
       ],
@@ -102,15 +133,18 @@ class _DatePickerWidgetState extends State<DatePickerWidget> {
   void initState() {
     super.initState();
     _selectedDate = widget.initialDate;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      widget.onChanged(_selectedDate);
+    });
   }
 
   @override
   Widget build(BuildContext context) {
-    return DatePicker(
+    return CalendarDatePicker(
       initialDate: _selectedDate,
       firstDate: widget.firstDate,
       lastDate: widget.lastDate,
-      onChangeEnd: (date, __) {
+      onDateChanged: (date) {
         setState(() {
           _selectedDate = date;
         });

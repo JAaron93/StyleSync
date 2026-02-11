@@ -128,7 +128,6 @@ class AuthServiceImpl implements AuthService {
         faceDetectionConsentGranted: false,
         biometricConsentGranted: false,
         is18PlusVerified: true,
-        dateOfBirth: dateOfBirth,
       );
 
       await _firestore
@@ -139,6 +138,8 @@ class AuthServiceImpl implements AuthService {
       return userProfile;
     } on FirebaseAuthException catch (e) {
       throw _mapFirebaseAuthError(e);
+    } on AuthError {
+      rethrow;
     } catch (e) {
       throw AuthError('An unexpected error occurred during sign-up');
     }
@@ -149,6 +150,11 @@ class AuthServiceImpl implements AuthService {
     try {
       // TODO: Implement Google Sign-In
       throw UnimplementedError('Google Sign-In not yet implemented');
+    } on UnimplementedError {
+      throw const AuthError(
+        'Google sign-in not yet implemented',
+        AuthErrorCode.notImplemented,
+      );
     } catch (e) {
       throw AuthError('An unexpected error occurred during Google sign-in');
     }
@@ -159,6 +165,11 @@ class AuthServiceImpl implements AuthService {
     try {
       // TODO: Implement Apple Sign-In
       throw UnimplementedError('Apple Sign-In not yet implemented');
+    } on UnimplementedError {
+      throw const AuthError(
+        'Apple sign-in not yet implemented',
+        AuthErrorCode.notImplemented,
+      );
     } catch (e) {
       throw AuthError('An unexpected error occurred during Apple sign-in');
     }
@@ -227,7 +238,7 @@ class AuthServiceImpl implements AuthService {
       await _firestore
           .collection('users')
           .doc(user.uid)
-          .update({'faceDetectionConsentGranted': granted});
+          .set({'faceDetectionConsentGranted': granted}, SetOptions(merge: true));
     } catch (e) {
       throw AuthError('Failed to update face detection consent');
     }
@@ -244,7 +255,7 @@ class AuthServiceImpl implements AuthService {
       await _firestore
           .collection('users')
           .doc(user.uid)
-          .update({'biometricConsentGranted': granted});
+          .set({'biometricConsentGranted': granted}, SetOptions(merge: true));
     } catch (e) {
       throw AuthError('Failed to update biometric consent');
     }
@@ -305,7 +316,7 @@ class AuthServiceImpl implements AuthService {
       }
 
       // Create a minimal profile if it doesn't exist
-      return UserProfile(
+      final userProfile = UserProfile(
         userId: user.uid,
         email: user.email ?? '',
         createdAt: DateTime.now(),
@@ -314,6 +325,10 @@ class AuthServiceImpl implements AuthService {
         biometricConsentGranted: false,
         is18PlusVerified: false,
       );
+
+      await _firestore.collection('users').doc(user.uid).set(userProfile.toMap());
+
+      return userProfile;
     } catch (e) {
       throw AuthError('Failed to retrieve user profile');
     }

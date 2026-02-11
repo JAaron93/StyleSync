@@ -33,7 +33,8 @@ match /users/{userId} {
     && (!request.resource.data.keys().hasAny(['faceDetectionConsentGranted']) || request.resource.data.faceDetectionConsentGranted is bool)
     && (!request.resource.data.keys().hasAny(['biometricConsentGranted']) || request.resource.data.biometricConsentGranted is bool)
     && (!request.resource.data.keys().hasAny(['is18PlusVerified']) || request.resource.data.is18PlusVerified is bool)
-    && (!request.resource.data.keys().hasAny(['verificationMethod']) || request.resource.data.verificationMethod is string);
+    && (!request.resource.data.keys().hasAny(['verificationMethod']) || request.resource.data.verificationMethod is string)
+    && !request.resource.data.keys().hasAny(['dateOfBirth']); // PII Minimization: Do not persist DOB
   allow update: if request.auth != null && request.auth.uid == userId
     && request.resource.data.userId == resource.data.userId
     && request.resource.data.email == resource.data.email
@@ -43,7 +44,8 @@ match /users/{userId} {
     && (!request.resource.data.keys().hasAny(['faceDetectionConsentGranted']) || request.resource.data.faceDetectionConsentGranted is bool)
     && (!request.resource.data.keys().hasAny(['biometricConsentGranted']) || request.resource.data.biometricConsentGranted is bool)
     && (!request.resource.data.keys().hasAny(['is18PlusVerified']) || request.resource.data.is18PlusVerified is bool)
-    && (!request.resource.data.keys().hasAny(['verificationMethod']) || request.resource.data.verificationMethod is string);
+    && (!request.resource.data.keys().hasAny(['verificationMethod']) || request.resource.data.verificationMethod is string)
+    && !request.resource.data.keys().hasAny(['dateOfBirth']); // PII Minimization: Do not persist DOB
 }
 
 ### Biometric Data Handling
@@ -70,6 +72,15 @@ The `faceDetectionConsentGranted` and `biometricConsentGranted` flags in the use
 - **Retention Duration**: Consent flags are retained for the duration of the account. No biometric data is retained as none is collected.
 
 **Indexes**: None required (single document reads)
+
+---
+
+### Data Minimization & PII Policy
+
+To comply with GDPR and CCPA, the system follows a strict PII minimization policy:
+- **Date of Birth**: Raw DOB is collected during signup for 18+ verification purposes ONLY. It is processed in-memory and NEVER persisted to Firestore or logs.
+- **Age Verification**: Only the result of the verification (`is18PlusVerified`) and the method used (`verificationMethod`) are stored.
+- **Data Erasure**: Deleting a user account removes all associated profile data including email and consent records.
 
 ---
 
@@ -127,6 +138,7 @@ match /clothing_items/{itemId} {
     && resource.data.userId == request.auth.uid
     && request.resource.data.userId == resource.data.userId
     && request.resource.data.createdAt == resource.data.createdAt
+    && request.resource.data.id == resource.data.id
     && request.resource.data.keys().hasAll(['id', 'userId', 'name', 'size', 'price', 'imageUrl', 'uploadedAt', 'createdAt', 'processingState', 'idempotencyKey'])
     && request.resource.data.id is string
     && request.resource.data.name is string
