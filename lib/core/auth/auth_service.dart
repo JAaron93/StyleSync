@@ -119,11 +119,13 @@ class AuthServiceImpl implements AuthService {
         password: password,
       );
 
-      // Create user profile
+      // Create user profile with consistent timestamp
+      // Use current time as placeholder, will be consistent with server timestamp
+      final now = DateTime.now();
       final userProfile = UserProfile(
         userId: credential.user!.uid,
         email: email,
-        createdAt: DateTime.now(), // Local use only
+        createdAt: now,
         onboardingComplete: false,
         faceDetectionConsentGranted: false,
         biometricConsentGranted: false,
@@ -330,6 +332,7 @@ class AuthServiceImpl implements AuthService {
         }
 
         // Create a minimal profile if it doesn't exist
+        final now = DateTime.now();
         final userProfileData = {
           'userId': user.uid,
           'email': user.email ?? '',
@@ -342,12 +345,12 @@ class AuthServiceImpl implements AuthService {
 
         transaction.set(docRef, userProfileData);
 
-        // Create UserProfile object with current time for local use
-        // (server timestamp will be used in Firestore)
+        // Create UserProfile object with consistent timestamp
+        // (server timestamp will be used in Firestore, local time for immediate use)
         return UserProfile(
           userId: user.uid,
           email: user.email ?? '',
-          createdAt: DateTime.now(),
+          createdAt: now,
           onboardingComplete: false,
           faceDetectionConsentGranted: false,
           biometricConsentGranted: false,

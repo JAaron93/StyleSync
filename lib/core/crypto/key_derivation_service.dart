@@ -25,9 +25,6 @@ class KeyDerivationServiceImpl implements KeyDerivationService {
       throw ArgumentError('Passphrase cannot be empty');
     }
     
-    // Validate algorithm before proceeding with cryptographic operations
-    _validateAlgorithm(metadata.algorithm);
-    
     switch (metadata.algorithm) {
       case KdfAlgorithm.argon2id:
         return _deriveWithArgon2id(passphrase, metadata);
@@ -86,19 +83,6 @@ class KeyDerivationServiceImpl implements KeyDerivationService {
   Uint8List _generateRandomSalt(int length) {
     final random = Random.secure();
     return Uint8List.fromList(List.generate(length, (_) => random.nextInt(256)));
-  }
-
-  /// Validates that the KDF algorithm is supported and not unknown.
-  /// 
-  /// Throws [ArgumentError] if the algorithm is not supported.
-  /// This is a safety check to prevent cryptographic operations with undefined algorithms.
-  void _validateAlgorithm(KdfAlgorithm algorithm) {
-    // Since we don't have an 'unknown' enum value in the actual implementation,
-    // this serves as a defensive programming measure and explicit documentation
-    // of the algorithm validation requirement.
-    if (!KdfAlgorithm.values.contains(algorithm)) {
-      throw ArgumentError('Unsupported KDF algorithm: $algorithm');
-    }
   }
 }
 
