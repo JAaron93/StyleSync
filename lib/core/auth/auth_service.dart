@@ -99,7 +99,7 @@ class AuthServiceImpl implements AuthService {
     } on FirebaseAuthException catch (e) {
       throw _mapFirebaseAuthError(e);
     } catch (e) {
-      throw AuthError('An unexpected error occurred during sign-in');
+      throw AuthError('An unexpected error occurred during sign-in: ${e.toString()}');
     }
   }
 
@@ -154,7 +154,7 @@ class AuthServiceImpl implements AuthService {
     } on AuthError {
       rethrow;
     } catch (e) {
-      throw AuthError('An unexpected error occurred during sign-up');
+      throw AuthError('An unexpected error occurred during sign-up: ${e.toString()}');
     }
   }
 
@@ -169,7 +169,7 @@ class AuthServiceImpl implements AuthService {
         AuthErrorCode.notImplemented,
       );
     } catch (e) {
-      throw AuthError('An unexpected error occurred during Google sign-in');
+      throw AuthError('An unexpected error occurred during Google sign-in: ${e.toString()}');
     }
   }
 
@@ -184,7 +184,7 @@ class AuthServiceImpl implements AuthService {
         AuthErrorCode.notImplemented,
       );
     } catch (e) {
-      throw AuthError('An unexpected error occurred during Apple sign-in');
+      throw AuthError('An unexpected error occurred during Apple sign-in: ${e.toString()}');
     }
   }
 
@@ -219,7 +219,7 @@ class AuthServiceImpl implements AuthService {
           .doc(profile.userId)
           .set(profile.toMap(), SetOptions(merge: true));
     } catch (e) {
-      throw AuthError('Failed to save user profile');
+      throw AuthError('Failed to save user profile: ${e.toString()}');
     }
   }
 
@@ -253,7 +253,7 @@ class AuthServiceImpl implements AuthService {
           .doc(user.uid)
           .set({'faceDetectionConsentGranted': granted}, SetOptions(merge: true));
     } catch (e) {
-      throw AuthError('Failed to update face detection consent');
+      throw AuthError('Failed to update face detection consent: ${e.toString()}');
     }
   }
 
@@ -270,7 +270,7 @@ class AuthServiceImpl implements AuthService {
           .doc(user.uid)
           .set({'biometricConsentGranted': granted}, SetOptions(merge: true));
     } catch (e) {
-      throw AuthError('Failed to update biometric consent');
+      throw AuthError('Failed to update biometric consent: ${e.toString()}');
     }
   }
 

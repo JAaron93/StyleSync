@@ -95,6 +95,9 @@ class AgeVerificationServiceImpl implements AgeVerificationService {
 
   /// Calculates age based on date of birth and an optional reference date (defaults to now).
   int _calculateAge(DateTime dateOfBirth, {DateTime? referenceDate}) {
+    // Input validation
+    _validateDateInputs(dateOfBirth, referenceDate);
+    
     final now = referenceDate ?? DateTime.now();
     return now.year -
         dateOfBirth.year -
@@ -102,6 +105,52 @@ class AgeVerificationServiceImpl implements AgeVerificationService {
                 (now.month == dateOfBirth.month && now.day < dateOfBirth.day)
             ? 1
             : 0);
+  }
+
+  /// Validates date inputs for age calculation.
+  /// 
+  /// Throws [ArgumentError] if dates are invalid or unreasonable.
+  void _validateDateInputs(DateTime dateOfBirth, DateTime? referenceDate) {
+    final now = referenceDate ?? DateTime.now();
+    
+    // Check if date of birth is in the future
+    if (dateOfBirth.isAfter(now)) {
+      throw ArgumentError(
+        'Date of birth cannot be in the future. Provided: ${dateOfBirth.toIso8601String()}, '
+        'Reference: ${now.toIso8601String()}'
+      );
+    }
+    
+    // Check for unreasonable ages (e.g., older than 150 years)
+    final maxReasonableAge = 150;
+    final calculatedAge = now.year - dateOfBirth.year;
+    if (calculatedAge > maxReasonableAge) {
+      throw ArgumentError(
+        'Date of birth indicates an unreasonable age. Maximum supported age is $maxReasonableAge years. '
+        'Provided date: ${dateOfBirth.toIso8601String()}'
+      );
+    }
+    
+    // Check for dates that are too far in the past (before year 1900)
+    final minReasonableYear = 1900;
+    if (dateOfBirth.year < minReasonableYear) {
+      throw ArgumentError(
+        'Date of birth is too far in the past. Minimum supported year is $minReasonableYear. '
+        'Provided year: ${dateOfBirth.year}'
+      );
+    }
+    
+    // Validate that reference date is not in the distant future (more than 1 day from now)
+    if (referenceDate != null) {
+      final maxFutureDelta = Duration(days: 1);
+      final futureDifference = referenceDate.difference(DateTime.now());
+      if (futureDifference > maxFutureDelta) {
+        throw ArgumentError(
+          'Reference date cannot be more than ${maxFutureDelta.inDays} days in the future. '
+          'Provided: ${referenceDate.toIso8601String()}'
+        );
+      }
+    }
   }
 
   /// Records a cooldown timestamp for the given [userId].
@@ -125,9 +174,9 @@ class AgeVerificationServiceImpl implements AgeVerificationService {
         'thirdPartyVerificationRequestedAt': FieldValue.serverTimestamp(),
       }, SetOptions(merge: true));
     } catch (e) {
-      _logger.warning('Failed to initiate third-party verification for user $userId', e);
+      _logger.warning('Failed to initiate third-party verification for user $userId: ${e.toString()}', e);
       throw AuthError(
-        'Failed to initiate third-party verification',
+        'Failed to initiate third-party verification for user $userId: ${e.toString()}',
         AuthErrorCode.thirdPartyInitiationFailed,
       );
     }
@@ -171,7 +220,7 @@ class AgeVerificationServiceImpl implements AgeVerificationService {
         _kCooldownKey: FieldValue.delete(),
       }, SetOptions(merge: true));
     } catch (e) {
-      throw AuthError('Failed to clear cooldown period');
+      throw AuthError('Failed to clear cooldown period: ${e.toString()}');
     }
   }
 
@@ -182,7 +231,7 @@ class AgeVerificationServiceImpl implements AgeVerificationService {
         _kVerifiedKey: true,
       }, SetOptions(merge: true));
     } catch (e) {
-      throw AuthError('Failed to mark user as verified');
+      throw AuthError('Failed to mark user as verified: ${e.toString()}');
     }
   }
 

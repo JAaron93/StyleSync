@@ -122,7 +122,7 @@ class AuthStateNotifier extends StateNotifier<AuthState> {
       state = const AuthState.unauthenticated();
     } catch (e) {
       // Preserve the prior authenticated state and surface the error
-      if (prev.status == AuthStatus.authenticated) {
+      if (prev.status == AuthStatus.authenticated && prev.profile != null) {
         state = prev.copyWith(errorMessage: e.toString());
       } else {
         state = AuthState.error(e.toString());
@@ -131,6 +131,12 @@ class AuthStateNotifier extends StateNotifier<AuthState> {
   }
   /// Updates the user's face detection consent.
   Future<void> updateFaceDetectionConsent(bool granted) async {
+    // Only allow consent updates if user is authenticated
+    if (state.status != AuthStatus.authenticated || state.profile == null) {
+      state = AuthState.error('User must be authenticated to update consent');
+      return;
+    }
+    
     try {
       await _authService.updateFaceDetectionConsent(granted);
       final profile = await _authService.getUserProfile();
@@ -148,6 +154,12 @@ class AuthStateNotifier extends StateNotifier<AuthState> {
 
   /// Updates the user's biometric consent.
   Future<void> updateBiometricConsent(bool granted) async {
+    // Only allow consent updates if user is authenticated
+    if (state.status != AuthStatus.authenticated || state.profile == null) {
+      state = AuthState.error('User must be authenticated to update consent');
+      return;
+    }
+    
     try {
       await _authService.updateBiometricConsent(granted);
       final profile = await _authService.getUserProfile();
