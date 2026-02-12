@@ -1,8 +1,12 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:logging/logging.dart';
 
 import 'models/user_profile.dart';
 import 'models/auth_error.dart';
+
+/// Logger for authentication operations.
+final Logger _logger = Logger('AuthService');
 
 /// Abstract interface for authentication services.
 ///
@@ -99,7 +103,8 @@ class AuthServiceImpl implements AuthService {
     } on FirebaseAuthException catch (e) {
       throw _mapFirebaseAuthError(e);
     } catch (e) {
-      throw AuthError('An unexpected error occurred during sign-in: ${e.toString()}');
+      _logger.warning('Unexpected error during sign-in', e);
+      throw AuthError('An unexpected error occurred during sign-in');
     }
   }
 
@@ -119,8 +124,8 @@ class AuthServiceImpl implements AuthService {
         password: password,
       );
 
-      // Create user profile with consistent timestamp
-      // Use current time as placeholder, will be consistent with server timestamp
+      // Create user profile with local timestamp for immediate use.
+      // Note: Firestore stores server timestamp, which may differ from this value.
       final now = DateTime.now();
       final userProfile = UserProfile(
         userId: credential.user!.uid,
@@ -154,7 +159,8 @@ class AuthServiceImpl implements AuthService {
     } on AuthError {
       rethrow;
     } catch (e) {
-      throw AuthError('An unexpected error occurred during sign-up: ${e.toString()}');
+      _logger.warning('Unexpected error during sign-up', e);
+      throw AuthError('An unexpected error occurred during sign-up');
     }
   }
 
@@ -169,7 +175,8 @@ class AuthServiceImpl implements AuthService {
         AuthErrorCode.notImplemented,
       );
     } catch (e) {
-      throw AuthError('An unexpected error occurred during Google sign-in: ${e.toString()}');
+      _logger.warning('Unexpected error during Google sign-in', e);
+      throw AuthError('An unexpected error occurred during Google sign-in');
     }
   }
 
@@ -184,7 +191,8 @@ class AuthServiceImpl implements AuthService {
         AuthErrorCode.notImplemented,
       );
     } catch (e) {
-      throw AuthError('An unexpected error occurred during Apple sign-in: ${e.toString()}');
+      _logger.warning('Unexpected error during Apple sign-in', e);
+      throw AuthError('An unexpected error occurred during Apple sign-in');
     }
   }
 
@@ -207,7 +215,8 @@ class AuthServiceImpl implements AuthService {
       }
       return null;
     } catch (e) {
-      throw AuthError('Failed to retrieve user profile: ${e.toString()}');
+      _logger.warning('Failed to retrieve user profile', e);
+      throw AuthError('Failed to retrieve user profile');
     }
   }
 
@@ -219,7 +228,8 @@ class AuthServiceImpl implements AuthService {
           .doc(profile.userId)
           .set(profile.toMap(), SetOptions(merge: true));
     } catch (e) {
-      throw AuthError('Failed to save user profile: ${e.toString()}');
+      _logger.warning('Failed to save user profile', e);
+      throw AuthError('Failed to save user profile');
     }
   }
 
@@ -253,7 +263,8 @@ class AuthServiceImpl implements AuthService {
           .doc(user.uid)
           .set({'faceDetectionConsentGranted': granted}, SetOptions(merge: true));
     } catch (e) {
-      throw AuthError('Failed to update face detection consent: ${e.toString()}');
+      _logger.warning('Failed to update face detection consent', e);
+      throw AuthError('Failed to update face detection consent');
     }
   }
 
@@ -270,7 +281,8 @@ class AuthServiceImpl implements AuthService {
           .doc(user.uid)
           .set({'biometricConsentGranted': granted}, SetOptions(merge: true));
     } catch (e) {
-      throw AuthError('Failed to update biometric consent: ${e.toString()}');
+      _logger.warning('Failed to update biometric consent', e);
+      throw AuthError('Failed to update biometric consent');
     }
   }
 
@@ -358,7 +370,8 @@ class AuthServiceImpl implements AuthService {
         );
       });
     } catch (e) {
-      throw AuthError('Failed to retrieve user profile: ${e.toString()}');
+      _logger.warning('Failed to retrieve user profile in transaction', e);
+      throw AuthError('Failed to retrieve user profile');
     }
   }
 }

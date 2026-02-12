@@ -129,13 +129,22 @@ class AuthStateNotifier extends StateNotifier<AuthState> {
       }
     }
   }
-  /// Updates the user's face detection consent.
-  Future<void> updateFaceDetectionConsent(bool granted) async {
-    // Only allow consent updates if user is authenticated
+
+  /// Private helper to require authenticated state.
+  /// 
+  /// Returns true if user is authenticated, false otherwise.
+  /// Sets error state and returns false when authentication is required.
+  bool _requireAuthenticated() {
     if (state.status != AuthStatus.authenticated || state.profile == null) {
       state = AuthState.error('User must be authenticated to update consent');
-      return;
+      return false;
     }
+    return true;
+  }
+
+  /// Updates the user's face detection consent.
+  Future<void> updateFaceDetectionConsent(bool granted) async {
+    if (!_requireAuthenticated()) return;
     
     try {
       await _authService.updateFaceDetectionConsent(granted);
@@ -154,11 +163,7 @@ class AuthStateNotifier extends StateNotifier<AuthState> {
 
   /// Updates the user's biometric consent.
   Future<void> updateBiometricConsent(bool granted) async {
-    // Only allow consent updates if user is authenticated
-    if (state.status != AuthStatus.authenticated || state.profile == null) {
-      state = AuthState.error('User must be authenticated to update consent');
-      return;
-    }
+    if (!_requireAuthenticated()) return;
     
     try {
       await _authService.updateBiometricConsent(granted);

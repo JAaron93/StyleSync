@@ -100,7 +100,6 @@ void main() {
       });
 
       test('should throw ArgumentError when reference date is too far in future', () {
-        // This test checks validation against actual current time
         final dateOfBirth = DateTime(2000, 1, 15);
         final futureReference = DateTime.now().add(Duration(days: 5)); // 5 days in future
         
@@ -109,7 +108,7 @@ void main() {
           throwsA(isA<ArgumentError>().having(
             (e) => e.message,
             'message',
-            contains('more than 1 days in the future'),
+            contains('more than 1 day in the future'),
           )),
         );
       });

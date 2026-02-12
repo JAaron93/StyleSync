@@ -140,13 +140,14 @@ class AgeVerificationServiceImpl implements AgeVerificationService {
       );
     }
     
-    // Validate that reference date is not in the distant future (more than 1 day from now)
+    // Validate that reference date is not in the distant future (more than 1 day from actual now)
     if (referenceDate != null) {
       final maxFutureDelta = Duration(days: 1);
-      final futureDifference = referenceDate.difference(DateTime.now());
+      final actualNow = DateTime.now();
+      final futureDifference = referenceDate.difference(actualNow);
       if (futureDifference > maxFutureDelta) {
         throw ArgumentError(
-          'Reference date cannot be more than ${maxFutureDelta.inDays} days in the future. '
+          'Reference date cannot be more than ${maxFutureDelta.inDays} day in the future. '
           'Provided: ${referenceDate.toIso8601String()}'
         );
       }
@@ -176,7 +177,7 @@ class AgeVerificationServiceImpl implements AgeVerificationService {
     } catch (e) {
       _logger.warning('Failed to initiate third-party verification for user $userId: ${e.toString()}', e);
       throw AuthError(
-        'Failed to initiate third-party verification for user $userId: ${e.toString()}',
+        'Failed to initiate third-party verification. Please try again later.',
         AuthErrorCode.thirdPartyInitiationFailed,
       );
     }
@@ -220,7 +221,8 @@ class AgeVerificationServiceImpl implements AgeVerificationService {
         _kCooldownKey: FieldValue.delete(),
       }, SetOptions(merge: true));
     } catch (e) {
-      throw AuthError('Failed to clear cooldown period: ${e.toString()}');
+      _logger.warning('Failed to clear cooldown for user $userId', e);
+      throw AuthError('Failed to clear cooldown period');
     }
   }
 
@@ -231,7 +233,8 @@ class AgeVerificationServiceImpl implements AgeVerificationService {
         _kVerifiedKey: true,
       }, SetOptions(merge: true));
     } catch (e) {
-      throw AuthError('Failed to mark user as verified: ${e.toString()}');
+      _logger.warning('Failed to mark user as verified for user $userId', e);
+      throw AuthError('Failed to mark user as verified');
     }
   }
 
