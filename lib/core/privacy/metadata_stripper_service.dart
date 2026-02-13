@@ -30,8 +30,8 @@ class MetadataStripperServiceImpl implements MetadataStripperService {
     
     // Write to a new file with .png extension
     final tempDir = await imageFile.parent.createTemp('stripped_');
-    final fileName = imageFile.path.split('/').last;
-    final strippedFile = File('${tempDir.path}/$fileName.png');
+    final baseName = p.basenameWithoutExtension(imageFile.path);
+    final strippedFile = File(p.join(tempDir.path, '$baseName.png'));
     await strippedFile.writeAsBytes(encoded);
     
     return strippedFile;

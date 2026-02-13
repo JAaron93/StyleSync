@@ -19,6 +19,16 @@ void main() {
         }
       }
       
+      // Add explicit EXIF metadata to ensure stripping reduces size
+      // Set EXIF fields for camera make, model, and timestamp
+      testImage.exif?.setTagString(img.ExifTags.make, 'TestCamera');
+      testImage.exif?.setTagString(img.ExifTags.model, 'TestModel');
+      testImage.exif?.setTagString(img.ExifTags.software, 'TestSoftware');
+      testImage.exif?.setTagString(img.ExifTags.artist, 'TestArtist');
+      testImage.exif?.setTagString(img.ExifTags.copyright, 'TestCopyright');
+      testImage.exif?.setTagString(img.ExifTags.dateTimeOriginal, '2024:01:01 00:00:00');
+      testImage.exif?.setTagString(img.ExifTags.createDate, '2024:01:01 00:00:00');
+      
       // Encode to JPEG (which supports EXIF)
       final jpegBytes = img.encodeJpg(testImage);
       
@@ -43,7 +53,7 @@ void main() {
         expect(strippedImage?.width, 100);
         expect(strippedImage?.height, 100);
         
-        // Check a sample pixel to verify data integrity (allow small variance due to PNG encoding)
+        // Check a sample pixel to verify data integrity (allow small variance due to JPEG lossy encoding)
         final samplePixel = strippedImage?.getPixel(50, 50);
         expect(samplePixel?.r, greaterThan(120));
         expect(samplePixel?.g, greaterThan(50));
@@ -101,13 +111,17 @@ void main() {
       final tempFile = File('${tempDir.path}/not_an_image.txt');
       await tempFile.writeAsString('This is not an image');
       
-      expect(
-        () => service.stripMetadata(tempFile),
-        throwsA(anything), // Should throw an error
-      );
-      
-      await tempFile.delete();
-      await tempDir.delete(recursive: true);
+      try {
+        await expectLater(
+          service.stripMetadata(tempFile),
+          throwsA(isA<Exception>()), // More specific error type if known
+        );
+      } finally {
+        if (await tempFile.exists()) {
+          await tempFile.delete();
+        }
+        await tempDir.delete(recursive: true);
+      }
     });
   });
 }

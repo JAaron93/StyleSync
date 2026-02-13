@@ -103,8 +103,11 @@ class AuthServiceImpl implements AuthService {
     } on FirebaseAuthException catch (e) {
       throw _mapFirebaseAuthError(e);
     } catch (e) {
-      _logger.warning('Unexpected error during sign-in', e);
-      throw AuthError('An unexpected error occurred during sign-in');
+      _logger.warning('Unexpected error during sign-in: ${e.toString()}');
+      throw AuthError(
+        'An unexpected error occurred during sign-in',
+        AuthErrorCode.generalError,
+      );
     }
   }
 

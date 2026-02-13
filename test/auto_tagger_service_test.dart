@@ -5,26 +5,48 @@ import 'package:stylesync/core/privacy/auto_tagger_service.dart';
 
 void main() {
   late AutoTaggerServiceImpl service;
+  final List<Directory> tempDirs = [];
 
   setUp(() {
     service = AutoTaggerServiceImpl();
   });
 
+  tearDown(() {
+    for (final dir in tempDirs) {
+      dir.deleteSync(recursive: true);
+    }
+    tempDirs.clear();
+  });
+
+  /// Helper to create a test image file with specified dimensions and color.
+  /// Returns the created File and its temp Directory (caller must add to tempDirs).
+  (File file, Directory dir) createTestImage({
+    required int width,
+    required int height,
+    required int r,
+    required int g,
+    required int b,
+  }) {
+    final image = img.Image(width: width, height: height);
+    for (var y = 0; y < image.height; y++) {
+      for (var x = 0; x < image.width; x++) {
+        image.setPixel(x, y, img.ColorRgb8(r, g, b));
+      }
+    }
+
+    final tempDir = Directory.systemTemp.createTempSync('auto_tagger_test_');
+    final file = File('${tempDir.path}/test_image.png');
+    final encoded = img.encodePng(image);
+    file.writeAsBytesSync(encoded);
+
+    return (file, tempDir);
+  }
+
   group('AutoTaggerServiceImpl', () {
     group('analyzeTags', () {
       test('should return valid tags for a simple image', () async {
-        // Create a simple test image
-        final image = img.Image(width: 300, height: 300);
-        for (var y = 0; y < image.height; y++) {
-          for (var x = 0; x < image.width; x++) {
-            image.setPixel(x, y, img.ColorRgb8(255, 0, 0));
-          }
-        }
-
-        final tempDir = Directory.systemTemp.createTempSync('auto_tagger_test_');
-        final file = File('${tempDir.path}/test_image.png');
-        final encoded = img.encodePng(image);
-        file.writeAsBytesSync(encoded);
+        final (file, tempDir) = createTestImage(width: 300, height: 300, r: 255, g: 0, b: 0);
+        tempDirs.add(tempDir);
 
         final tags = await service.analyzeTags(file);
 
@@ -45,18 +67,8 @@ void main() {
       });
 
       test('should categorize square images as tops', () async {
-        // Create a square image (aspect ratio ~1.0)
-        final image = img.Image(width: 300, height: 300);
-        for (var y = 0; y < image.height; y++) {
-          for (var x = 0; x < image.width; x++) {
-            image.setPixel(x, y, img.ColorRgb8(100, 150, 200));
-          }
-        }
-
-        final tempDir = Directory.systemTemp.createTempSync('auto_tagger_test_');
-        final file = File('${tempDir.path}/test_image.png');
-        final encoded = img.encodePng(image);
-        file.writeAsBytesSync(encoded);
+        final (file, tempDir) = createTestImage(width: 300, height: 300, r: 100, g: 150, b: 200);
+        tempDirs.add(tempDir);
 
         final tags = await service.analyzeTags(file);
 
@@ -64,18 +76,8 @@ void main() {
       });
 
       test('should categorize tall images as bottoms', () async {
-        // Create a tall image (aspect ratio < 0.7)
-        final image = img.Image(width: 200, height: 500);
-        for (var y = 0; y < image.height; y++) {
-          for (var x = 0; x < image.width; x++) {
-            image.setPixel(x, y, img.ColorRgb8(50, 100, 150));
-          }
-        }
-
-        final tempDir = Directory.systemTemp.createTempSync('auto_tagger_test_');
-        final file = File('${tempDir.path}/test_image.png');
-        final encoded = img.encodePng(image);
-        file.writeAsBytesSync(encoded);
+        final (file, tempDir) = createTestImage(width: 200, height: 500, r: 50, g: 100, b: 150);
+        tempDirs.add(tempDir);
 
         final tags = await service.analyzeTags(file);
 
@@ -83,18 +85,8 @@ void main() {
       });
 
       test('should categorize wide images as shoes', () async {
-        // Create a wide image (aspect ratio > 1.5)
-        final image = img.Image(width: 400, height: 200);
-        for (var y = 0; y < image.height; y++) {
-          for (var x = 0; x < image.width; x++) {
-            image.setPixel(x, y, img.ColorRgb8(25, 50, 75));
-          }
-        }
-
-        final tempDir = Directory.systemTemp.createTempSync('auto_tagger_test_');
-        final file = File('${tempDir.path}/test_image.png');
-        final encoded = img.encodePng(image);
-        file.writeAsBytesSync(encoded);
+        final (file, tempDir) = createTestImage(width: 400, height: 200, r: 25, g: 50, b: 75);
+        tempDirs.add(tempDir);
 
         final tags = await service.analyzeTags(file);
 
@@ -102,19 +94,8 @@ void main() {
       });
 
       test('should categorize other images as accessories', () async {
-        // Create an image with aspect ratio between 0.7 and 0.8
-        // Using dimensions that give aspect ratio ~0.75
-        final image = img.Image(width: 300, height: 400);
-        for (var y = 0; y < image.height; y++) {
-          for (var x = 0; x < image.width; x++) {
-            image.setPixel(x, y, img.ColorRgb8(200, 100, 50));
-          }
-        }
-
-        final tempDir = Directory.systemTemp.createTempSync('auto_tagger_test_');
-        final file = File('${tempDir.path}/test_image.png');
-        final encoded = img.encodePng(image);
-        file.writeAsBytesSync(encoded);
+        final (file, tempDir) = createTestImage(width: 300, height: 400, r: 200, g: 100, b: 50);
+        tempDirs.add(tempDir);
 
         final tags = await service.analyzeTags(file);
 
@@ -125,18 +106,8 @@ void main() {
       });
 
       test('should extract white color from light image', () async {
-        // Create a white image
-        final image = img.Image(width: 100, height: 100);
-        for (var y = 0; y < image.height; y++) {
-          for (var x = 0; x < image.width; x++) {
-            image.setPixel(x, y, img.ColorRgb8(255, 255, 255));
-          }
-        }
-
-        final tempDir = Directory.systemTemp.createTempSync('auto_tagger_test_');
-        final file = File('${tempDir.path}/test_image.png');
-        final encoded = img.encodePng(image);
-        file.writeAsBytesSync(encoded);
+        final (file, tempDir) = createTestImage(width: 100, height: 100, r: 255, g: 255, b: 255);
+        tempDirs.add(tempDir);
 
         final tags = await service.analyzeTags(file);
 
@@ -144,18 +115,8 @@ void main() {
       });
 
       test('should extract black color from dark image', () async {
-        // Create a black image
-        final image = img.Image(width: 100, height: 100);
-        for (var y = 0; y < image.height; y++) {
-          for (var x = 0; x < image.width; x++) {
-            image.setPixel(x, y, img.ColorRgb8(0, 0, 0));
-          }
-        }
-
-        final tempDir = Directory.systemTemp.createTempSync('auto_tagger_test_');
-        final file = File('${tempDir.path}/test_image.png');
-        final encoded = img.encodePng(image);
-        file.writeAsBytesSync(encoded);
+        final (file, tempDir) = createTestImage(width: 100, height: 100, r: 0, g: 0, b: 0);
+        tempDirs.add(tempDir);
 
         final tags = await service.analyzeTags(file);
 
@@ -163,18 +124,8 @@ void main() {
       });
 
       test('should extract red color from red image', () async {
-        // Create a red image
-        final image = img.Image(width: 100, height: 100);
-        for (var y = 0; y < image.height; y++) {
-          for (var x = 0; x < image.width; x++) {
-            image.setPixel(x, y, img.ColorRgb8(255, 0, 0));
-          }
-        }
-
-        final tempDir = Directory.systemTemp.createTempSync('auto_tagger_test_');
-        final file = File('${tempDir.path}/test_image.png');
-        final encoded = img.encodePng(image);
-        file.writeAsBytesSync(encoded);
+        final (file, tempDir) = createTestImage(width: 100, height: 100, r: 255, g: 0, b: 0);
+        tempDirs.add(tempDir);
 
         final tags = await service.analyzeTags(file);
 
@@ -182,18 +133,8 @@ void main() {
       });
 
       test('should extract green color from green image', () async {
-        // Create a green image
-        final image = img.Image(width: 100, height: 100);
-        for (var y = 0; y < image.height; y++) {
-          for (var x = 0; x < image.width; x++) {
-            image.setPixel(x, y, img.ColorRgb8(0, 255, 0));
-          }
-        }
-
-        final tempDir = Directory.systemTemp.createTempSync('auto_tagger_test_');
-        final file = File('${tempDir.path}/test_image.png');
-        final encoded = img.encodePng(image);
-        file.writeAsBytesSync(encoded);
+        final (file, tempDir) = createTestImage(width: 100, height: 100, r: 0, g: 255, b: 0);
+        tempDirs.add(tempDir);
 
         final tags = await service.analyzeTags(file);
 
@@ -201,18 +142,8 @@ void main() {
       });
 
       test('should extract blue color from blue image', () async {
-        // Create a blue image
-        final image = img.Image(width: 100, height: 100);
-        for (var y = 0; y < image.height; y++) {
-          for (var x = 0; x < image.width; x++) {
-            image.setPixel(x, y, img.ColorRgb8(0, 0, 255));
-          }
-        }
-
-        final tempDir = Directory.systemTemp.createTempSync('auto_tagger_test_');
-        final file = File('${tempDir.path}/test_image.png');
-        final encoded = img.encodePng(image);
-        file.writeAsBytesSync(encoded);
+        final (file, tempDir) = createTestImage(width: 100, height: 100, r: 0, g: 0, b: 255);
+        tempDirs.add(tempDir);
 
         final tags = await service.analyzeTags(file);
 
@@ -220,18 +151,8 @@ void main() {
       });
 
       test('should suggest spring/summer for light colors', () async {
-        // Create a white/yellow image
-        final image = img.Image(width: 100, height: 100);
-        for (var y = 0; y < image.height; y++) {
-          for (var x = 0; x < image.width; x++) {
-            image.setPixel(x, y, img.ColorRgb8(255, 255, 200));
-          }
-        }
-
-        final tempDir = Directory.systemTemp.createTempSync('auto_tagger_test_');
-        final file = File('${tempDir.path}/test_image.png');
-        final encoded = img.encodePng(image);
-        file.writeAsBytesSync(encoded);
+        final (file, tempDir) = createTestImage(width: 100, height: 100, r: 255, g: 255, b: 200);
+        tempDirs.add(tempDir);
 
         final tags = await service.analyzeTags(file);
 
@@ -241,18 +162,8 @@ void main() {
       });
 
       test('should suggest fall for warm colors', () async {
-        // Create an orange/brown image
-        final image = img.Image(width: 100, height: 100);
-        for (var y = 0; y < image.height; y++) {
-          for (var x = 0; x < image.width; x++) {
-            image.setPixel(x, y, img.ColorRgb8(255, 100, 50));
-          }
-        }
-
-        final tempDir = Directory.systemTemp.createTempSync('auto_tagger_test_');
-        final file = File('${tempDir.path}/test_image.png');
-        final encoded = img.encodePng(image);
-        file.writeAsBytesSync(encoded);
+        final (file, tempDir) = createTestImage(width: 100, height: 100, r: 255, g: 100, b: 50);
+        tempDirs.add(tempDir);
 
         final tags = await service.analyzeTags(file);
 
@@ -260,18 +171,8 @@ void main() {
       });
 
       test('should suggest winter for dark colors', () async {
-        // Create a dark blue/black image
-        final image = img.Image(width: 100, height: 100);
-        for (var y = 0; y < image.height; y++) {
-          for (var x = 0; x < image.width; x++) {
-            image.setPixel(x, y, img.ColorRgb8(0, 0, 100));
-          }
-        }
-
-        final tempDir = Directory.systemTemp.createTempSync('auto_tagger_test_');
-        final file = File('${tempDir.path}/test_image.png');
-        final encoded = img.encodePng(image);
-        file.writeAsBytesSync(encoded);
+        final (file, tempDir) = createTestImage(width: 100, height: 100, r: 0, g: 0, b: 100);
+        tempDirs.add(tempDir);
 
         final tags = await service.analyzeTags(file);
 
@@ -282,18 +183,8 @@ void main() {
       });
 
       test('should return all-season for neutral colors', () async {
-        // Create a gray image
-        final image = img.Image(width: 100, height: 100);
-        for (var y = 0; y < image.height; y++) {
-          for (var x = 0; x < image.width; x++) {
-            image.setPixel(x, y, img.ColorRgb8(128, 128, 128));
-          }
-        }
-
-        final tempDir = Directory.systemTemp.createTempSync('auto_tagger_test_');
-        final file = File('${tempDir.path}/test_image.png');
-        final encoded = img.encodePng(image);
-        file.writeAsBytesSync(encoded);
+        final (file, tempDir) = createTestImage(width: 100, height: 100, r: 128, g: 128, b: 128);
+        tempDirs.add(tempDir);
 
         final tags = await service.analyzeTags(file);
 

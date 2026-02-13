@@ -28,13 +28,20 @@ abstract class ConsentManager {
   Future<void> clearAllConsents();
 }
 
+import 'package:shared_preferences/shared_preferences.dart';
+
 class ConsentManagerImpl implements ConsentManager {
   static const String _faceDetectionConsentKey = 'face_detection_consent';
   static const String _biometricConsentKey = 'biometric_consent';
 
-  final Map<String, bool> _consents = {};
+  final SharedPreferences _prefs;
 
-  ConsentManagerImpl();
+  ConsentManagerImpl(this._prefs);
+
+  @override
+  Future<bool> hasFaceDetectionConsent() async {
+    return _prefs.getBool(_faceDetectionConsentKey) ?? false;
+  }
 
   @override
   Future<bool> hasFaceDetectionConsent() async {

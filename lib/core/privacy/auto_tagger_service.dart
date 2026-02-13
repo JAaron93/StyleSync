@@ -42,7 +42,7 @@ class ClothingTags {
 
   factory ClothingTags.fromJson(Map<String, dynamic> json) {
     return ClothingTags(
-      category: json['category'] as String,
+      category: json['category'] as String? ?? 'unknown',
       colors: List<String>.from(json['colors'] ?? []),
       seasons: List<String>.from(json['seasons'] ?? []),
       additionalAttributes: Map<String, dynamic>.from(json['additionalAttributes'] ?? {}),
@@ -84,8 +84,10 @@ class AutoTaggerServiceImpl implements AutoTaggerService {
   String _categorizeClothing(img.Image image) {
     final width = image.width;
     final height = image.height;
+    if (height == 0) {
+      return 'accessories'; // default for degenerate images
+    }
     final aspectRatio = width / height;
-
     // T-shirts and tops are typically square or slightly wider
     if (aspectRatio > 0.8 && aspectRatio < 1.3) {
       return 'tops';
@@ -157,7 +159,7 @@ class AutoTaggerServiceImpl implements AutoTaggerService {
     if (r > 200 && g < 150 && b < 100) {
       return 'orange';
     }
-    if (r > 150 && g < 100 && b < 150) {
+    if (r > 150 && g < 100 && b > 150) {
       return 'purple';
     }
     if (r > 200 && g > 150 && b < 100) {

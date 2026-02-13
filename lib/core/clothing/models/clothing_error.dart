@@ -27,10 +27,16 @@ class StorageQuotaExceededError extends ClothingError {
 ///
 /// Returned when attempting to retrieve or delete an item that doesn't exist.
 class ClothingItemNotFoundError extends ClothingError {
-  const ClothingItemNotFoundError() : super('Clothing item not found');
+  /// The ID of the item that was not found, if known.
+  final String? itemId;
+
+  const ClothingItemNotFoundError([this.itemId = null])
+      : super(itemId == null
+            ? 'Clothing item not found'
+            : 'Clothing item not found: $itemId');
 
   @override
-  String toString() => 'ClothingItemNotFoundError($message)';
+  String toString() => 'ClothingItemNotFoundError($message, itemId: $itemId)';
 }
 
 /// Firebase operation failed.
@@ -121,12 +127,50 @@ class StorageQuota {
       };
 
   /// Creates a [StorageQuota] from a JSON map.
-  factory StorageQuota.fromJson(Map<String, dynamic> json) => StorageQuota(
-        itemCount: json['itemCount'] as int,
-        maxItems: json['maxItems'] as int,
-        bytesUsed: json['bytesUsed'] as int,
-        maxBytes: json['maxBytes'] as int,
+  factory StorageQuota.fromJson(Map<String, dynamic> json) {
+    final itemCount = _safeToInt(json['itemCount'], 'itemCount');
+    final maxItems = _safeToInt(json['maxItems'], 'maxItems');
+    final bytesUsed = _safeToInt(json['bytesUsed'], 'bytesUsed');
+    final maxBytes = _safeToInt(json['maxBytes'], 'maxBytes');
+
+    return StorageQuota(
+      itemCount: itemCount,
+      maxItems: maxItems,
+      bytesUsed: bytesUsed,
+      maxBytes: maxBytes,
+    );
+  }
+
+  /// Safely converts a value to int, throwing a clear FormatException if invalid.
+  static int _safeToInt(dynamic value, String fieldName) {
+    if (value == null) {
+      throw FormatException(
+        'StorageQuota: field "$fieldName" is null',
       );
+    }
+
+    if (value is int) {
+      return value;
+    }
+
+    if (value is num) {
+      return value.toInt();
+    }
+
+    if (value is String) {
+      try {
+        return int.parse(value);
+      } on FormatException catch (e) {
+        throw FormatException(
+          'StorageQuota: field "$fieldName" is not a valid integer: $e',
+        );
+      }
+    }
+
+    throw FormatException(
+      'StorageQuota: field "$fieldName" has invalid type ${value.runtimeType}',
+    );
+  }
 
   @override
   bool operator ==(Object other) =>

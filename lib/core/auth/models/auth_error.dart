@@ -61,4 +61,10 @@ class AuthErrorCode {
 
   /// The requested feature is not implemented.
   static const String notImplemented = 'not-implemented';
+
+  /// Failed to clear cooldown period.
+  static const String clearCooldownFailed = 'clear-cooldown-failed';
+
+  /// Failed to mark user as verified.
+  static const String markVerifiedFailed = 'mark-verified-failed';
 }

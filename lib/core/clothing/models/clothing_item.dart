@@ -144,8 +144,10 @@ class ClothingItem {
 
   /// Creates a [ClothingItem] from a JSON map.
   factory ClothingItem.fromJson(Map<String, dynamic> json) {
-    final processingState = ItemProcessingState.values.byName(
-      json['processingState'] as String,
+    final processingStateName = json['processingState'] as String;
+    final processingState = ItemProcessingState.values.tryByName(
+      processingStateName,
+      orElse: () => ItemProcessingState.processingFailed,
     );
     return ClothingItem(
       id: json['id'] as String,
@@ -161,7 +163,7 @@ class ClothingItem {
       processingState: processingState,
       failureReason: json['failureReason'] as String?,
       retryCount: json['retryCount'] as int? ?? 0,
-      idempotencyKey: json['idempotencyKey'] as String,
+      idempotencyKey: json['idempotencyKey'] as String? ?? const Uuid().v4(),
     );
   }
 
@@ -193,8 +195,8 @@ class ClothingItem {
         processedImageUrl,
         thumbnailUrl,
         category,
-        colors,
-        seasons,
+        Object.hashAll(colors),
+        Object.hashAll(seasons),
         uploadedAt,
         updatedAt,
         processingState,

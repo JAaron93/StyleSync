@@ -16,37 +16,46 @@ class FaceDetectionConsentDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
-      title: const Text('Privacy Protection'),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'To protect your privacy, we scan uploaded photos for faces.',
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) {
+          onConsentRejected();
+          Navigator.of(context).pop();
+        }
+      },
+      child: AlertDialog(
+        title: const Text('Privacy Protection'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'To protect your privacy, we scan uploaded photos for faces.',
+            ),
+            const SizedBox(height: 16),
+            const Text(
+              'This analysis happens entirely on your device. '
+              'No biometric data is extracted or stored.',
+            ),
+            const SizedBox(height: 16),
+            const Text(
+              'If a face is detected, we will ask for your consent before '
+              'proceeding with storage.',
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: onConsentRejected,
+            child: const Text('Reject'),
           ),
-          const SizedBox(height: 16),
-          const Text(
-            'This analysis happens entirely on your device. '
-            'No biometric data is extracted or stored.',
-          ),
-          const SizedBox(height: 16),
-          const Text(
-            'If a face is detected, we will ask for your consent before '
-            'proceeding with storage.',
+          ElevatedButton(
+            onPressed: onConsentGranted,
+            child: const Text('Grant Consent'),
           ),
         ],
       ),
-      actions: [
-        TextButton(
-          onPressed: onConsentRejected,
-          child: const Text('Reject'),
-        ),
-        ElevatedButton(
-          onPressed: onConsentGranted,
-          child: const Text('Grant Consent'),
-        ),
-      ],
     );
   }
 }

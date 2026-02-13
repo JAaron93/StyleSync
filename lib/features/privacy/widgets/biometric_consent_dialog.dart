@@ -15,39 +15,47 @@ class BiometricConsentDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return AlertDialog(
-      title: const Text('Virtual Try-On Consent'),
-      content: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'To generate virtual try-on images, we need to process your photo.',
+    return WillPopScope(
+      onWillPop: () async {
+        onConsentRejected();
+        return true;
+      },
+      child: AlertDialog(
+        title: const Text('Virtual Try-On Consent'),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'To generate virtual try-on images, we need to process your photo.',
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                'Processing happens on-device with direct client-to-AI communication.',
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                'Your input photo is ephemeral and deleted immediately after generation.',
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                'Generated try-on results are stored only if you explicitly save them.',
+              ),
+            ],
           ),
-          const SizedBox(height: 16),
-          const Text(
-            'Processing happens on-device with direct client-to-AI communication.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: onConsentRejected,
+            child: const Text('Reject'),
           ),
-          const SizedBox(height: 16),
-          const Text(
-            'Your input photo is ephemeral and deleted immediately after generation.',
-          ),
-          const SizedBox(height: 16),
-          const Text(
-            'Generated try-on results are stored only if you explicitly save them.',
+          ElevatedButton(
+            onPressed: onConsentGranted,
+            child: const Text('Grant Consent'),
           ),
         ],
       ),
-      actions: [
-        TextButton(
-          onPressed: onConsentRejected,
-          child: const Text('Reject'),
-        ),
-        ElevatedButton(
-          onPressed: onConsentGranted,
-          child: const Text('Grant Consent'),
-        ),
-      ],
     );
   }
 }

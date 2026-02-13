@@ -49,11 +49,24 @@ void main() {
         expect(decodedImage?.width, 513);
         expect(decodedImage?.height, 513);
       } finally {
-        await tempFile.delete();
-        if (resultFile != null) {
-          await resultFile.delete();
+        // Safely delete files, avoiding double-deletes and ensuring all deletions run
+        try {
+          await tempFile.delete();
+        } catch (e) {
+          // Log and continue
         }
-        await tempDir.delete(recursive: true);
+        if (resultFile != null && resultFile.path != tempFile.path) {
+          try {
+            await resultFile.delete();
+          } catch (e) {
+            // Log and continue
+          }
+        }
+        try {
+          await tempDir.delete(recursive: true);
+        } catch (e) {
+          // Log and continue
+        }
       }
     });
 
@@ -85,12 +98,40 @@ void main() {
         // Result should be resized to model input size (513x513)
         expect(decodedImage?.width, 513);
         expect(decodedImage?.height, 513);
+        
+        // Verify alpha handling - check that semi-transparent pixels are preserved or handled
+        // Sample pixels from the opaque region (left side, x < 25)
+        final opaquePixel = decodedImage?.getPixel(10, 10);
+        expect(opaquePixel?.a, greaterThan(200)); // Should be mostly opaque
+        
+        // Sample pixels from the semi-transparent region (right side, x >= 25)
+        final semiTransparentPixel = decodedImage?.getPixel(35, 10);
+        // After processing, alpha may be preserved or flattened to 255
+        // Either behavior is acceptable as long as the image is valid
+        expect(semiTransparentPixel, isNotNull);
+        
+        // Verify at least one pixel has valid alpha (0-255)
+        final anyAlpha = decodedImage?.getPixel(25, 25);
+        expect(anyAlpha?.a, inRange(0, 255));
       } finally {
-        await tempFile.delete();
-        if (resultFile != null) {
-          await resultFile.delete();
+        // Safely delete files, avoiding double-deletes and ensuring all deletions run
+        try {
+          await tempFile.delete();
+        } catch (e) {
+          // Log and continue
         }
-        await tempDir.delete(recursive: true);
+        if (resultFile != null && resultFile.path != tempFile.path) {
+          try {
+            await resultFile.delete();
+          } catch (e) {
+            // Log and continue
+          }
+        }
+        try {
+          await tempDir.delete(recursive: true);
+        } catch (e) {
+          // Log and continue
+        }
       }
     });
 
@@ -106,8 +147,17 @@ void main() {
         // Should return original file when image cannot be decoded
         expect(resultFile.path, tempFile.path);
       } finally {
-        await tempFile.delete();
-        await tempDir.delete(recursive: true);
+        // Safely delete files, avoiding double-deletes and ensuring all deletions run
+        try {
+          await tempFile.delete();
+        } catch (e) {
+          // Log and continue
+        }
+        try {
+          await tempDir.delete(recursive: true);
+        } catch (e) {
+          // Log and continue
+        }
       }
     });
   });

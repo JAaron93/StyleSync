@@ -75,6 +75,8 @@ void main() {
       final updated = quota.copyWith(bytesUsed: 200 * 1024 * 1024);
       expect(updated.itemCount, 100);
       expect(updated.bytesUsed, 200 * 1024 * 1024);
+      expect(updated.maxItems, 500);
+      expect(updated.maxBytes, 2 * 1024 * 1024 * 1024);
     });
 
     // Property: Storage quota JSON serialization round-trip
@@ -196,7 +198,7 @@ void main() {
 
       final item2 = item1.copyWith(category: 'bottoms');
 
-      expect(item1 != item2, true);
+      expect(item1, isNot(item2));
     });
   });
 }

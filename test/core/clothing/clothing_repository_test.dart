@@ -21,6 +21,12 @@ void main() {
       firestore: mockFirestore,
       storage: mockStorage,
     );
+    
+    // Stub Firestore collection operations for tests that query
+    when(mockFirestore.collection('clothing_items')).thenReturn(MockCollectionReference());
+    
+    // Stub storage ref operations for tests that upload
+    when(mockStorage.ref(any)).thenReturn(MockStorageReference());
   });
 
   group('ClothingRepository Upload Flow', () {
@@ -92,7 +98,7 @@ void main() {
       }
     });
 
-    test('deleteClothing succeeds when item exists', () async {
+    test('deleteClothing succeeds', () async {
       final result = await repository.deleteClothing('test-id');
 
       expect(result.isFailure, false);
@@ -123,3 +129,13 @@ void main() {
 class MockFirebaseFirestore extends Mock implements FirebaseFirestore {}
 
 class MockFirebaseStorage extends Mock implements FirebaseStorage {}
+
+class MockCollectionReference extends Mock implements CollectionReference {}
+
+class MockDocumentReference extends Mock implements DocumentReference {}
+
+class MockStorageReference extends Mock implements StorageReference {}
+
+class MockUploadTask extends Mock implements UploadTask {}
+
+class MockDownloadUrl extends Mock implements DownloadUrl {}

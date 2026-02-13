@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -66,6 +67,9 @@ abstract class BackgroundRetryService {
 /// Uses a simple in-memory queue with exponential backoff.
 /// For production, consider using a persistent queue (e.g., Hive, SQLite).
 class BackgroundRetryServiceImpl implements BackgroundRetryService {
+  /// Maximum number of retry attempts before giving up.
+  static const int MAX_RETRIES = 5;
+
   /// The clothing repository for performing retries.
   final ClothingRepository _repository;
 
@@ -74,6 +78,9 @@ class BackgroundRetryServiceImpl implements BackgroundRetryService {
 
   /// Timer for processing the queue.
   Timer? _processTimer;
+
+  /// Concurrency guard to prevent overlapping processRetryQueue calls.
+  bool _isProcessing = false;
 
   /// Creates a new [BackgroundRetryServiceImpl] instance.
   BackgroundRetryServiceImpl({
@@ -88,7 +95,6 @@ class BackgroundRetryServiceImpl implements BackgroundRetryService {
     final task = _RetryTask(
       itemId: itemId,
       retryCount: retryCount,
-      scheduledAt: DateTime.now().toUtc(),
     );
     _retryQueue.add(task);
     debugPrint('Enqueued retry for item $itemId (attempt ${retryCount + 1})');
@@ -114,7 +120,14 @@ class BackgroundRetryServiceImpl implements BackgroundRetryService {
         _retryQueue.remove(task);
       } else {
         debugPrint('Retry failed for item ${task.itemId}: ${result.errorOrNull}');
-        // Keep in queue for next attempt
+        // Increment retry count and re-enqueue if under max retries
+        task.retryCount++;
+        if (task.retryCount < MAX_RETRIES) {
+          debugPrint('Re-enqueued item ${task.itemId} for retry (attempt ${task.retryCount + 1})');
+        } else {
+          debugPrint('Max retries reached for item ${task.itemId}, removing from queue');
+          _retryQueue.remove(task);
+        }
       }
     }
   }
@@ -126,11 +139,20 @@ class BackgroundRetryServiceImpl implements BackgroundRetryService {
     debugPrint('Cleared retry queue');
   }
 
+  /// Disposes the service and releases resources.
+  ///
+  /// Cancels the processing timer and clears the retry queue.
+  void dispose() {
+    _retryQueue.clear();
+    _stopProcessing();
+    debugPrint('Disposed retry service');
+  }
   /// Attempts to retry processing for an item.
   Future<RetryResult<ClothingItem>> _attemptRetry(_RetryTask task) async {
     try {
       // Calculate backoff delay with jitter
-      final baseDelay = Duration(seconds: 1 << task.retryCount); // 1s, 2s, 4s, 8s...
+      final cappedRetryCount = task.retryCount.clamp(0, 8); // Cap at ~4 minutes
+      final baseDelay = Duration(seconds: 1 << cappedRetryCount); // 1s, 2s, 4s... max 256s
       final jitter = Duration(milliseconds: Random().nextInt(1000)); // 0-1000ms jitter
       final delay = baseDelay + jitter;
 
@@ -151,6 +173,7 @@ class BackgroundRetryServiceImpl implements BackgroundRetryService {
       return RetryFailure(ClothingError('Unexpected error during retry: $e'));
     }
   }
+  }
 
   /// Starts the processing timer.
   void _startProcessing() {
@@ -159,8 +182,18 @@ class BackgroundRetryServiceImpl implements BackgroundRetryService {
     }
 
     debugPrint('Starting retry queue processor');
-    _processTimer = Timer.periodic(const Duration(seconds: 30), (_) {
-      processRetryQueue();
+    _processTimer = Timer.periodic(const Duration(seconds: 30), (_) async {
+      // Prevent overlapping runs
+      if (_isProcessing) {
+        debugPrint('Skipping retry processing - previous run still in progress');
+        return;
+      }
+      _isProcessing = true;
+      try {
+        await processRetryQueue();
+      } finally {
+        _isProcessing = false;
+      }
     });
   }
 
@@ -180,13 +213,9 @@ class _RetryTask {
   /// The current retry count.
   final int retryCount;
 
-  /// When this task was scheduled.
-  final DateTime scheduledAt;
-
   const _RetryTask({
     required this.itemId,
     required this.retryCount,
-    required this.scheduledAt,
   });
 }
 
@@ -199,5 +228,7 @@ class _RetryTask {
 /// Creates a [BackgroundRetryServiceImpl] instance with injected dependencies.
 final backgroundRetryServiceProvider = Provider<BackgroundRetryService>((ref) {
   final repository = ref.watch(clothingRepositoryProvider);
-  return BackgroundRetryServiceImpl(repository: repository);
+  final service = BackgroundRetryServiceImpl(repository: repository);
+  ref.onDispose(() => service.dispose());
+  return service;
 });

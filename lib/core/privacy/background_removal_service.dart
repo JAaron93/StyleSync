@@ -39,38 +39,40 @@ class BackgroundRemovalServiceImpl implements BackgroundRemovalService {
     Duration timeout = const Duration(seconds: 10),
   }) async {
     if (!await imageFile.exists()) {
-      // Return original file if it doesn't exist
-      return imageFile;
+      throw ArgumentError('Input image file does not exist: ${imageFile.path}');
     }
 
     try {
-      // Load and preprocess image
-      final imageBytes = await imageFile.readAsBytes();
-      final decodedImage = img.decodeImage(imageBytes);
-      if (decodedImage == null) {
-        // Return original file if image can't be decoded
-        return imageFile;
-      }
+      // Wrap the entire operation with timeout
+      return await Future<File>.delayed(Duration.zero, () async {
+        // Load and preprocess image
+        final imageBytes = await imageFile.readAsBytes();
+        final decodedImage = img.decodeImage(imageBytes);
+        if (decodedImage == null) {
+          // Return original file if image can't be decoded
+          return imageFile;
+        }
 
-      // Resize image for model input
-      final resizedImage = img.copyResize(
-        decodedImage,
-        width: _inputWidth,
-        height: _inputHeight,
-      );
+        // Resize image for model input
+        final resizedImage = img.copyResize(
+          decodedImage,
+          width: _inputWidth,
+          height: _inputHeight,
+        );
 
-      // For now, just return the resized image (background removal would happen here)
-      // In a real implementation, this would apply the segmentation mask from the model
-      final resultImage = resizedImage;
+        // For now, just return the resized image (background removal would happen here)
+        // In a real implementation, this would apply the segmentation mask from the model
+        final resultImage = resizedImage;
 
-      // Save result to temporary file
-      final tempDir = await imageFile.parent.createTemp('background_removed_');
-      final fileName = imageFile.path.split('/').last;
-      final resultFile = File('${tempDir.path}/$fileName');
-      final encoded = img.encodePng(resultImage);
-      await resultFile.writeAsBytes(encoded);
+        // Save result to temporary file
+        final tempDir = await imageFile.parent.createTemp('background_removed_');
+        final fileName = p.basename(imageFile.path);
+        final resultFile = File('${tempDir.path}/$fileName');
+        final encoded = img.encodePng(resultImage);
+        await resultFile.writeAsBytes(encoded);
 
-      return resultFile;
+        return resultFile;
+      }).timeout(timeout);
     } on TimeoutException {
       // Return original image on timeout
       return imageFile;

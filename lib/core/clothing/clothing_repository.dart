@@ -56,6 +56,7 @@ abstract class ClothingRepository {
   /// Returns [Failure] with [ClothingError] if the operation fails.
   Future<Result<ClothingItem>> uploadClothing(
     File image, {
+    required String userId,
     String? idempotencyKey,
     Map<String, dynamic>? metadata,
   });
@@ -99,7 +100,7 @@ abstract class ClothingRepository {
   /// Gets the current storage quota for a user.
   ///
   /// [userId] - The user ID to check quota for.
-  Future<StorageQuota> getStorageQuota(String userId);
+  Future<Result<StorageQuota>> getStorageQuota(String userId);
 
   /// Retries processing for a failed item.
   ///
@@ -267,7 +268,7 @@ class ClothingRepositoryImpl implements ClothingRepository {
           originalError: e,
         ));
       }
-      return Failure(FirebaseError(
+      return Failure(ProcessingError(
         'Failed to fetch clothing items: ${e.toString()}',
         originalError: e,
       ));
@@ -400,18 +401,18 @@ class ClothingRepositoryImpl implements ClothingRepository {
         maxItems: 500,
         bytesUsed: 0,
         maxBytes: 2 * 1024 * 1024 * 1024, // 2GB
-      );
     } catch (e) {
       if (_isNetworkError(e)) {
-        throw NetworkError(
+        return Failure(NetworkError(
           'Network error during quota check: ${e.toString()}',
           originalError: e,
-        );
+        ));
       }
-      throw FirebaseError(
+      return Failure(FirebaseError(
         'Failed to check storage quota: ${e.toString()}',
         originalError: e,
-      );
+      ));
+    }
     }
   }
 
@@ -424,10 +425,11 @@ class ClothingRepositoryImpl implements ClothingRepository {
       if (item.isFailure) {
         return item;
       }
-
-      final updatedItem = item.valueOrNull!.copyWith(
+      final currentItem = item.valueOrNull!;
+      final updatedItem = currentItem.copyWith(
         processingState: ItemProcessingState.processing,
-        retryCount: (item.valueOrNull?.retryCount ?? 0) + 1,
+        retryCount: currentItem.retryCount + 1,
+      );
       );
 
       // TODO: Update Firestore with new state

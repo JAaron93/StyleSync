@@ -221,8 +221,11 @@ class AgeVerificationServiceImpl implements AgeVerificationService {
         _kCooldownKey: FieldValue.delete(),
       }, SetOptions(merge: true));
     } catch (e) {
-      _logger.warning('Failed to clear cooldown for user $userId', e);
-      throw AuthError('Failed to clear cooldown period');
+      _logger.warning('Failed to clear cooldown for user $userId: ${e.toString()}', e);
+      throw AuthError(
+        'Failed to clear cooldown period',
+        AuthErrorCode.clearCooldownFailed,
+      );
     }
   }
 
@@ -233,8 +236,11 @@ class AgeVerificationServiceImpl implements AgeVerificationService {
         _kVerifiedKey: true,
       }, SetOptions(merge: true));
     } catch (e) {
-      _logger.warning('Failed to mark user as verified for user $userId', e);
-      throw AuthError('Failed to mark user as verified');
+      _logger.warning('Failed to mark user as verified for user $userId: ${e.toString()}', e);
+      throw AuthError(
+        'Failed to mark user as verified',
+        AuthErrorCode.markVerifiedFailed,
+      );
     }
   }
 

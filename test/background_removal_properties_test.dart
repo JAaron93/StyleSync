@@ -60,7 +60,7 @@ void main() {
           expect(decodedImage?.height, 513);
         } finally {
           await tempFile.delete();
-          if (resultFile != null) {
+          if (resultFile != null && resultFile.path != tempFile.path) {
             await resultFile.delete();
           }
           await tempDir.delete(recursive: true);
