@@ -19,8 +19,8 @@ void main() {
   });
 
   /// Helper to create a test image file with specified dimensions and color.
-  /// Returns the created File and its temp Directory (caller must add to tempDirs).
-  (File file, Directory dir) createTestImage({
+  /// Automatically tracks the temp Directory for cleanup.
+  File createTestImage({
     required int width,
     required int height,
     required int r,
@@ -35,11 +35,12 @@ void main() {
     }
 
     final tempDir = Directory.systemTemp.createTempSync('auto_tagger_test_');
+    tempDirs.add(tempDir);
     final file = File('${tempDir.path}/test_image.png');
     final encoded = img.encodePng(image);
     file.writeAsBytesSync(encoded);
 
-    return (file, tempDir);
+    return file;
   }
 
   group('AutoTaggerServiceImpl', () {

@@ -20,14 +20,17 @@ void main() {
       }
       
       // Add explicit EXIF metadata to ensure stripping reduces size
+      // Ensure EXIF is present before setting tags
+      expect(testImage.exif, isNotNull, reason: 'Test image must have EXIF data initialized');
+      
       // Set EXIF fields for camera make, model, and timestamp
-      testImage.exif?.setTagString(img.ExifTags.make, 'TestCamera');
-      testImage.exif?.setTagString(img.ExifTags.model, 'TestModel');
-      testImage.exif?.setTagString(img.ExifTags.software, 'TestSoftware');
-      testImage.exif?.setTagString(img.ExifTags.artist, 'TestArtist');
-      testImage.exif?.setTagString(img.ExifTags.copyright, 'TestCopyright');
-      testImage.exif?.setTagString(img.ExifTags.dateTimeOriginal, '2024:01:01 00:00:00');
-      testImage.exif?.setTagString(img.ExifTags.createDate, '2024:01:01 00:00:00');
+      testImage.exif!.setTagString(img.ExifTags.make, 'TestCamera');
+      testImage.exif!.setTagString(img.ExifTags.model, 'TestModel');
+      testImage.exif!.setTagString(img.ExifTags.software, 'TestSoftware');
+      testImage.exif!.setTagString(img.ExifTags.artist, 'TestArtist');
+      testImage.exif!.setTagString(img.ExifTags.copyright, 'TestCopyright');
+      testImage.exif!.setTagString(img.ExifTags.dateTimeOriginal, '2024:01:01 00:00:00');
+      testImage.exif!.setTagString(img.ExifTags.createDate, '2024:01:01 00:00:00');
       
       // Encode to JPEG (which supports EXIF)
       final jpegBytes = img.encodeJpg(testImage);
@@ -114,12 +117,10 @@ void main() {
       try {
         await expectLater(
           service.stripMetadata(tempFile),
-          throwsA(isA<Exception>()), // More specific error type if known
+          throwsA(isA<StateError>()),
         );
       } finally {
-        if (await tempFile.exists()) {
-          await tempFile.delete();
-        }
+        await tempFile.delete();
         await tempDir.delete(recursive: true);
       }
     });

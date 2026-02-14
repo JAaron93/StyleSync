@@ -121,16 +121,16 @@ class BackgroundRetryServiceImpl implements BackgroundRetryService {
       } else {
         debugPrint('Retry failed for item ${task.itemId}: ${result.errorOrNull}');
         // Increment retry count and re-enqueue if under max retries
-        task.retryCount++;
-        if (task.retryCount < MAX_RETRIES) {
-          debugPrint('Re-enqueued item ${task.itemId} for retry (attempt ${task.retryCount + 1})');
+        final newRetryCount = task.retryCount + 1;
+        _retryQueue.remove(task);
+        if (newRetryCount < MAX_RETRIES) {
+          _retryQueue.add(_RetryTask(itemId: task.itemId, retryCount: newRetryCount));
+          debugPrint('Re-enqueued item ${task.itemId} for retry (attempt ${newRetryCount + 1})');
         } else {
           debugPrint('Max retries reached for item ${task.itemId}, removing from queue');
-          _retryQueue.remove(task);
         }
       }
     }
-  }
 
   @override
   Future<void> clearQueue() async {

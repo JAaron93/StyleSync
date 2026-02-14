@@ -1,7 +1,7 @@
-
+import 'package:shared_preferences/shared_preferences.dart';
 
 /// Service for managing user consent for various privacy-sensitive operations.
-/// 
+///
 /// Tracks consent states for:
 /// - Face detection (clothing upload)
 /// - Biometric processing (virtual try-on)
@@ -28,8 +28,6 @@ abstract class ConsentManager {
   Future<void> clearAllConsents();
 }
 
-import 'package:shared_preferences/shared_preferences.dart';
-
 class ConsentManagerImpl implements ConsentManager {
   static const String _faceDetectionConsentKey = 'face_detection_consent';
   static const String _biometricConsentKey = 'biometric_consent';
@@ -44,37 +42,33 @@ class ConsentManagerImpl implements ConsentManager {
   }
 
   @override
-  Future<bool> hasFaceDetectionConsent() async {
-    return _consents[_faceDetectionConsentKey] ?? false;
-  }
-
-  @override
   Future<void> recordFaceDetectionConsent() async {
-    _consents[_faceDetectionConsentKey] = true;
+    await _prefs.setBool(_faceDetectionConsentKey, true);
   }
 
   @override
   Future<void> revokeFaceDetectionConsent() async {
-    _consents[_faceDetectionConsentKey] = false;
+    await _prefs.setBool(_faceDetectionConsentKey, false);
   }
 
   @override
   Future<bool> hasBiometricConsent() async {
-    return _consents[_biometricConsentKey] ?? false;
+    return _prefs.getBool(_biometricConsentKey) ?? false;
   }
 
   @override
   Future<void> recordBiometricConsent() async {
-    _consents[_biometricConsentKey] = true;
+    await _prefs.setBool(_biometricConsentKey, true);
   }
 
   @override
   Future<void> revokeBiometricConsent() async {
-    _consents[_biometricConsentKey] = false;
+    await _prefs.setBool(_biometricConsentKey, false);
   }
 
   @override
   Future<void> clearAllConsents() async {
-    _consents.clear();
+    await _prefs.remove(_faceDetectionConsentKey);
+    await _prefs.remove(_biometricConsentKey);
   }
 }

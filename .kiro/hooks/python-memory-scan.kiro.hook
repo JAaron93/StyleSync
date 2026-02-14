@@ -1,18 +1,14 @@
 {
-  "enabled": true,
+  "enabled": false,
   "name": "Python Memory Leak Scanner",
   "description": "Scan Python files for memory leak patterns on save",
   "version": "1",
   "when": {
-    "type": "fileEdited",
-    "patterns": [
-      "**/*.py"
-    ]
+    "type": "userTriggered"
   },
   "then": {
-    "type": "runCommand",
-    "command": "python3 -c \"\nimport sys\nimport re\n\ndef check_memory_leaks(filepath):\n    with open(filepath, 'r') as f:\n        content = f.read()\n        lines = content.split('\\n')\n    \n    issues = []\n    \n    # Check 1: lru_cache without maxsize or maxsize=None\n    for i, line in enumerate(lines, 1):\n        if '@functools.lru_cache()' in line or '@lru_cache()' in line:\n            issues.append((i, 'lru_cache without maxsize limit', 'Add maxsize parameter: @lru_cache(maxsize=128)'))\n        elif 'lru_cache(maxsize=None)' in line:\n            issues.append((i, 'lru_cache with maxsize=None creates unbounded cache', 'Set a reasonable maxsize limit'))\n    \n    # Check 2: __del__ methods (potential circular reference issues)\n    for i, line in enumerate(lines, 1):\n        if 'def __del__(self):' in line or 'def __del__(self)' in line:\n            issues.append((i, '__del__ method may cause circular reference issues', 'Consider using context managers or explicit cleanup methods instead'))\n    \n    # Check 3: Global mutable state\n    for i, line in enumerate(lines, 1):\n        if re.match(r'^\\w+\\s*=\\s*(?:\\{|\\[|set\\()', line) and 'global' not in line.lower():\n            # Check if it's a module-level assignment\n            if i <= 5 or not any('import' in lines[j] for j in range(min(10, i))):\n                issues.append((i, 'Module-level mutable global state detected', 'Consider using lazy initialization or dependency injection'))\n    \n    # Check 4: File/socket operations without context managers\n    for i, line in enumerate(lines, 1):\n        if re.search(r'(open|socket|connect)\\s*\\(', line) and 'with ' not in line and 'try:' not in '\\n'.join(lines[max(0,i-3):i]):\n            issues.append((i, 'Resource without context manager or try/finally', 'Wrap in with statement or try/finally block'))\n    \n    return issues\n\nif __name__ == '__main__':\n    filepath = sys.argv[1] if len(sys.argv) > 1 else input()\n    issues = check_memory_leaks(filepath)\n    \n    if not issues:\n        print('✅ Memory Safety Check Passed.')\n    else:\n        print('⚠️ Potential Memory Leak Detected')\n        for line_num, issue, fix in issues:\n            print(f'  - Line {line_num}: {issue}')\n            print(f'    Suggestion: {fix}')\n\" \"$1\"",
-    "timeout": 60
+    "type": "askAgent",
+    "prompt": ""
   },
   "workspaceFolderName": "StyleSync",
   "shortName": "python-memory-scan"

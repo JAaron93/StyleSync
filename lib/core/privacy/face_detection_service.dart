@@ -5,15 +5,24 @@ import 'package:google_mlkit_face_detection/google_mlkit_face_detection.dart';
 class FaceDetectionException implements Exception {
   final String message;
   final Object? originalError;
+  final StackTrace? stackTrace;
 
-  FaceDetectionException(this.message, [this.originalError]);
+  FaceDetectionException(this.message, [this.originalError, this.stackTrace]);
 
   @override
   String toString() {
-    if (originalError == null) {
-      return 'FaceDetectionException: $message';
+    final buffer = StringBuffer();
+    buffer.write('FaceDetectionException: $message');
+    
+    if (originalError != null) {
+      buffer.write(' (original: $originalError)');
     }
-    return 'FaceDetectionException: $message (original: $originalError)';
+    
+    if (stackTrace != null) {
+      buffer.write('\nStackTrace: $stackTrace');
+    }
+    
+    return buffer.toString();
   }
 }
 
@@ -45,7 +54,8 @@ class FaceDetectionServiceImpl implements FaceDetectionService {
   @override
   Future<bool> detectFace(File imageFile) async {
     if (!await imageFile.exists()) {
-      throw FaceDetectionException('Image file does not exist: ${imageFile.path}');
+      throw FaceDetectionException('Image file does not exist');
+    }
     }
 
     try {
@@ -61,6 +71,7 @@ class FaceDetectionServiceImpl implements FaceDetectionService {
       throw FaceDetectionException(
         'Failed to process image for face detection',
         error,
+        stackTrace,
       );
     }
   }

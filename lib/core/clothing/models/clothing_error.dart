@@ -30,7 +30,7 @@ class ClothingItemNotFoundError extends ClothingError {
   /// The ID of the item that was not found, if known.
   final String? itemId;
 
-  const ClothingItemNotFoundError([this.itemId = null])
+  const ClothingItemNotFoundError([this.itemId])
       : super(itemId == null
             ? 'Clothing item not found'
             : 'Clothing item not found: $itemId');
@@ -154,6 +154,15 @@ class StorageQuota {
     }
 
     if (value is num) {
+      // Check for fractional numbers that would lose precision
+      if (value % 1 != 0) {
+        // For storage quota, we want to be strict about precision
+        // Throw an error to prevent silent truncation of quota values
+        throw FormatException(
+          'StorageQuota: field "$fieldName" has fractional value $value which would lose precision when converted to int. '
+          'Storage quota values must be whole numbers.',
+        );
+      }
       return value.toInt();
     }
 

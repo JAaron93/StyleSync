@@ -2,15 +2,9 @@ import 'dart:io';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 
-import '../byok/models/api_key_config.dart';
-import '../byok/models/byok_error.dart';
-import '../crypto/encryption_service.dart';
-import '../crypto/key_derivation_service.dart';
-import '../storage/secure_storage_service.dart';
 import 'models/clothing_error.dart';
 import 'models/clothing_item.dart';
 
@@ -21,13 +15,13 @@ sealed class Result<T> {
   bool get isSuccess => this is Success<T>;
   bool get isFailure => this is Failure<T>;
   T? get valueOrNull => switch (this) {
-        Success<T>(:final value) => value,
-        Failure<T>() => null,
-      };
+    Success<T>(:final value) => value,
+    Failure<T>() => null,
+  };
   ClothingError? get errorOrNull => switch (this) {
-        Success<T>() => null,
-        Failure<T>(:final error) => error,
-      };
+    Success<T>() => null,
+    Failure<T>(:final error) => error,
+  };
 }
 
 class Success<T> extends Result<T> {
@@ -92,10 +86,7 @@ abstract class ClothingRepository {
   ///
   /// [itemId] - The ID of the item to delete.
   /// [deleteImage] - Whether to also delete the image from Firebase Storage.
-  Future<Result<void>> deleteClothing(
-    String itemId, {
-    bool deleteImage = true,
-  });
+  Future<Result<void>> deleteClothing(String itemId, {bool deleteImage = true});
 
   /// Gets the current storage quota for a user.
   ///
@@ -127,9 +118,9 @@ class ClothingRepositoryImpl implements ClothingRepository {
     FirebaseFirestore? firestore,
     FirebaseStorage? storage,
     Uuid? uuid,
-  })  : _firestore = firestore ?? FirebaseFirestore.instance,
-        _storage = storage ?? FirebaseStorage.instance,
-        _uuid = uuid ?? const Uuid();
+  }) : _firestore = firestore ?? FirebaseFirestore.instance,
+       _storage = storage ?? FirebaseStorage.instance,
+       _uuid = uuid ?? const Uuid();
 
   /// Gets the storage path for a user's clothing item.
   String _getClothingPath(String userId, String itemId) {
@@ -155,10 +146,7 @@ class ClothingRepositoryImpl implements ClothingRepository {
       return true;
     }
     if (error is FirebaseException) {
-      const networkErrorCodes = {
-        'network-request-failed',
-        'unavailable',
-      };
+      const networkErrorCodes = {'network-request-failed', 'unavailable'};
       return networkErrorCodes.contains(error.code);
     }
     return false;
@@ -167,6 +155,7 @@ class ClothingRepositoryImpl implements ClothingRepository {
   @override
   Future<Result<ClothingItem>> uploadClothing(
     File image, {
+    required String userId,
     String? idempotencyKey,
     Map<String, dynamic>? metadata,
   }) async {
@@ -181,14 +170,12 @@ class ClothingRepositoryImpl implements ClothingRepository {
 
       // TODO: Implement actual image processing (background removal, tagging)
       // For now, we'll simulate the upload process
-      final now = DateTime.now().toUtc();
-      final itemId = _uuid.v4();
 
       // Create a placeholder clothing item
       // In a real implementation, this would process the image and generate
       // processed and thumbnail versions
       final clothingItem = ClothingItem.create(
-        userId: 'placeholder_user_id',
+        userId: userId,
         imageUrl: 'https://example.com/image.jpg',
         processedImageUrl: 'https://example.com/processed.jpg',
         thumbnailUrl: 'https://example.com/thumbnail.jpg',
@@ -209,21 +196,24 @@ class ClothingRepositoryImpl implements ClothingRepository {
 
       return Success(clothingItem);
     } on FirebaseException catch (e) {
-      return Failure(FirebaseError(
-        'Firebase error: ${e.message}',
-        originalError: e,
-      ));
+      return Failure(
+        FirebaseError('Firebase error: ${e.message}', originalError: e),
+      );
     } catch (e) {
       if (_isNetworkError(e)) {
-        return Failure(NetworkError(
-          'Network error during upload: ${e.toString()}',
-          originalError: e,
-        ));
+        return Failure(
+          NetworkError(
+            'Network error during upload: ${e.toString()}',
+            originalError: e,
+          ),
+        );
       }
-      return Failure(ProcessingError(
-        'Failed to upload clothing: ${e.toString()}',
-        originalError: e,
-      ));
+      return Failure(
+        ProcessingError(
+          'Failed to upload clothing: ${e.toString()}',
+          originalError: e,
+        ),
+      );
     }
   }
 
@@ -257,21 +247,24 @@ class ClothingRepositoryImpl implements ClothingRepository {
       // For now, return empty list
       return Success([]);
     } on FirebaseException catch (e) {
-      return Failure(FirebaseError(
-        'Firebase error: ${e.message}',
-        originalError: e,
-      ));
+      return Failure(
+        FirebaseError('Firebase error: ${e.message}', originalError: e),
+      );
     } catch (e) {
       if (_isNetworkError(e)) {
-        return Failure(NetworkError(
-          'Network error during fetch: ${e.toString()}',
-          originalError: e,
-        ));
+        return Failure(
+          NetworkError(
+            'Network error during fetch: ${e.toString()}',
+            originalError: e,
+          ),
+        );
       }
-      return Failure(ProcessingError(
-        'Failed to fetch clothing items: ${e.toString()}',
-        originalError: e,
-      ));
+      return Failure(
+        ProcessingError(
+          'Failed to fetch clothing items: ${e.toString()}',
+          originalError: e,
+        ),
+      );
     }
   }
 
@@ -291,21 +284,24 @@ class ClothingRepositoryImpl implements ClothingRepository {
       // For now, return not found
       return const Failure(ClothingItemNotFoundError());
     } on FirebaseException catch (e) {
-      return Failure(FirebaseError(
-        'Firebase error: ${e.message}',
-        originalError: e,
-      ));
+      return Failure(
+        FirebaseError('Firebase error: ${e.message}', originalError: e),
+      );
     } catch (e) {
       if (_isNetworkError(e)) {
-        return Failure(NetworkError(
-          'Network error during fetch: ${e.toString()}',
-          originalError: e,
-        ));
+        return Failure(
+          NetworkError(
+            'Network error during fetch: ${e.toString()}',
+            originalError: e,
+          ),
+        );
       }
-      return Failure(FirebaseError(
-        'Failed to fetch clothing item: ${e.toString()}',
-        originalError: e,
-      ));
+      return Failure(
+        FirebaseError(
+          'Failed to fetch clothing item: ${e.toString()}',
+          originalError: e,
+        ),
+      );
     }
   }
 
@@ -322,21 +318,24 @@ class ClothingRepositoryImpl implements ClothingRepository {
 
       return Success(updates);
     } on FirebaseException catch (e) {
-      return Failure(FirebaseError(
-        'Firebase error: ${e.message}',
-        originalError: e,
-      ));
+      return Failure(
+        FirebaseError('Firebase error: ${e.message}', originalError: e),
+      );
     } catch (e) {
       if (_isNetworkError(e)) {
-        return Failure(NetworkError(
-          'Network error during update: ${e.toString()}',
-          originalError: e,
-        ));
+        return Failure(
+          NetworkError(
+            'Network error during update: ${e.toString()}',
+            originalError: e,
+          ),
+        );
       }
-      return Failure(FirebaseError(
-        'Failed to update clothing item: ${e.toString()}',
-        originalError: e,
-      ));
+      return Failure(
+        FirebaseError(
+          'Failed to update clothing item: ${e.toString()}',
+          originalError: e,
+        ),
+      );
     }
   }
 
@@ -361,26 +360,29 @@ class ClothingRepositoryImpl implements ClothingRepository {
 
       return const Success(null);
     } on FirebaseException catch (e) {
-      return Failure(FirebaseError(
-        'Firebase error: ${e.message}',
-        originalError: e,
-      ));
+      return Failure(
+        FirebaseError('Firebase error: ${e.message}', originalError: e),
+      );
     } catch (e) {
       if (_isNetworkError(e)) {
-        return Failure(NetworkError(
-          'Network error during deletion: ${e.toString()}',
-          originalError: e,
-        ));
+        return Failure(
+          NetworkError(
+            'Network error during deletion: ${e.toString()}',
+            originalError: e,
+          ),
+        );
       }
-      return Failure(FirebaseError(
-        'Failed to delete clothing item: ${e.toString()}',
-        originalError: e,
-      ));
+      return Failure(
+        FirebaseError(
+          'Failed to delete clothing item: ${e.toString()}',
+          originalError: e,
+        ),
+      );
     }
   }
 
   @override
-  Future<StorageQuota> getStorageQuota(String userId) async {
+  Future<Result<StorageQuota>> getStorageQuota(String userId) async {
     try {
       // TODO: Query Firestore to count items and calculate total size
       // final itemsSnapshot = await _firestore
@@ -396,23 +398,28 @@ class ClothingRepositoryImpl implements ClothingRepository {
       // });
 
       // For now, return a placeholder quota
-      return StorageQuota(
+      final quota = StorageQuota(
         itemCount: 0,
         maxItems: 500,
         bytesUsed: 0,
         maxBytes: 2 * 1024 * 1024 * 1024, // 2GB
+      );
+      return Success(quota);
     } catch (e) {
       if (_isNetworkError(e)) {
-        return Failure(NetworkError(
-          'Network error during quota check: ${e.toString()}',
-          originalError: e,
-        ));
+        return Failure(
+          NetworkError(
+            'Network error during quota check: ${e.toString()}',
+            originalError: e,
+          ),
+        );
       }
-      return Failure(FirebaseError(
-        'Failed to check storage quota: ${e.toString()}',
-        originalError: e,
-      ));
-    }
+      return Failure(
+        FirebaseError(
+          'Failed to check storage quota: ${e.toString()}',
+          originalError: e,
+        ),
+      );
     }
   }
 
@@ -430,7 +437,6 @@ class ClothingRepositoryImpl implements ClothingRepository {
         processingState: ItemProcessingState.processing,
         retryCount: currentItem.retryCount + 1,
       );
-      );
 
       // TODO: Update Firestore with new state
       // await _firestore.collection('clothing_items').doc(itemId).update(
@@ -440,15 +446,19 @@ class ClothingRepositoryImpl implements ClothingRepository {
       return Success(updatedItem);
     } catch (e) {
       if (_isNetworkError(e)) {
-        return Failure(NetworkError(
-          'Network error during retry: ${e.toString()}',
-          originalError: e,
-        ));
+        return Failure(
+          NetworkError(
+            'Network error during retry: ${e.toString()}',
+            originalError: e,
+          ),
+        );
       }
-      return Failure(ProcessingError(
-        'Failed to retry processing: ${e.toString()}',
-        originalError: e,
-      ));
+      return Failure(
+        ProcessingError(
+          'Failed to retry processing: ${e.toString()}',
+          originalError: e,
+        ),
+      );
     }
   }
 }
@@ -474,8 +484,5 @@ final clothingRepositoryProvider = Provider<ClothingRepository>((ref) {
   final firestore = ref.watch(firebaseFirestoreProvider);
   final storage = ref.watch(firebaseStorageClothingProvider);
 
-  return ClothingRepositoryImpl(
-    firestore: firestore,
-    storage: storage,
-  );
+  return ClothingRepositoryImpl(firestore: firestore, storage: storage);
 });

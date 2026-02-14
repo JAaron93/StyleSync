@@ -19,7 +19,7 @@ abstract class AutoTaggerService {
 }
 
 class ClothingTags {
-  final String category; // tops, bottoms, shoes, accessories
+  final String category; // tops, bottoms, shoes, accessories, unknown (fallback)
   final List<String> colors;
   final List<String> seasons; // spring, summer, fall, winter, all-season
   final Map<String, dynamic> additionalAttributes;
@@ -84,7 +84,7 @@ class AutoTaggerServiceImpl implements AutoTaggerService {
   String _categorizeClothing(img.Image image) {
     final width = image.width;
     final height = image.height;
-    if (height == 0) {
+    if (width == 0 || height == 0) {
       return 'accessories'; // default for degenerate images
     }
     final aspectRatio = width / height;

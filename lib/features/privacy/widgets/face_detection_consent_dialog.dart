@@ -47,11 +47,17 @@ class FaceDetectionConsentDialog extends StatelessWidget {
         ),
         actions: [
           TextButton(
-            onPressed: onConsentRejected,
+            onPressed: () {
+              onConsentRejected();
+              Navigator.of(context).pop();
+            },
             child: const Text('Reject'),
           ),
           ElevatedButton(
-            onPressed: onConsentGranted,
+            onPressed: () {
+              onConsentGranted();
+              Navigator.of(context).pop();
+            },
             child: const Text('Grant Consent'),
           ),
         ],

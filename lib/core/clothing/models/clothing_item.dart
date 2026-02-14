@@ -71,7 +71,7 @@ class ClothingItem {
     required String category,
     required List<String> colors,
     required List<String> seasons,
-    String? idempotencyKey,
+    required String idempotencyKey,
   }) {
     final now = DateTime.now().toUtc();
     return ClothingItem(
@@ -86,7 +86,7 @@ class ClothingItem {
       uploadedAt: now,
       updatedAt: now,
       processingState: ItemProcessingState.completed,
-      idempotencyKey: idempotencyKey ?? const Uuid().v4(),
+      idempotencyKey: idempotencyKey,
     );
   }
 
@@ -106,49 +106,56 @@ class ClothingItem {
     String? failureReason,
     int? retryCount,
     String? idempotencyKey,
-  }) =>
-      ClothingItem(
-        id: id ?? this.id,
-        userId: userId ?? this.userId,
-        imageUrl: imageUrl ?? this.imageUrl,
-        processedImageUrl: processedImageUrl ?? this.processedImageUrl,
-        thumbnailUrl: thumbnailUrl ?? this.thumbnailUrl,
-        category: category ?? this.category,
-        colors: colors ?? this.colors,
-        seasons: seasons ?? this.seasons,
-        uploadedAt: uploadedAt ?? this.uploadedAt,
-        updatedAt: updatedAt ?? this.updatedAt,
-        processingState: processingState ?? this.processingState,
-        failureReason: failureReason ?? this.failureReason,
-        retryCount: retryCount ?? this.retryCount,
-        idempotencyKey: idempotencyKey ?? this.idempotencyKey,
-      );
+  }) => ClothingItem(
+    id: id ?? this.id,
+    userId: userId ?? this.userId,
+    imageUrl: imageUrl ?? this.imageUrl,
+    processedImageUrl: processedImageUrl ?? this.processedImageUrl,
+    thumbnailUrl: thumbnailUrl ?? this.thumbnailUrl,
+    category: category ?? this.category,
+    colors: colors ?? this.colors,
+    seasons: seasons ?? this.seasons,
+    uploadedAt: uploadedAt ?? this.uploadedAt,
+    updatedAt: updatedAt ?? this.updatedAt,
+    processingState: processingState ?? this.processingState,
+    failureReason: failureReason ?? this.failureReason,
+    retryCount: retryCount ?? this.retryCount,
+    idempotencyKey: idempotencyKey ?? this.idempotencyKey,
+  );
 
   /// Serializes this item to a JSON map.
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'userId': userId,
-        'imageUrl': imageUrl,
-        'processedImageUrl': processedImageUrl,
-        'thumbnailUrl': thumbnailUrl,
-        'category': category,
-        'colors': colors,
-        'seasons': seasons,
-        'uploadedAt': uploadedAt.toIso8601String(),
-        'updatedAt': updatedAt.toIso8601String(),
-        'processingState': processingState.name,
-        'failureReason': failureReason,
-        'retryCount': retryCount,
-        'idempotencyKey': idempotencyKey,
-      };
+    'id': id,
+    'userId': userId,
+    'imageUrl': imageUrl,
+    'processedImageUrl': processedImageUrl,
+    'thumbnailUrl': thumbnailUrl,
+    'category': category,
+    'colors': colors,
+    'seasons': seasons,
+    'uploadedAt': uploadedAt.toIso8601String(),
+    'updatedAt': updatedAt.toIso8601String(),
+    'processingState': processingState.name,
+    'failureReason': failureReason,
+    'retryCount': retryCount,
+    'idempotencyKey': idempotencyKey,
+  };
 
   /// Creates a [ClothingItem] from a JSON map.
   factory ClothingItem.fromJson(Map<String, dynamic> json) {
     final processingStateName = json['processingState'] as String;
-    final processingState = ItemProcessingState.values.tryByName(
-      processingStateName,
+    final processingState = ItemProcessingState.values.firstWhere(
+      (e) => e.name == processingStateName,
       orElse: () => ItemProcessingState.processingFailed,
     );
+
+    final idempotencyKey = json['idempotencyKey'] as String?;
+    if (idempotencyKey == null) {
+      throw FormatException(
+        'ClothingItem: field "idempotencyKey" is required for deduplication',
+      );
+    }
+
     return ClothingItem(
       id: json['id'] as String,
       userId: json['userId'] as String,
@@ -163,7 +170,7 @@ class ClothingItem {
       processingState: processingState,
       failureReason: json['failureReason'] as String?,
       retryCount: json['retryCount'] as int? ?? 0,
-      idempotencyKey: json['idempotencyKey'] as String? ?? const Uuid().v4(),
+      idempotencyKey: idempotencyKey,
     );
   }
 
@@ -189,24 +196,25 @@ class ClothingItem {
 
   @override
   int get hashCode => Object.hash(
-        id,
-        userId,
-        imageUrl,
-        processedImageUrl,
-        thumbnailUrl,
-        category,
-        Object.hashAll(colors),
-        Object.hashAll(seasons),
-        uploadedAt,
-        updatedAt,
-        processingState,
-        failureReason,
-        retryCount,
-        idempotencyKey,
-      );
+    id,
+    userId,
+    imageUrl,
+    processedImageUrl,
+    thumbnailUrl,
+    category,
+    Object.hashAll(colors),
+    Object.hashAll(seasons),
+    uploadedAt,
+    updatedAt,
+    processingState,
+    failureReason,
+    retryCount,
+    idempotencyKey,
+  );
 
   @override
-  String toString() => 'ClothingItem(id: $id, category: $category, '
+  String toString() =>
+      'ClothingItem(id: $id, category: $category, '
       'colors: $colors, seasons: $seasons, state: $processingState)';
 
   /// Helper method to compare two lists for equality.

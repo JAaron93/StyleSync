@@ -15,10 +15,11 @@ class BiometricConsentDialog extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return WillPopScope(
-      onWillPop: () async {
-        onConsentRejected();
-        return true;
+    return PopScope(
+      onPopInvokedWithResult: (didPop, result) {
+        if (!didPop) {
+          onConsentRejected();
+        }
       },
       child: AlertDialog(
         title: const Text('Virtual Try-On Consent'),

@@ -14,16 +14,13 @@ void main() {
 
     // Property 5: Face Detection Consent Enforcement
     testWidgets('FaceDetectionConsentDialog renders correctly', (WidgetTester tester) async {
-      bool consentGranted = false;
-      bool consentRejected = false;
-
       // Given: A consent dialog wrapped in MaterialApp
       await tester.pumpWidget(
         MaterialApp(
           home: Scaffold(
             body: FaceDetectionConsentDialog(
-              onConsentGranted: () => consentGranted = true,
-              onConsentRejected: () => consentRejected = true,
+              onConsentGranted: () {},
+              onConsentRejected: () {},
             ),
           ),
         ),
@@ -40,6 +37,27 @@ void main() {
       expect(find.text('Generated results are stored only if you explicitly save them.'), findsOneWidget);
       expect(find.text('Reject'), findsOneWidget);
       expect(find.text('Grant Consent'), findsOneWidget);
+    });
+
+    testWidgets('FaceDetectionConsentDialog rejects consent correctly', (WidgetTester tester) async {
+      bool consentGranted = false;
+      bool consentRejected = false;
+
+      // Given: A consent dialog wrapped in MaterialApp
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: FaceDetectionConsentDialog(
+              onConsentGranted: () => consentGranted = true,
+              onConsentRejected: () => consentRejected = true,
+            ),
+          ),
+        ),
+      );
+
+      // Check UI elements are present
+      expect(find.text('Reject'), findsOneWidget);
+      expect(find.text('Grant Consent'), findsOneWidget);
 
       // When: User taps Reject button
       await tester.tap(find.text('Reject'));
@@ -48,10 +66,27 @@ void main() {
       // Then: onConsentRejected should be called
       expect(consentRejected, isTrue);
       expect(consentGranted, isFalse);
+    });
 
-      // Reset and test Grant button
-      consentGranted = false;
-      consentRejected = false;
+    testWidgets('FaceDetectionConsentDialog grants consent correctly', (WidgetTester tester) async {
+      bool consentGranted = false;
+      bool consentRejected = false;
+
+      // Given: A consent dialog wrapped in MaterialApp
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Scaffold(
+            body: FaceDetectionConsentDialog(
+              onConsentGranted: () => consentGranted = true,
+              onConsentRejected: () => consentRejected = true,
+            ),
+          ),
+        ),
+      );
+
+      // Check UI elements are present
+      expect(find.text('Reject'), findsOneWidget);
+      expect(find.text('Grant Consent'), findsOneWidget);
 
       // When: User taps Grant Consent button
       await tester.tap(find.text('Grant Consent'));

@@ -13,8 +13,11 @@ void main() {
         bytesUsed: 0,
         maxBytes: 2 * 1024 * 1024 * 1024,
       );
-      expect(quota.isExceeded, true,
-          reason: 'Quota should be exceeded when itemCount >= maxItems');
+      expect(
+        quota.isExceeded,
+        true,
+        reason: 'Quota should be exceeded when itemCount >= maxItems',
+      );
     });
 
     test('storage quota is not exceeded when itemCount < maxItems', () {
@@ -24,8 +27,11 @@ void main() {
         bytesUsed: 0,
         maxBytes: 2 * 1024 * 1024 * 1024,
       );
-      expect(quota.isExceeded, false,
-          reason: 'Quota should not be exceeded when itemCount < maxItems');
+      expect(
+        quota.isExceeded,
+        false,
+        reason: 'Quota should not be exceeded when itemCount < maxItems',
+      );
     });
 
     test('storage quota is exceeded when bytesUsed >= maxBytes', () {
@@ -35,8 +41,11 @@ void main() {
         bytesUsed: 2 * 1024 * 1024 * 1024,
         maxBytes: 2 * 1024 * 1024 * 1024,
       );
-      expect(quota.isExceeded, true,
-          reason: 'Quota should be exceeded when bytesUsed >= maxBytes');
+      expect(
+        quota.isExceeded,
+        true,
+        reason: 'Quota should be exceeded when bytesUsed >= maxBytes',
+      );
     });
 
     test('storage quota is not exceeded when within both limits', () {
@@ -46,8 +55,11 @@ void main() {
         bytesUsed: 2 * 1024 * 1024 * 1024 - 1,
         maxBytes: 2 * 1024 * 1024 * 1024,
       );
-      expect(quota.isExceeded, false,
-          reason: 'Quota should not be exceeded when within limits');
+      expect(
+        quota.isExceeded,
+        false,
+        reason: 'Quota should not be exceeded when within limits',
+      );
     });
 
     // Property: Storage quota copyWith preserves all fields
@@ -109,6 +121,7 @@ void main() {
         category: 'tops',
         colors: ['blue', 'white'],
         seasons: ['spring', 'summer'],
+        idempotencyKey: 'test-idempotency-key-1',
       );
 
       final json = item.toJson();
@@ -136,6 +149,7 @@ void main() {
         category: 'tops',
         colors: ['blue', 'white'],
         seasons: ['spring', 'summer'],
+        idempotencyKey: 'test-idempotency-key-2',
       );
 
       final updated = item.copyWith(
@@ -194,6 +208,7 @@ void main() {
         category: 'tops',
         colors: ['blue', 'white'],
         seasons: ['spring', 'summer'],
+        idempotencyKey: 'test-idempotency-key-3',
       );
 
       final item2 = item1.copyWith(category: 'bottoms');

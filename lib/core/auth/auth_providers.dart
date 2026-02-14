@@ -133,10 +133,12 @@ class AuthStateNotifier extends StateNotifier<AuthState> {
   /// Private helper to require authenticated state.
   /// 
   /// Returns true if user is authenticated, false otherwise.
-  /// Sets error state and returns false when authentication is required.
+  /// Sets consistent unauthenticated state and returns false when authentication is required.
   bool _requireAuthenticated() {
     if (state.status != AuthStatus.authenticated || state.profile == null) {
-      state = state.copyWith(errorMessage: 'User must be authenticated to update consent');
+      state = const AuthState.unauthenticated().copyWith(
+        errorMessage: 'User must be authenticated to update consent',
+      );
       return false;
     }
     return true;
