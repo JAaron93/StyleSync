@@ -114,7 +114,7 @@ class BackgroundRetryServiceImpl implements BackgroundRetryService {
 
     // Process items in order
     for (final task in List.from(_retryQueue)) {
-      final result = await _attemptRetry(task);
+      final result = await attemptRetry(task);
       if (result.isSuccess) {
         debugPrint('Successfully retried item ${task.itemId}');
         _retryQueue.remove(task);
@@ -148,7 +148,7 @@ class BackgroundRetryServiceImpl implements BackgroundRetryService {
     debugPrint('Disposed retry service');
   }
   /// Attempts to retry processing for an item.
-  Future<RetryResult<ClothingItem>> _attemptRetry(_RetryTask task) async {
+  Future<RetryResult<ClothingItem>> attemptRetry(_RetryTask task) async {
     try {
       // Calculate backoff delay with jitter
       final cappedRetryCount = task.retryCount.clamp(0, 8); // Cap at ~4 minutes

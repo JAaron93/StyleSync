@@ -56,6 +56,56 @@ void main() {
       expect(age, 17);
     });
 
+    group('Edge Case Tests', () {
+      test('should handle Feb 29 birthday on non-leap year (evaluated on Feb 28)', () {
+        // Born Feb 29, 2004 (leap year) - would turn 19 on Feb 29, 2023
+        // But 2023 is not a leap year, so Feb 28 is before the "birthday"
+        final dateOfBirth = DateTime(2004, 2, 29);
+        final referenceDate = DateTime(2023, 2, 28);
+        
+        final age = service.calculateAgeForTesting(dateOfBirth, referenceDate: referenceDate);
+
+        // On Feb 28, birthday (Feb 29) hasn't occurred yet, so age is 18
+        expect(age, 18);
+      });
+
+      test('should handle Feb 29 birthday on non-leap year (evaluated on Mar 1)', () {
+        // Born Feb 29, 2004 (leap year) - would turn 19 on Feb 29, 2023
+        // But 2023 is not a leap year, so Mar 1 is after the "birthday"
+        final dateOfBirth = DateTime(2004, 2, 29);
+        final referenceDate = DateTime(2023, 3, 1);
+        
+        final age = service.calculateAgeForTesting(dateOfBirth, referenceDate: referenceDate);
+
+        // On Mar 1, birthday has passed, so age is 19
+        expect(age, 19);
+      });
+
+      test('should handle year-boundary transition (Dec 31 birthday, Jan 1 reference)', () {
+        // Born Dec 31, 2000 - turns 1 on Dec 31, 2001
+        // On Jan 1, 2001, birthday hasn't occurred yet
+        final dateOfBirth = DateTime(2000, 12, 31);
+        final referenceDate = DateTime(2001, 1, 1);
+        
+        final age = service.calculateAgeForTesting(dateOfBirth, referenceDate: referenceDate);
+
+        // On Jan 1, 2001, still 0 years old (birthday Dec 31 not yet occurred)
+        expect(age, 0);
+      });
+
+      test('should handle year-boundary transition (Jan 1 birthday, Dec 31 reference)', () {
+        // Born Jan 1, 2000 - turns 1 on Jan 1, 2001
+        // On Dec 31, 2000, birthday hasn't occurred yet
+        final dateOfBirth = DateTime(2000, 1, 1);
+        final referenceDate = DateTime(2000, 12, 31);
+        
+        final age = service.calculateAgeForTesting(dateOfBirth, referenceDate: referenceDate);
+
+        // On Dec 31, 2000, still 0 years old (birthday Jan 1 not yet occurred)
+        expect(age, 0);
+      });
+    });
+
     group('Input Validation Tests', () {
       test('should throw ArgumentError when date of birth is in the future', () {
         final referenceDate = DateTime(2024, 1, 15);

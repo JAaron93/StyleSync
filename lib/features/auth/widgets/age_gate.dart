@@ -84,7 +84,7 @@ class _AgeGateDialogState extends State<AgeGateDialog> {
   }
 
   String _formatDate(DateTime date) {
-    return '${date.month}/${date.day}/${date.year}';
+    return '${date.month.toString().padLeft(2, '0')}/${date.day.toString().padLeft(2, '0')}/${date.year}';
   }
 }
 
@@ -109,7 +109,7 @@ class DatePickerWidget extends StatefulWidget {
   final DateTime lastDate;
 
   /// Callback when the date changes.
-  final Function(DateTime) onChanged;
+  final ValueChanged<DateTime> onChanged;
 
   @override
   State<DatePickerWidget> createState() => _DatePickerWidgetState();

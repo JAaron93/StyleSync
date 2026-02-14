@@ -2,15 +2,26 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:stylesync/features/auth/widgets/age_gate.dart';
 
+/// Configures the test view with standard physical size and device pixel ratio.
+/// Automatically registers tear down callbacks to reset the view after the test.
+void configureTestView(WidgetTester tester) {
+  tester.view.physicalSize = const Size(1080, 2220);
+  tester.view.devicePixelRatio = 3.0;
+  addTearDown(tester.view.resetPhysicalSize);
+  addTearDown(tester.view.resetDevicePixelRatio);
+}
+
 void main() {
   group('AgeGateLogic', () {
     test('is18Plus returns true for 25 years old', () {
-      final date = DateTime.now().subtract(const Duration(days: 365 * 25));
+      final now = DateTime.now();
+      final date = DateTime(now.year - 25, now.month, now.day);
       expect(is18Plus(date), isTrue);
     });
 
     test('is18Plus returns false for under 18 (17 years old)', () {
-      final date = DateTime.now().subtract(const Duration(days: 365 * 17));
+      final now = DateTime.now();
+      final date = DateTime(now.year - 17, now.month, now.day);
       expect(is18Plus(date), isFalse);
     });
 
@@ -25,8 +36,7 @@ void main() {
 
 
     testWidgets('initial state passes validation (25 years old)', (tester) async {
-      tester.view.physicalSize = const Size(1080, 2220);
-      tester.view.devicePixelRatio = 3.0;
+      configureTestView(tester);
 
       final mockObserver = MockNavigatorObserver();
       await tester.pumpWidget(
@@ -61,9 +71,6 @@ void main() {
       
       expect(mockObserver.didPopCalled, isTrue);
       expect(find.text('You must be 18 years or older to use this application.'), findsNothing);
-      
-      addTearDown(tester.view.resetPhysicalSize);
-      addTearDown(tester.view.resetDevicePixelRatio);
     });
     
     // To test failure, we need to change the date to < 18 years.

@@ -21,7 +21,7 @@ class SecureStorageServiceImpl implements SecureStorageService {
         _injectedBackend = backend,
         _platform = platform ?? const LocalPlatform() {
     if (_injectedStorage != null) {
-      _storage = _injectedStorage!;
+      _storage = _injectedStorage;
       _backend = _injectedBackend ?? SecureStorageBackend.software;
       _initialized = true;
       _initCompleter.complete();

@@ -10,9 +10,13 @@ build/
 .idea/
 *.iml
 android/key.properties
+android/local.properties
 *.jks
 *.keystore
 .kilocode/
 
 # Coverage
 coverage/
+
+# Generated mocks (Mockito)
+*.mocks.dart

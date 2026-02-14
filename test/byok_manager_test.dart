@@ -18,7 +18,6 @@ import 'package:stylesync/core/byok/byok_storage_keys.dart';
 import 'package:stylesync/core/byok/cloud_backup_service.dart';
 import 'package:stylesync/core/byok/models/api_key_config.dart';
 import 'package:stylesync/core/byok/models/byok_error.dart';
-import 'package:stylesync/core/byok/models/validation_result.dart';
 import 'package:stylesync/core/storage/secure_storage_service.dart';
 
 // =============================================================================

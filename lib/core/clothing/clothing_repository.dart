@@ -174,16 +174,28 @@ class ClothingRepositoryImpl implements ClothingRepository {
       // Create a placeholder clothing item
       // In a real implementation, this would process the image and generate
       // processed and thumbnail versions
-      final clothingItem = ClothingItem.create(
-        userId: userId,
-        imageUrl: 'https://example.com/image.jpg',
-        processedImageUrl: 'https://example.com/processed.jpg',
-        thumbnailUrl: 'https://example.com/thumbnail.jpg',
-        category: 'tops',
-        colors: ['blue', 'white'],
-        seasons: ['spring', 'summer', 'all-season'],
-        idempotencyKey: finalIdempotencyKey,
-      );
+      // NOTE: This placeholder branch is only for testing. Production builds
+      // should never use these example.com URLs.
+      final clothingItem = () {
+        // Prevent placeholder from being used in production
+        if (!bool.fromEnvironment('dart.test', defaultValue: false)) {
+          throw UnimplementedError(
+            'ClothingItem upload is not yet implemented. '
+            'Image processing, storage upload, and Firestore persistence '
+            'are required before production use.',
+          );
+        }
+        return ClothingItem.create(
+          userId: userId,
+          imageUrl: 'https://example.com/image.jpg',
+          processedImageUrl: 'https://example.com/processed.jpg',
+          thumbnailUrl: 'https://example.com/thumbnail.jpg',
+          category: 'tops',
+          colors: ['blue', 'white'],
+          seasons: ['spring', 'summer', 'all-season'],
+          idempotencyKey: finalIdempotencyKey,
+        );
+      }();
 
       // TODO: Upload image to Firebase Storage
       // final imageRef = _storage.ref(_getClothingPath(userId, itemId));
@@ -373,7 +385,7 @@ class ClothingRepositoryImpl implements ClothingRepository {
         );
       }
       return Failure(
-        FirebaseError(
+        ProcessingError(
           'Failed to delete clothing item: ${e.toString()}',
           originalError: e,
         ),
@@ -405,6 +417,10 @@ class ClothingRepositoryImpl implements ClothingRepository {
         maxBytes: 2 * 1024 * 1024 * 1024, // 2GB
       );
       return Success(quota);
+    } on FirebaseException catch (e) {
+      return Failure(
+        FirebaseError('Firebase error: ${e.message}', originalError: e),
+      );
     } catch (e) {
       if (_isNetworkError(e)) {
         return Failure(

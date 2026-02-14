@@ -20,6 +20,9 @@ class AuthError implements Exception {
 
 /// Error codes for authentication operations.
 class AuthErrorCode {
+  /// Private constructor to prevent instantiation.
+  AuthErrorCode._();
+
   /// The email address is already in use by another account.
   static const String emailAlreadyInUse = 'email-already-in-use';
 
@@ -33,10 +36,22 @@ class AuthErrorCode {
   static const String userDisabled = 'user-disabled';
 
   /// The user was not found.
+  ///
+  /// Note: Prefer using [invalidCredentials] for sign-in failures to prevent
+  /// account enumeration attacks.
   static const String userNotFound = 'user-not-found';
 
   /// The password is invalid.
+  ///
+  /// Note: Prefer using [invalidCredentials] for sign-in failures to prevent
+  /// account enumeration attacks.
   static const String wrongPassword = 'wrong-password';
+
+  /// Invalid email or password (unified to prevent account enumeration).
+  ///
+  /// Use this for sign-in failures instead of [userNotFound] or [wrongPassword]
+  /// to prevent attackers from determining if an email exists in the system.
+  static const String invalidCredentials = 'invalid-credentials';
 
   /// The operation is not allowed.
   static const String operationNotAllowed = 'operation-not-allowed';

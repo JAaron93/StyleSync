@@ -56,7 +56,6 @@ class FaceDetectionServiceImpl implements FaceDetectionService {
     if (!await imageFile.exists()) {
       throw FaceDetectionException('Image file does not exist');
     }
-    }
 
     try {
       final inputImage = InputImage.fromFile(imageFile);

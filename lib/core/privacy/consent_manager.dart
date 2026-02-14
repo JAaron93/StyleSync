@@ -68,7 +68,9 @@ class ConsentManagerImpl implements ConsentManager {
 
   @override
   Future<void> clearAllConsents() async {
-    await _prefs.remove(_faceDetectionConsentKey);
-    await _prefs.remove(_biometricConsentKey);
+    await Future.wait([
+      _prefs.remove(_faceDetectionConsentKey),
+      _prefs.remove(_biometricConsentKey),
+    ]);
   }
 }

@@ -19,7 +19,7 @@ abstract class AutoTaggerService {
 }
 
 class ClothingTags {
-  final String category; // tops, bottoms, shoes, accessories, unknown (fallback)
+  final String category; // tops, bottoms, shoes, accessories (fallback), unknown (JSON parse fallback)
   final List<String> colors;
   final List<String> seasons; // spring, summer, fall, winter, all-season
   final Map<String, dynamic> additionalAttributes;

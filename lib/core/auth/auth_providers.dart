@@ -29,7 +29,7 @@ final ageVerificationServiceProvider =
 /// This is a [FutureProvider] that asynchronously checks the authentication
 /// status. It's useful for determining the initial route during app startup.
 final isSignedInProvider = FutureProvider<bool>((ref) async {
-  final service = ref.read(authServiceProvider);
+  final service = ref.watch(authServiceProvider);
   return service.isSignedIn();
 });
 
@@ -38,17 +38,17 @@ final isSignedInProvider = FutureProvider<bool>((ref) async {
 /// This is a [FutureProvider] that retrieves the authenticated user's
 /// profile from Firestore. Returns null if the user is not signed in.
 final userProfileProvider = FutureProvider<UserProfile?>((ref) async {
-  final service = ref.read(authServiceProvider);
+  final service = ref.watch(authServiceProvider);
   return service.getUserProfile();
 });
 
 /// Provider for the current user's age verification status.
 ///
 /// This is a [FutureProvider] that checks if the current user has
-/// been verified as 18+ years old.
+/// been verified as 18+ years old. It depends on [userProfileProvider]
+/// to avoid duplicating profile fetches.
 final is18PlusVerifiedProvider = FutureProvider<bool>((ref) async {
-  final service = ref.read(authServiceProvider);
-  final profile = await service.getUserProfile();
+  final profile = await ref.watch(userProfileProvider.future);
   return profile?.is18PlusVerified ?? false;
 });
 

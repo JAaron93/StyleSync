@@ -1,5 +1,4 @@
 import 'dart:math';
-import 'dart:typed_data';
 import 'package:argon2/argon2.dart';
 import 'package:cryptography/cryptography.dart' as crypto;
 import 'package:flutter/foundation.dart';

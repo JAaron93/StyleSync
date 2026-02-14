@@ -232,13 +232,45 @@ class AgeVerificationServiceImpl implements AgeVerificationService {
   @override
   Future<void> markUserAsVerified(String userId) async {
     try {
+      // Get the previous verification status for audit trail
+      bool previousValue = false;
+      final doc = await _firestore.collection('users').doc(userId).get();
+      if (doc.exists) {
+        previousValue = doc.data()?[_kVerifiedKey] as bool? ?? false;
+      }
+
+      // Update the user's verification status using set with merge to ensure
+      // the write succeeds even if the document doesn't exist
       await _firestore.collection('users').doc(userId).set({
         _kVerifiedKey: true,
       }, SetOptions(merge: true));
-    } catch (e) {
-      _logger.warning('Failed to mark user as verified for user $userId: ${e.toString()}', e);
+
+      // Write audit record to verification-audit collection
+      await _firestore.collection('user_verification_audit').add({
+        'userId': userId,
+        'actor': 'system',
+        'trigger': 'markUserAsVerified',
+        'reason': 'User marked as 18+ verified',
+        'timestamp': FieldValue.serverTimestamp(),
+        'previousValue': previousValue,
+        'newValue': true,
+      });
+    } on FirebaseException catch (e) {
+      _logger.warning(
+        'Failed to mark user as verified for user $userId: ${e.message}',
+        e,
+      );
       throw AuthError(
-        'Failed to mark user as verified',
+        'Failed to mark user as verified: ${e.message}',
+        AuthErrorCode.markVerifiedFailed,
+      );
+    } catch (e) {
+      _logger.warning(
+        'Unexpected error marking user as verified for user $userId: ${e.toString()}',
+        e,
+      );
+      throw AuthError(
+        'Failed to mark user as verified: ${e.toString()}',
         AuthErrorCode.markVerifiedFailed,
       );
     }

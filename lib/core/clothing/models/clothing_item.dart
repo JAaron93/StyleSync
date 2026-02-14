@@ -143,10 +143,23 @@ class ClothingItem {
 
   /// Creates a [ClothingItem] from a JSON map.
   factory ClothingItem.fromJson(Map<String, dynamic> json) {
-    final processingStateName = json['processingState'] as String;
+    final processingStateValue = json['processingState'];
+    if (processingStateValue == null) {
+      throw FormatException(
+        'ClothingItem: field "processingState" is required',
+      );
+    }
+    if (processingStateValue is! String) {
+      throw FormatException(
+        'ClothingItem: field "processingState" must be a String, got ${processingStateValue.runtimeType}',
+      );
+    }
+    final processingStateName = processingStateValue;
     final processingState = ItemProcessingState.values.firstWhere(
       (e) => e.name == processingStateName,
-      orElse: () => ItemProcessingState.processingFailed,
+      orElse: () => throw FormatException(
+        'ClothingItem: invalid processingState "$processingStateName"',
+      ),
     );
 
     final idempotencyKey = json['idempotencyKey'] as String?;

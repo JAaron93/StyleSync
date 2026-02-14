@@ -2,6 +2,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:logging/logging.dart';
 
+import 'models/auth_user.dart';
 import 'models/user_profile.dart';
 import 'models/auth_error.dart';
 
@@ -17,7 +18,10 @@ final Logger _logger = Logger('AuthService');
 /// - User profile management
 abstract class AuthService {
   /// The currently authenticated user, or null if not signed in.
-  User? get currentUser;
+  ///
+  /// Returns an [AuthUser] abstraction to decouple callers from
+  /// Firebase Auth implementation details.
+  AuthUser? get currentUser;
 
   /// Checks if a user is currently signed in.
   Future<bool> isSignedIn();
@@ -83,7 +87,15 @@ class AuthServiceImpl implements AuthService {
   final FirebaseFirestore _firestore;
 
   @override
-  User? get currentUser => _auth.currentUser;
+  AuthUser? get currentUser {
+    final user = _auth.currentUser;
+    if (user == null) return null;
+    return AuthUser(
+      id: user.uid,
+      email: user.email,
+      displayName: user.displayName,
+    );
+  }
 
   @override
   Future<bool> isSignedIn() async {
@@ -201,7 +213,18 @@ class AuthServiceImpl implements AuthService {
 
   @override
   Future<void> signOut() async {
-    await _auth.signOut();
+    try {
+      await _auth.signOut();
+    } on FirebaseAuthException catch (e) {
+      _logger.warning('Firebase Auth error during sign-out: ${e.message}');
+      throw _mapFirebaseAuthError(e);
+    } catch (e) {
+      _logger.warning('Unexpected error during sign-out: ${e.toString()}');
+      throw AuthError(
+        'An unexpected error occurred during sign-out',
+        AuthErrorCode.generalError,
+      );
+    }
   }
 
   @override
@@ -313,14 +336,11 @@ class AuthServiceImpl implements AuthService {
           AuthErrorCode.userDisabled,
         );
       case 'user-not-found':
-        return AuthError(
-          'No account found for this email address.',
-          AuthErrorCode.userNotFound,
-        );
       case 'wrong-password':
+        // Return unified error to prevent account enumeration
         return AuthError(
-          'The password is incorrect.',
-          AuthErrorCode.wrongPassword,
+          'Invalid email or password.',
+          AuthErrorCode.invalidCredentials,
         );
       case 'operation-not-allowed':
         return AuthError(

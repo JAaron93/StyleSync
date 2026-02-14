@@ -17,7 +17,7 @@ class BiometricConsentDialog extends StatelessWidget {
   Widget build(BuildContext context) {
     return PopScope(
       onPopInvokedWithResult: (didPop, result) {
-        if (!didPop) {
+        if (didPop) {
           onConsentRejected();
         }
       },

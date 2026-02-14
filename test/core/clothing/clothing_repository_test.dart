@@ -7,7 +7,6 @@ import 'package:firebase_storage/firebase_storage.dart';
 
 import 'package:stylesync/core/clothing/clothing_repository.dart';
 import 'package:stylesync/core/clothing/models/clothing_error.dart';
-import 'package:stylesync/core/clothing/models/clothing_item.dart';
 
 void main() {
   late ClothingRepositoryImpl repository;

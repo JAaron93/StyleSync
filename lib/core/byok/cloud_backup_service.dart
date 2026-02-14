@@ -2,10 +2,11 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
 
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../auth/auth_service.dart';
+import '../auth/auth_providers.dart';
 import '../crypto/encryption_service.dart';
 import '../crypto/key_derivation_service.dart';
 import 'byok_manager.dart';
@@ -98,8 +99,8 @@ class CloudBackupServiceImpl implements CloudBackupService {
   /// The Firebase Storage instance.
   final FirebaseStorage _storage;
 
-  /// The Firebase Auth instance for getting the current user ID.
-  final FirebaseAuth _auth;
+  /// The auth service for getting the current user ID.
+  final AuthService _authService;
 
   /// The key derivation service for deriving encryption keys.
   final KeyDerivationService _keyDerivationService;
@@ -110,17 +111,17 @@ class CloudBackupServiceImpl implements CloudBackupService {
   /// Creates a new [CloudBackupServiceImpl] instance.
   CloudBackupServiceImpl({
     required FirebaseStorage storage,
-    required FirebaseAuth auth,
+    required AuthService authService,
     required KeyDerivationService keyDerivationService,
     required EncryptionService encryptionService,
   })  : _storage = storage,
-        _auth = auth,
+        _authService = authService,
         _keyDerivationService = keyDerivationService,
         _encryptionService = encryptionService;
 
   /// Gets the storage path for the current user's backup.
   String _getBackupPath() {
-    final userId = _auth.currentUser?.uid;
+    final userId = _authService.currentUser?.id;
     if (userId == null) {
       throw StateError('No authenticated user');
     }
@@ -129,7 +130,7 @@ class CloudBackupServiceImpl implements CloudBackupService {
 
   /// Gets the temporary storage path for passphrase rotation.
   String _getTempBackupPath() {
-    final userId = _auth.currentUser?.uid;
+    final userId = _authService.currentUser?.id;
     if (userId == null) {
       throw StateError('No authenticated user');
     }
@@ -171,7 +172,7 @@ class CloudBackupServiceImpl implements CloudBackupService {
   }) async {
     try {
       // Validate user is authenticated
-      if (_auth.currentUser == null) {
+      if (_authService.currentUser == null) {
         return const Failure(BackupError(
           'User must be authenticated to create a backup',
           BackupErrorType.storageError,
@@ -320,7 +321,7 @@ class CloudBackupServiceImpl implements CloudBackupService {
   Future<Result<void>> deleteBackup() async {
     try {
       // Validate user is authenticated
-      if (_auth.currentUser == null) {
+      if (_authService.currentUser == null) {
         return const Failure(BackupError(
           'User must be authenticated to delete a backup',
           BackupErrorType.storageError,
@@ -366,7 +367,7 @@ class CloudBackupServiceImpl implements CloudBackupService {
   Future<Result<bool>> backupExists() async {
     try {
       // Validate user is authenticated
-      if (_auth.currentUser == null) {
+      if (_authService.currentUser == null) {
         return const Failure(BackupError(
           'User must be authenticated to check backup existence',
           BackupErrorType.storageError,
@@ -430,7 +431,7 @@ class CloudBackupServiceImpl implements CloudBackupService {
 
     try {
       // Validate user is authenticated
-      if (_auth.currentUser == null) {
+      if (_authService.currentUser == null) {
         return const Failure(BackupError(
           'User must be authenticated to rotate passphrase',
           BackupErrorType.storageError,
@@ -749,7 +750,7 @@ class CloudBackupServiceImpl implements CloudBackupService {
   Future<CloudBackupBlob?> _tryGetExistingBlob() async {
     try {
       // Check if user is authenticated
-      if (_auth.currentUser == null) {
+      if (_authService.currentUser == null) {
         return null;
       }
 
@@ -785,7 +786,7 @@ class CloudBackupServiceImpl implements CloudBackupService {
   Future<Result<CloudBackupBlob>> _fetchAndParseBlob() async {
     try {
       // Validate user is authenticated
-      if (_auth.currentUser == null) {
+      if (_authService.currentUser == null) {
         return const Failure(BackupError(
           'User must be authenticated to access backup',
           BackupErrorType.storageError,
@@ -866,11 +867,6 @@ final firebaseStorageProvider = Provider<FirebaseStorage>((ref) {
   return FirebaseStorage.instance;
 });
 
-/// Provider for [FirebaseAuth].
-final firebaseAuthProvider = Provider<FirebaseAuth>((ref) {
-  return FirebaseAuth.instance;
-});
-
 /// Provider for [KeyDerivationService].
 final keyDerivationServiceProvider = Provider<KeyDerivationService>((ref) {
   return KeyDerivationServiceImpl();
@@ -886,13 +882,13 @@ final encryptionServiceProvider = Provider<EncryptionService>((ref) {
 /// Creates a [CloudBackupServiceImpl] instance with injected dependencies.
 final cloudBackupServiceProvider = Provider<CloudBackupService>((ref) {
   final storage = ref.watch(firebaseStorageProvider);
-  final auth = ref.watch(firebaseAuthProvider);
+  final authService = ref.watch(authServiceProvider);
   final keyDerivationService = ref.watch(keyDerivationServiceProvider);
   final encryptionService = ref.watch(encryptionServiceProvider);
 
   return CloudBackupServiceImpl(
     storage: storage,
-    auth: auth,
+    authService: authService,
     keyDerivationService: keyDerivationService,
     encryptionService: encryptionService,
   );

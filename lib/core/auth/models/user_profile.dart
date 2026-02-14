@@ -14,6 +14,7 @@ class UserProfile {
     required this.faceDetectionConsentGranted,
     required this.biometricConsentGranted,
     required this.is18PlusVerified,
+    this.dateOfBirth,
   });
 
   /// The unique Firebase Auth UID for this user.
@@ -37,7 +38,13 @@ class UserProfile {
   /// Whether the user has been verified as 18+ years old.
   final bool is18PlusVerified;
 
+  /// The user's date of birth (optional, not persisted to Firestore per PII minimization).
+  final DateTime? dateOfBirth;
+
   /// Creates a copy of this profile with the given fields replaced.
+  ///
+  /// Use [clearDateOfBirth] to explicitly set [dateOfBirth] to null.
+  /// If [dateOfBirth] is provided, it takes precedence over [clearDateOfBirth].
   UserProfile copyWith({
     String? userId,
     String? email,
@@ -46,6 +53,8 @@ class UserProfile {
     bool? faceDetectionConsentGranted,
     bool? biometricConsentGranted,
     bool? is18PlusVerified,
+    DateTime? dateOfBirth,
+    bool clearDateOfBirth = false,
   }) {
     return UserProfile(
       userId: userId ?? this.userId,
@@ -57,6 +66,7 @@ class UserProfile {
       biometricConsentGranted:
           biometricConsentGranted ?? this.biometricConsentGranted,
       is18PlusVerified: is18PlusVerified ?? this.is18PlusVerified,
+      dateOfBirth: dateOfBirth ?? (clearDateOfBirth ? null : this.dateOfBirth),
     );
   }
 
@@ -125,7 +135,8 @@ class UserProfile {
         other.onboardingComplete == onboardingComplete &&
         other.faceDetectionConsentGranted == faceDetectionConsentGranted &&
         other.biometricConsentGranted == biometricConsentGranted &&
-        other.is18PlusVerified == is18PlusVerified;
+        other.is18PlusVerified == is18PlusVerified &&
+        other.dateOfBirth == dateOfBirth;
   }
 
   @override
@@ -137,10 +148,11 @@ class UserProfile {
         faceDetectionConsentGranted,
         biometricConsentGranted,
         is18PlusVerified,
+        dateOfBirth,
       );
 
   @override
   String toString() {
-    return 'UserProfile(userId: $userId, email: *****, createdAt: $createdAt, onboardingComplete: $onboardingComplete, faceDetectionConsentGranted: $faceDetectionConsentGranted, biometricConsentGranted: $biometricConsentGranted, is18PlusVerified: $is18PlusVerified)';
+    return 'UserProfile(userId: $userId, email: *****, createdAt: $createdAt, onboardingComplete: $onboardingComplete, faceDetectionConsentGranted: $faceDetectionConsentGranted, biometricConsentGranted: $biometricConsentGranted, is18PlusVerified: $is18PlusVerified, dateOfBirth: $dateOfBirth)';
   }
 }
