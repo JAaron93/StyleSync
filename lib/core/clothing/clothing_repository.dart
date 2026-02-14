@@ -297,7 +297,7 @@ class ClothingRepositoryImpl implements ClothingRepository {
         );
       }
       return Failure(
-        FirebaseError(
+        ProcessingError(
           'Failed to fetch clothing item: ${e.toString()}',
           originalError: e,
         ),
@@ -331,7 +331,7 @@ class ClothingRepositoryImpl implements ClothingRepository {
         );
       }
       return Failure(
-        FirebaseError(
+        ProcessingError(
           'Failed to update clothing item: ${e.toString()}',
           originalError: e,
         ),
