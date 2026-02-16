@@ -249,23 +249,27 @@ class CloudBackupServiceImpl implements CloudBackupService {
     }
   }
 
-  @override
-  Future<Result<APIKeyConfig>> restoreBackup(String passphrase) async {
-    // Step 1: Fetch and parse the backup blob
-    final blobResult = await _fetchAndParseBlob();
-    if (blobResult.isFailure) {
-      return Failure(blobResult.errorOrNull!);
-    }
-    final blob = blobResult.valueOrNull!;
-
+  /// Decrypts a [CloudBackupBlob] using the provided passphrase.
+  ///
+  /// This helper extracts the decryption logic used by [restoreBackup]
+  /// so it can be reused without re-fetching the blob.
+  ///
+  /// Returns [Success] with [APIKeyConfig] if decryption succeeds.
+  /// Returns [Failure] with [BackupError] if:
+  /// - Passphrase is incorrect ([BackupErrorType.wrongPassphrase])
+  /// - Backup is corrupted ([BackupErrorType.corrupted])
+  Future<Result<APIKeyConfig>> _decryptBlob(
+    CloudBackupBlob blob,
+    String passphrase,
+  ) async {
     try {
-      // Step 2: Derive decryption key from passphrase using stored KDF metadata
+      // Step 1: Derive decryption key from passphrase using stored KDF metadata
       final decryptionKey = await _keyDerivationService.deriveKey(
         passphrase,
         blob.kdfMetadata,
       );
 
-      // Step 3: Decrypt the data
+      // Step 2: Decrypt the data
       final Uint8List decryptedBytes;
       try {
         final encryptedBytes = base64Decode(blob.encryptedData);
@@ -288,7 +292,7 @@ class CloudBackupServiceImpl implements CloudBackupService {
         ));
       }
 
-      // Step 4: Parse APIKeyConfig from decrypted JSON
+      // Step 3: Parse APIKeyConfig from decrypted JSON
       try {
         final configJson = utf8.decode(decryptedBytes);
         final configMap = jsonDecode(configJson) as Map<String, dynamic>;
@@ -315,6 +319,19 @@ class CloudBackupServiceImpl implements CloudBackupService {
         originalError: e,
       ));
     }
+  }
+
+  @override
+  Future<Result<APIKeyConfig>> restoreBackup(String passphrase) async {
+    // Step 1: Fetch and parse the backup blob
+    final blobResult = await _fetchAndParseBlob();
+    if (blobResult.isFailure) {
+      return Failure(blobResult.errorOrNull!);
+    }
+    final blob = blobResult.valueOrNull!;
+
+    // Step 2: Decrypt using the helper
+    return _decryptBlob(blob, passphrase);
   }
 
   @override
@@ -446,12 +463,12 @@ class CloudBackupServiceImpl implements CloudBackupService {
       final existingBlob = existingBlobResult.valueOrNull!;
       final originalCreatedAt = existingBlob.createdAt;
 
-      // Step 2: Restore backup with old passphrase to get the config
-      final restoreResult = await restoreBackup(oldPassphrase);
-      if (restoreResult.isFailure) {
-        return Failure(restoreResult.errorOrNull!);
+      // Step 2: Decrypt with old passphrase to get the config (no second fetch)
+      final decryptResult = await _decryptBlob(existingBlob, oldPassphrase);
+      if (decryptResult.isFailure) {
+        return Failure(decryptResult.errorOrNull!);
       }
-      final config = restoreResult.valueOrNull!;
+      final config = decryptResult.valueOrNull!;
 
       // Step 3: Create re-encrypted backup at temporary path
       final uploadTempResult = await _uploadToPath(

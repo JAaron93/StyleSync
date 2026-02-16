@@ -57,7 +57,7 @@ void main() {
       expect(key1.length, 32);
     });
 
-    test('Encryption round-trip rejects empty passphrase', () async {
+    test('deriveKey throws ArgumentError for empty passphrase', () async {
       final salt = Uint8List(16);
       final metadata = KdfMetadata(
         algorithm: KdfAlgorithm.argon2id,

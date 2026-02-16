@@ -1,8 +1,10 @@
+import 'models/onboarding_persistence_exception.dart';
+
 /// Abstract interface for managing onboarding state and persistence.
 ///
 /// The [OnboardingController] is responsible for tracking whether a user
 /// has completed the onboarding flow and persisting this state across
-/// app sessions. Implementations should ensure thread-safe operations
+/// app sessions. Implementations should ensure safe concurrent async access
 /// and reliable persistence.
 ///
 /// Example usage:
@@ -31,7 +33,12 @@ abstract class OnboardingController {
   /// onboarding steps. The completion state is persisted so that
   /// the onboarding flow is not shown again on subsequent app launches.
   ///
-  /// Throws an exception if the persistence operation fails.
+  /// Throws [OnboardingPersistenceException] if the persistence operation fails,
+  /// such as when the storage backend is unavailable or the write operation
+  /// is rejected by the storage layer.
+  ///
+  /// Implementations should throw [OnboardingPersistenceException] with
+  /// `operation: 'markOnboardingComplete'` for consistent error handling.
   Future<void> markOnboardingComplete();
 
   /// Resets the onboarding state, allowing the flow to be shown again.

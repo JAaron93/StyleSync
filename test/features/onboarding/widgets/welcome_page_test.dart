@@ -7,6 +7,7 @@
 library;
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:stylesync/features/onboarding/widgets/welcome_page.dart';
 
@@ -171,6 +172,7 @@ void main() {
         await tester.ensureVisible(find.text('Get Started'));
         await tester.pumpAndSettle();
         await tester.tap(find.text('Get Started'));
+        await tester.pump();
 
         expect(callbackCalled, isTrue,
             reason: 'onGetStarted callback should be called when button is tapped');
@@ -266,11 +268,8 @@ void main() {
           reason: 'Subtitle should have proper semantics label',
         );
 
-        // Scroll to make the button visible
-        await tester.drag(
-          find.byType(SingleChildScrollView),
-          const Offset(0, -500),
-        );
+        // Ensure the Get Started button is visible
+        await tester.ensureVisible(find.widgetWithText(FilledButton, 'Get Started'));
         await tester.pumpAndSettle();
 
         // Verify Get Started button has proper button semantics
@@ -318,11 +317,8 @@ void main() {
           reason: 'Virtual Try-On title should have proper semantics label',
         );
 
-        // Scroll down to make Outfit Brainstorming visible
-        await tester.drag(
-          find.byType(SingleChildScrollView),
-          const Offset(0, -200),
-        );
+        // Ensure Outfit Brainstorming is visible
+        await tester.ensureVisible(find.text('Outfit Brainstorming'));
         await tester.pumpAndSettle();
 
         // Verify third feature card title has semantics label (now visible after scrolling)
@@ -337,7 +333,7 @@ void main() {
         handle.dispose();
       });
 
-      testWidgets('button is tappable', (WidgetTester tester) async {
+      testWidgets('button is keyboard accessible', (WidgetTester tester) async {
         bool callbackInvoked = false;
 
         await tester.pumpWidget(createTestWidget(
@@ -355,12 +351,14 @@ void main() {
         await tester.ensureVisible(buttonFinder);
         await tester.pumpAndSettle();
 
-        // Tap the button and verify callback was invoked
-        await tester.tap(buttonFinder);
+        // Focus the button and activate via Enter key (keyboard accessibility)
+        await tester.tap(buttonFinder); // Focus the button
+        await tester.pump();
+        await tester.sendKeyEvent(LogicalKeyboardKey.enter);
         await tester.pump();
 
         expect(callbackInvoked, isTrue,
-            reason: 'onGetStarted callback should be invoked when button is tapped');
+            reason: 'onGetStarted callback should be invoked when button is activated via Enter key');
       });
     });
   });

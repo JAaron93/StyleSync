@@ -110,7 +110,10 @@ class UserProfile {
       try {
         createdAtDateTime = DateTime.parse(createdAt);
       } catch (e) {
-        throw FormatException('Invalid UserProfile data: $map');
+        throw FormatException(
+          'Invalid UserProfile data: $map. '
+          'Failed to parse createdAt: $e',
+        );
       }
     }
 

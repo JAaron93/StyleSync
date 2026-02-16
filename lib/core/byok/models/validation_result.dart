@@ -147,7 +147,7 @@ class ValidationFailure extends ValidationResult {
           errorCode == other.errorCode;
 
   @override
-  int get hashCode => type.hashCode ^ message.hashCode ^ errorCode.hashCode;
+  int get hashCode => Object.hash(type, message, errorCode);
 
   @override
   String toString() => 'ValidationFailure('

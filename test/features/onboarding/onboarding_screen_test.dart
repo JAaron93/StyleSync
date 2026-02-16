@@ -85,7 +85,6 @@ void main() {
           (WidgetTester tester) async {
         await tester.pumpWidget(createTestWidget(
           initialState: const OnboardingState(
-            isComplete: false,
             currentStep: OnboardingStep.welcome,
           ),
         ));
@@ -103,7 +102,6 @@ void main() {
           (WidgetTester tester) async {
         await tester.pumpWidget(createTestWidget(
           initialState: const OnboardingState(
-            isComplete: false,
             currentStep: OnboardingStep.tutorial,
           ),
         ));
@@ -121,7 +119,6 @@ void main() {
           (WidgetTester tester) async {
         await tester.pumpWidget(createTestWidget(
           initialState: const OnboardingState(
-            isComplete: false,
             currentStep: OnboardingStep.apiKeyInput,
           ),
         ));
@@ -158,7 +155,6 @@ void main() {
           (WidgetTester tester) async {
         await tester.pumpWidget(createTestWidget(
           initialState: const OnboardingState(
-            isComplete: false,
             currentStep: OnboardingStep.welcome,
           ),
         ));
@@ -168,7 +164,16 @@ void main() {
             reason: 'Page indicator should be displayed');
 
         // The indicator should have 3 dots (welcome, tutorial, apiKeyInput)
-        // Each dot is an AnimatedContainer
+        final dotsCount = find
+            .descendant(
+              of: find.byType(OnboardingPageIndicator),
+              matching: find.byType(AnimatedContainer),
+            )
+            .evaluate()
+            .length;
+        expect(dotsCount, equals(3),
+            reason: 'Page indicator should have 3 dots for onboarding steps');
+
         final indicator = tester.widget<OnboardingPageIndicator>(
           find.byType(OnboardingPageIndicator),
         );
@@ -180,7 +185,6 @@ void main() {
           (WidgetTester tester) async {
         await tester.pumpWidget(createTestWidget(
           initialState: const OnboardingState(
-            isComplete: false,
             currentStep: OnboardingStep.welcome,
           ),
         ));
@@ -197,7 +201,6 @@ void main() {
           (WidgetTester tester) async {
         await tester.pumpWidget(createTestWidget(
           initialState: const OnboardingState(
-            isComplete: false,
             currentStep: OnboardingStep.tutorial,
           ),
         ));
@@ -214,7 +217,6 @@ void main() {
           (WidgetTester tester) async {
         await tester.pumpWidget(createTestWidget(
           initialState: const OnboardingState(
-            isComplete: false,
             currentStep: OnboardingStep.apiKeyInput,
           ),
         ));
@@ -237,7 +239,6 @@ void main() {
           (WidgetTester tester) async {
         await tester.pumpWidget(createTestWidget(
           initialState: const OnboardingState(
-            isComplete: false,
             currentStep: OnboardingStep.welcome,
           ),
         ));
@@ -250,7 +251,6 @@ void main() {
       testWidgets('uses Scaffold as root widget', (WidgetTester tester) async {
         await tester.pumpWidget(createTestWidget(
           initialState: const OnboardingState(
-            isComplete: false,
             currentStep: OnboardingStep.welcome,
           ),
         ));
@@ -264,7 +264,6 @@ void main() {
           (WidgetTester tester) async {
         await tester.pumpWidget(createTestWidget(
           initialState: const OnboardingState(
-            isComplete: false,
             currentStep: OnboardingStep.welcome,
           ),
         ));
@@ -282,22 +281,18 @@ void main() {
     group('Navigation flow', () {
       testWidgets('navigates from welcome to tutorial when Get Started is tapped',
           (WidgetTester tester) async {
-        await tester.pumpWidget(ProviderScope(
-          child: MaterialApp(
-            home: OnboardingScreen(),
-          ),
-        ));
+        // Set up mock SharedPreferences for the controller
+        SharedPreferences.setMockInitialValues({});
+
+        await tester.pumpWidget(createTestWidget());
         await tester.pumpAndSettle();
 
         // Verify we start on welcome page
         expect(find.byType(WelcomePage), findsOneWidget,
             reason: 'Should start on WelcomePage');
 
-        // Scroll to make the button visible
-        await tester.drag(
-          find.byType(SingleChildScrollView),
-          const Offset(0, -500),
-        );
+        // Ensure the Get Started button is visible
+        await tester.ensureVisible(find.text('Get Started'));
         await tester.pumpAndSettle();
 
         // Tap Get Started button
@@ -313,7 +308,6 @@ void main() {
           (WidgetTester tester) async {
         await tester.pumpWidget(createTestWidget(
           initialState: const OnboardingState(
-            isComplete: false,
             currentStep: OnboardingStep.tutorial,
           ),
         ));
@@ -336,7 +330,6 @@ void main() {
           (WidgetTester tester) async {
         await tester.pumpWidget(createTestWidget(
           initialState: const OnboardingState(
-            isComplete: false,
             currentStep: OnboardingStep.tutorial,
           ),
         ));
@@ -359,7 +352,6 @@ void main() {
           (WidgetTester tester) async {
         await tester.pumpWidget(createTestWidget(
           initialState: const OnboardingState(
-            isComplete: false,
             currentStep: OnboardingStep.apiKeyInput,
           ),
         ));
@@ -388,7 +380,6 @@ void main() {
           (WidgetTester tester) async {
         await tester.pumpWidget(createTestWidget(
           initialState: const OnboardingState(
-            isComplete: false,
             currentStep: OnboardingStep.welcome,
           ),
         ));
@@ -403,7 +394,6 @@ void main() {
           (WidgetTester tester) async {
         await tester.pumpWidget(createTestWidget(
           initialState: const OnboardingState(
-            isComplete: false,
             currentStep: OnboardingStep.tutorial,
           ),
         ));
@@ -419,7 +409,6 @@ void main() {
           (WidgetTester tester) async {
         await tester.pumpWidget(createTestWidget(
           initialState: const OnboardingState(
-            isComplete: false,
             currentStep: OnboardingStep.apiKeyInput,
           ),
         ));

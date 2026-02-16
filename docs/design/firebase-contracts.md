@@ -21,6 +21,8 @@
 }
 ```
 
+**Security Rules**:
+```javascript
 match /users/{userId} {
   allow read: if request.auth != null && request.auth.uid == userId;
   allow create: if request.auth != null && request.auth.uid == userId
@@ -33,7 +35,7 @@ match /users/{userId} {
     && (!request.resource.data.keys().hasAny(['faceDetectionConsentGranted']) || request.resource.data.faceDetectionConsentGranted is bool)
     && (!request.resource.data.keys().hasAny(['biometricConsentGranted']) || request.resource.data.biometricConsentGranted is bool)
     && (!request.resource.data.keys().hasAny(['is18PlusVerified']) || request.resource.data.is18PlusVerified is bool)
-    && (!request.resource.data.keys().hasAny(['verificationMethod']) || request.resource.data.verificationMethod is string)
+    && (!request.resource.data.keys().hasAny(['verificationMethod']) || request.resource.data.verificationMethod in ['selfReported', 'thirdPartyVerified'])
     && !request.resource.data.keys().hasAny(['dateOfBirth']); // PII Minimization: Do not persist DOB
   allow update: if request.auth != null && request.auth.uid == userId
     && request.resource.data.userId == resource.data.userId
@@ -44,9 +46,10 @@ match /users/{userId} {
     && (!request.resource.data.keys().hasAny(['faceDetectionConsentGranted']) || request.resource.data.faceDetectionConsentGranted is bool)
     && (!request.resource.data.keys().hasAny(['biometricConsentGranted']) || request.resource.data.biometricConsentGranted is bool)
     && (!request.resource.data.keys().hasAny(['is18PlusVerified']) || request.resource.data.is18PlusVerified is bool)
-    && (!request.resource.data.keys().hasAny(['verificationMethod']) || request.resource.data.verificationMethod is string)
+    && (!request.resource.data.keys().hasAny(['verificationMethod']) || request.resource.data.verificationMethod in ['selfReported', 'thirdPartyVerified'])
     && !request.resource.data.keys().hasAny(['dateOfBirth']); // PII Minimization: Do not persist DOB
 }
+```
 
 ### Biometric Data Handling
 
@@ -419,13 +422,16 @@ match /users/{userId}/outfits/{filename} {
 - Implement server-side key storage protected by Multi-Factor Authentication (MFA).
 
 **Mitigation Policies**:
+- **Decryption Model**: Decryption occurs **client-side** using Argon2id KDF with the user's password. The server never sees the decryption key or plaintext API key.
 - **Key Rotation**: API keys should be rotated every 90 days. Backups must be overwritten or deleted upon rotation.
 - **Expiration**: Backups should have a limited TTL (e.g., 30 days) and be automatically cleaned up by a lifecycle policy if not refreshed.
 - **Audit Logging**: All access to this file must be logged via Cloud Audit Logs or a custom logging function for security reviews.
-- **Brute-Force Protection**: 
-    - Use Argon2id with high memory cost for the KDF.
-    - Implement server-side rate-limiting and throttling for decryption attempts (client-side controls can be bypassed).
-    - Consider implementing account lockout after N failed decryption attempts within a time window.
+- **Offline Brute-Force Protection** (since decryption is client-side):
+    - Use the strong Argon2id parameters specified above (64MB memory cost, 3 iterations) to maximize brute-force resistance.
+    - Ensure per-file unique salts (already in schema) to prevent rainbow table attacks.
+    - Consider adding a pepper stored server-side or in Secure Enclave/TEE for an additional layer of protection.
+    - **File Access Rate-Limiting**: Limit download frequency using signed URLs with short TTLs (e.g., 5 minutes) and enforce per-user auth checks to detect anomalous access patterns.
+- **High-Risk Flow Alternative**: For users requiring enhanced security, consider offering optional server-side decryption via a Cloud Function with MFA, allowing server-side rate-limiting, account lockout, and audit trails.
 **Content Structure**:
 ```json
 {

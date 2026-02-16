@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'models/onboarding_persistence_exception.dart';
 import 'onboarding_controller.dart';
 
 /// Storage key used to persist the onboarding completion state.
@@ -11,8 +12,8 @@ const String _kOnboardingCompleteKey = 'onboarding_complete';
 ///
 /// This implementation persists the onboarding completion state to
 /// SharedPreferences, ensuring the state survives app restarts.
-/// All operations are thread-safe through the use of a Completer-based
-/// lock mechanism.
+/// All operations are safe for concurrent async access through the use of
+/// a Completer-based lock mechanism.
 class OnboardingControllerImpl implements OnboardingController {
   /// Creates an [OnboardingControllerImpl] instance.
   ///
@@ -23,12 +24,12 @@ class OnboardingControllerImpl implements OnboardingController {
 
   SharedPreferences? _sharedPreferences;
 
-  /// Completer used to ensure thread-safe initialization of SharedPreferences.
+  /// Completer used to ensure safe concurrent async initialization of SharedPreferences.
   Completer<SharedPreferences>? _initCompleter;
 
   /// Gets the SharedPreferences instance, initializing it if necessary.
   ///
-  /// This method ensures thread-safe lazy initialization by using a
+  /// This method ensures safe concurrent async lazy initialization by using a
   /// Completer to prevent multiple simultaneous initialization attempts.
   Future<SharedPreferences> _getPrefs() async {
     if (_sharedPreferences != null) {
@@ -65,7 +66,10 @@ class OnboardingControllerImpl implements OnboardingController {
     final prefs = await _getPrefs();
     final success = await prefs.setBool(_kOnboardingCompleteKey, true);
     if (!success) {
-      throw StateError('Failed to persist onboarding completion state');
+      throw OnboardingPersistenceException(
+        'Failed to persist onboarding completion state',
+        operation: 'markOnboardingComplete',
+      );
     }
   }
 

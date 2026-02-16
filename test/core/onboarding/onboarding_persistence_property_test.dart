@@ -23,7 +23,16 @@ import 'package:stylesync/core/onboarding/onboarding_controller_impl.dart';
 Generator<int> smallPositiveIntGenerator({int max = 10}) {
   return (random, size) {
     final value = random.nextInt(max) + 1;
-    return Shrinkable(value, () sync* {});
+    return Shrinkable(value, () sync* {
+      // Shrink toward 1 by halving
+      if (value > 1) {
+        yield Shrinkable(value ~/ 2, () sync* {});
+      }
+      // Shrink by decrementing toward 1
+      if (value > 1) {
+        yield Shrinkable(value - 1, () sync* {});
+      }
+    });
   };
 }
 
@@ -32,7 +41,30 @@ Generator<List<bool>> operationSequenceGenerator({int maxLength = 10}) {
   return (random, size) {
     final length = random.nextInt(maxLength) + 1;
     final operations = List.generate(length, (_) => random.nextBool());
-    return Shrinkable(operations, () sync* {});
+    return Shrinkable(operations, () sync* {
+      // Shrink by removing elements from the beginning
+      if (operations.isNotEmpty) {
+        yield Shrinkable(operations.sublist(1), () sync* {});
+      }
+      // Shrink by removing elements from the end
+      if (operations.isNotEmpty) {
+        yield Shrinkable(operations.sublist(0, operations.length - 1), () sync* {});
+      }
+      // Shrink by removing middle elements (for sequences of length >= 3)
+      if (operations.length >= 3) {
+        yield Shrinkable([...operations.sublist(0, 1), ...operations.sublist(2)], () sync* {});
+      }
+      // Shrink by flipping true -> false (markComplete -> reset)
+      for (int i = 0; i < operations.length; i++) {
+        if (operations[i]) {
+          yield Shrinkable([...operations.sublist(0, i), false, ...operations.sublist(i + 1)], () sync* {});
+        }
+      }
+      // Shrink to empty list (minimal case)
+      if (operations.isNotEmpty) {
+        yield Shrinkable(<bool>[], () sync* {});
+      }
+    });
   };
 }
 
@@ -411,10 +443,6 @@ void main() {
   // ===========================================================================
   
   group('Edge Cases', () {
-    setUp(() {
-      resetMockStorage();
-    });
-
     test('isOnboardingComplete() returns false for fresh storage', () async {
       final controller = await createController();
       final isComplete = await controller.isOnboardingComplete();

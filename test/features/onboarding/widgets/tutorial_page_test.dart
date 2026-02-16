@@ -142,11 +142,11 @@ void main() {
         ));
         await tester.pumpAndSettle();
 
-        expect(find.text('1'), findsOneWidget,
+        expect(find.byKey(const ValueKey('step-number-1')), findsOneWidget,
             reason: 'Step number 1 should be displayed');
-        expect(find.text('2'), findsOneWidget,
+        expect(find.byKey(const ValueKey('step-number-2')), findsOneWidget,
             reason: 'Step number 2 should be displayed');
-        expect(find.text('3'), findsOneWidget,
+        expect(find.byKey(const ValueKey('step-number-3')), findsOneWidget,
             reason: 'Step number 3 should be displayed');
       });
     });
@@ -368,17 +368,20 @@ void main() {
         ));
         await tester.pumpAndSettle();
 
-        // FilledButton.icon creates a FilledButton widget
-        // Find the button that contains "Next" text
-        // Note: FilledButton.icon creates both _FilledButtonWithIcon and _FilledButtonWithIconChild
-        final nextButtonFinder = find.ancestor(
-          of: find.text('Next'),
-          matching: find.byWidgetPredicate(
-            (widget) => widget.runtimeType.toString().contains('FilledButton'),
+        // FilledButton.icon creates an internal widget type that implements
+        // FilledButton semantics. Verify the button exists via semantics.
+        expect(
+          tester.getSemantics(find.text('Next')),
+          matchesSemantics(
+            isButton: true,
+            hasTapAction: true,
+            hasFocusAction: true,
+            hasEnabledState: true,
+            isEnabled: true,
+            isFocusable: true,
           ),
+          reason: 'Next button should have button semantics',
         );
-        expect(nextButtonFinder, findsAtLeastNWidgets(1),
-            reason: 'Next button should be a FilledButton');
       });
 
       testWidgets('Back button has back arrow icon',
@@ -423,7 +426,7 @@ void main() {
             reason: 'TutorialPage content should be scrollable');
       });
 
-      testWidgets('has bottom navigation bar',
+      testWidgets('navigation buttons are present',
           (WidgetTester tester) async {
         await tester.pumpWidget(createTestWidget(
           onNext: () {},
@@ -431,9 +434,11 @@ void main() {
         ));
         await tester.pumpAndSettle();
 
-        // Both Back and Next buttons should be in a Row at the bottom
-        expect(find.text('Back'), findsOneWidget);
-        expect(find.text('Next'), findsOneWidget);
+        // Both Back and Next buttons should be present
+        expect(find.text('Back'), findsOneWidget,
+            reason: 'Back button should be present');
+        expect(find.text('Next'), findsOneWidget,
+            reason: 'Next button should be present');
       });
 
       testWidgets('info icon is displayed for important notice',

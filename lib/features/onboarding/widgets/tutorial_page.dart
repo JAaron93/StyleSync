@@ -142,10 +142,12 @@ class TutorialPage extends StatelessWidget {
         }
       }
     } catch (e) {
+      // Log the actual error internally for debugging
+      debugPrint('Error opening link: $e');
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error opening link: $e'),
+          const SnackBar(
+            content: Text('Could not open link. Please try again later.'),
             behavior: SnackBarBehavior.floating,
           ),
         );
@@ -248,6 +250,7 @@ class _TutorialStep extends StatelessWidget {
       children: [
         // Step number circle
         Container(
+          key: ValueKey('step-number-$stepNumber'),
           width: 32,
           height: 32,
           decoration: BoxDecoration(

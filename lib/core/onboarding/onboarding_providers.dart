@@ -67,10 +67,17 @@ class OnboardingStateNotifier extends StateNotifier<OnboardingState> {
   ///
   /// This should be called when the onboarding flow is first displayed
   /// to ensure the state reflects the persisted completion status.
+  ///
+  /// If the storage check fails, the state is set to an error state
+  /// allowing the UI to react accordingly.
   Future<void> initialize() async {
-    final isComplete = await _controller.isOnboardingComplete();
-    if (isComplete) {
-      state = const OnboardingState.completed();
+    try {
+      final isComplete = await _controller.isOnboardingComplete();
+      if (isComplete) {
+        state = const OnboardingState.completed();
+      }
+    } catch (e) {
+      state = OnboardingState.error(e);
     }
   }
 
@@ -91,8 +98,7 @@ class OnboardingStateNotifier extends StateNotifier<OnboardingState> {
           await _controller.markOnboardingComplete();
           state = const OnboardingState.completed();
         } catch (e) {
-          // Handle error - possibly expose error state or rethrow
-          rethrow;
+          state = OnboardingState.error(e);
         }
         break;
       case OnboardingStep.complete:
@@ -127,13 +133,8 @@ class OnboardingStateNotifier extends StateNotifier<OnboardingState> {
   /// the state to the welcome step. Useful for testing or allowing users
   /// to re-experience the onboarding flow.
   Future<void> reset() async {
-    try {
-      await _controller.resetOnboarding();
-      state = const OnboardingState.initial();
-    } catch (e) {
-      // Handle persistence error
-      rethrow;
-    }
+    await _controller.resetOnboarding();
+    state = const OnboardingState.initial();
   }
 
   /// Skips directly to a specific step.
@@ -147,6 +148,14 @@ class OnboardingStateNotifier extends StateNotifier<OnboardingState> {
     }
     state = state.copyWith(currentStep: step);
   }
+
+  /// Clears any error in the current state.
+  ///
+  /// This returns the state to the apiKeyInput step, allowing
+  /// the user to retry after an error.
+  void clearError() {
+    state = state.copyWith(clearError: true);
+  }
 }
 
 /// Provider for the [OnboardingStateNotifier].
@@ -155,10 +164,17 @@ class OnboardingStateNotifier extends StateNotifier<OnboardingState> {
 /// onboarding flow state. Use this provider in UI components to
 /// react to onboarding state changes.
 ///
+/// **Important:** The notifier must be explicitly initialized to sync
+/// with persisted state. Call [initialize] once when the onboarding
+/// screen loads, before relying on the state values.
+///
 /// Example usage:
 /// ```dart
+/// // In a StatefulWidget's initState or via ref.listen:
+/// await ref.read(onboardingStateProvider.notifier).initialize();
+///
+/// // Then watch the state in build:
 /// final onboardingState = ref.watch(onboardingStateProvider);
-/// final notifier = ref.read(onboardingStateProvider.notifier);
 ///
 /// // Check current step
 /// if (onboardingState.currentStep == OnboardingStep.welcome) {
@@ -166,8 +182,12 @@ class OnboardingStateNotifier extends StateNotifier<OnboardingState> {
 /// }
 ///
 /// // Advance to next step
-/// await notifier.nextStep();
+/// await ref.read(onboardingStateProvider.notifier).nextStep();
 /// ```
+///
+/// See also:
+/// - [OnboardingStateNotifier.initialize] for the initialization method
+/// - [OnboardingStateNotifier.nextStep] for advancing the flow
 final onboardingStateProvider =
     StateNotifierProvider<OnboardingStateNotifier, OnboardingState>((ref) {
   final controller = ref.read(onboardingControllerProvider);

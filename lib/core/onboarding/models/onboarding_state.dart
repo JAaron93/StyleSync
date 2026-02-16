@@ -20,40 +20,58 @@ enum OnboardingStep {
 ///
 /// This immutable class holds information about whether onboarding
 /// has been completed and the current step in the flow.
+///
+/// [isComplete] is a computed property derived from [currentStep] to
+/// guarantee state consistency - onboarding is complete iff the current
+/// step is [OnboardingStep.complete].
 class OnboardingState {
   /// Creates an [OnboardingState] instance.
   ///
-  /// [isComplete] indicates whether the user has finished onboarding.
   /// [currentStep] represents the current step in the onboarding flow.
+  /// [error] contains any error that occurred during onboarding operations.
   const OnboardingState({
-    required this.isComplete,
     required this.currentStep,
+    this.error,
   });
 
   /// Creates an initial state for a new user who hasn't started onboarding.
   const OnboardingState.initial()
-      : isComplete = false,
-        currentStep = OnboardingStep.welcome;
+      : currentStep = OnboardingStep.welcome,
+        error = null;
 
   /// Creates a state representing completed onboarding.
   const OnboardingState.completed()
-      : isComplete = true,
-        currentStep = OnboardingStep.complete;
+      : currentStep = OnboardingStep.complete,
+        error = null;
+
+  /// Creates a state representing an error during onboarding.
+  const OnboardingState.error(this.error)
+      : currentStep = OnboardingStep.apiKeyInput;
 
   /// Whether the onboarding process has been completed.
-  final bool isComplete;
+  ///
+  /// This is computed from [currentStep] to guarantee consistency:
+  /// onboarding is complete iff the current step is [OnboardingStep.complete].
+  bool get isComplete => currentStep == OnboardingStep.complete;
 
   /// The current step in the onboarding flow.
   final OnboardingStep currentStep;
 
+  /// The error that occurred during onboarding, if any.
+  final Object? error;
+
+  /// Whether the state has an error.
+  bool get hasError => error != null;
+
   /// Creates a copy of this state with the given fields replaced.
   OnboardingState copyWith({
-    bool? isComplete,
     OnboardingStep? currentStep,
+    Object? error,
+    bool clearError = false,
   }) {
     return OnboardingState(
-      isComplete: isComplete ?? this.isComplete,
       currentStep: currentStep ?? this.currentStep,
+      error: clearError ? null : (error ?? this.error),
     );
   }
 
@@ -61,14 +79,14 @@ class OnboardingState {
   bool operator ==(Object other) {
     if (identical(this, other)) return true;
     return other is OnboardingState &&
-        other.isComplete == isComplete &&
-        other.currentStep == currentStep;
+        other.currentStep == currentStep &&
+        other.error == error;
   }
 
   @override
-  int get hashCode => Object.hash(isComplete, currentStep);
+  int get hashCode => Object.hash(currentStep, error);
 
   @override
   String toString() =>
-      'OnboardingState(isComplete: $isComplete, currentStep: $currentStep)';
+      'OnboardingState(currentStep: $currentStep, error: $error)';
 }
