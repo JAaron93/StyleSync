@@ -15,7 +15,17 @@
 - [key_derivation_service.dart](file://lib/core/crypto/key_derivation_service.dart)
 - [kdf_metadata.dart](file://lib/core/crypto/kdf_metadata.dart)
 - [byok_manager_test.dart](file://test/byok_manager_test.dart)
+- [cloud_backup_service_test.dart](file://test/cloud_backup_service_test.dart)
 </cite>
+
+## Update Summary
+**Changes Made**
+- Enhanced API reference documentation with comprehensive method signatures and parameter descriptions
+- Expanded lifecycle management details with step-by-step workflows
+- Added detailed validation workflows including format and functional checks
+- Improved cloud backup integration patterns with passphrase rotation and error handling
+- Updated error handling strategies with specific failure scenarios
+- Enhanced practical usage patterns with concrete examples and integration guidance
 
 ## Table of Contents
 1. [Introduction](#introduction)
@@ -23,11 +33,15 @@
 3. [Core Components](#core-components)
 4. [Architecture Overview](#architecture-overview)
 5. [Detailed Component Analysis](#detailed-component-analysis)
-6. [Dependency Analysis](#dependency-analysis)
-7. [Performance Considerations](#performance-considerations)
-8. [Troubleshooting Guide](#troubleshooting-guide)
-9. [Conclusion](#conclusion)
-10. [Appendices](#appendices)
+6. [API Reference](#api-reference)
+7. [Lifecycle Management Workflows](#lifecycle-management-workflows)
+8. [Validation and Error Handling](#validation-and-error-handling)
+9. [Cloud Backup Integration](#cloud-backup-integration)
+10. [Practical Usage Patterns](#practical-usage-patterns)
+11. [Performance Considerations](#performance-considerations)
+12. [Troubleshooting Guide](#troubleshooting-guide)
+13. [Conclusion](#conclusion)
+14. [Appendices](#appendices)
 
 ## Introduction
 The BYOK (Bring Your Own Key) Manager service is the central orchestrator for API key lifecycle management in the application. It securely stores, retrieves, validates, updates, and deletes user-provided Vertex AI API keys, and integrates with cloud backup for disaster recovery. The service enforces robust error handling via a Result<T> sealed class pattern, supports idempotency keys, preserves metadata across updates, and provides passphrase rotation capabilities for cloud backups.
@@ -107,7 +121,7 @@ BYOKImpl --> CloudBackupBlob
 - [api_key_config.dart](file://lib/core/byok/models/api_key_config.dart#L1-L110)
 - [validation_result.dart](file://lib/core/byok/models/validation_result.dart#L1-L188)
 - [byok_error.dart](file://lib/core/byok/models/byok_error.dart#L1-L94)
-- [cloud_backup_blob.dart](file://lib/core/byok/models/cloud_backup_blob.dart#L1-L157)
+- [cloud_backup_blob.dart](file://lib/core/byok/models/cloud_backup_blob.dart#L1-L166)
 
 ## Core Components
 - BYOKManager: Abstract interface defining the API key lifecycle operations (store, get, delete, update, enable/disable cloud backup, restore, passphrase rotation, presence checks).
@@ -336,7 +350,7 @@ BYOKError <|-- CryptoError
 - Purpose: Serialized encrypted backup container for cloud storage
 
 **Section sources**
-- [cloud_backup_blob.dart](file://lib/core/byok/models/cloud_backup_blob.dart#L8-L157)
+- [cloud_backup_blob.dart](file://lib/core/byok/models/cloud_backup_blob.dart#L8-L166)
 
 ### CloudBackupService and CloudBackupServiceImpl
 - CloudBackupService: Abstract interface for create/update/restore/delete/exists/rotate/verify
@@ -391,13 +405,191 @@ CBS-->>BYOK : Success(void)
 - [secure_storage_service.dart](file://lib/core/storage/secure_storage_service.dart#L11-L29)
 - [byok_storage_keys.dart](file://lib/core/byok/byok_storage_keys.dart#L5-L14)
 
+## API Reference
+
+### BYOKManager Interface Methods
+
+#### storeAPIKey
+Stores an API key after validation with comprehensive error handling.
+
+**Method Signature:**
+```dart
+Future<Result<void>> storeAPIKey(String apiKey, String projectId)
+```
+
+**Parameters:**
+- `apiKey` (String): The Vertex AI API key to store
+- `projectId` (String): The Google Cloud project ID for validation
+
+**Returns:**
+- `Future<Result<void>>`: Success if key stored, Failure with BYOKError on validation or storage failure
+
+**Behavior:**
+1. Trims whitespace from input
+2. Validates key format using APIKeyValidator
+3. Validates key functionality via API call
+4. Creates APIKeyConfig with metadata
+5. Stores in secure storage
+
+**Section sources**
+- [byok_manager.dart](file://lib/core/byok/byok_manager.dart#L84-L92)
+
+#### getAPIKey
+Retrieves the stored API key configuration.
+
+**Method Signature:**
+```dart
+Future<Result<APIKeyConfig>> getAPIKey()
+```
+
+**Returns:**
+- `Future<Result<APIKeyConfig>>`: Success with APIKeyConfig if found, Failure with NotFoundError if not found
+
+**Section sources**
+- [byok_manager.dart](file://lib/core/byok/byok_manager.dart#L94-L98)
+
+#### deleteAPIKey
+Deletes the stored API key and optionally cloud backup.
+
+**Method Signature:**
+```dart
+Future<Result<void>> deleteAPIKey({bool deleteCloudBackup = false})
+```
+
+**Parameters:**
+- `deleteCloudBackup` (bool): If true, also deletes cloud backup
+
+**Returns:**
+- `Future<Result<void>>`: Success if deletion successful, Failure on error
+
+**Section sources**
+- [byok_manager.dart](file://lib/core/byok/byok_manager.dart#L100-L106)
+
+#### updateAPIKey
+Updates an existing API key while preserving metadata.
+
+**Method Signature:**
+```dart
+Future<Result<void>> updateAPIKey(String newApiKey, String projectId, {String? passphrase})
+```
+
+**Parameters:**
+- `newApiKey` (String): The new API key
+- `projectId` (String): The project ID for validation
+- `passphrase` (String?): Optional passphrase for backup re-encryption
+
+**Returns:**
+- `Future<Result<void>>`: Success if update successful, Failure on validation or storage error
+
+**Behavior:**
+- Preserves createdAt, lastValidated, and cloudBackupEnabled
+- Re-encrypts backup if enabled and passphrase provided
+- Graceful fallback if backup re-encryption fails
+
+**Section sources**
+- [byok_manager.dart](file://lib/core/byok/byok_manager.dart#L108-L116)
+
+#### enableCloudBackup
+Enables cloud backup with passphrase protection.
+
+**Method Signature:**
+```dart
+Future<Result<void>> enableCloudBackup(String passphrase)
+```
+
+**Parameters:**
+- `passphrase` (String): Passphrase for backup encryption
+
+**Returns:**
+- `Future<Result<void>>`: Success if backup enabled, Failure on error
+
+**Section sources**
+- [byok_manager.dart](file://lib/core/byok/byok_manager.dart#L117-L121)
+
+#### disableCloudBackup
+Disables cloud backup and optionally deletes remote backup.
+
+**Method Signature:**
+```dart
+Future<Result<void>> disableCloudBackup({bool deleteBackup = true})
+```
+
+**Parameters:**
+- `deleteBackup` (bool): If true, deletes existing cloud backup
+
+**Returns:**
+- `Future<Result<void>>`: Success if disabled, Failure on error
+
+**Section sources**
+- [byok_manager.dart](file://lib/core/byok/byok_manager.dart#L123-L127)
+
+#### restoreFromCloudBackup
+Restores API key from cloud backup.
+
+**Method Signature:**
+```dart
+Future<Result<APIKeyConfig>> restoreFromCloudBackup(String passphrase)
+```
+
+**Parameters:**
+- `passphrase` (String): Passphrase for backup decryption
+
+**Returns:**
+- `Future<Result<APIKeyConfig>>`: Success with restored APIKeyConfig, Failure on error
+
+**Section sources**
+- [byok_manager.dart](file://lib/core/byok/byok_manager.dart#L128-L131)
+
+#### hasStoredKey
+Checks if an API key is currently stored.
+
+**Method Signature:**
+```dart
+Future<bool> hasStoredKey()
+```
+
+**Returns:**
+- `Future<bool>`: True if key exists, false otherwise
+
+**Section sources**
+- [byok_manager.dart](file://lib/core/byok/byok_manager.dart#L133-L134)
+
+#### isCloudBackupEnabled
+Checks if cloud backup is enabled.
+
+**Method Signature:**
+```dart
+Future<bool> isCloudBackupEnabled()
+```
+
+**Returns:**
+- `Future<bool>`: True if cloud backup enabled, false otherwise
+
+**Section sources**
+- [byok_manager.dart](file://lib/core/byok/byok_manager.dart#L136-L137)
+
+#### rotateBackupPassphrase
+Re-encrypts cloud backup with new passphrase.
+
+**Method Signature:**
+```dart
+Future<Result<void>> rotateBackupPassphrase(String oldPassphrase, String newPassphrase)
+```
+
+**Parameters:**
+- `oldPassphrase` (String): Current passphrase
+- `newPassphrase` (String): New passphrase
+
+**Returns:**
+- `Future<Result<void>>`: Success if rotation successful, Failure on error
+
+**Section sources**
+- [byok_manager.dart](file://lib/core/byok/byok_manager.dart#L139-L146)
+
+## Lifecycle Management Workflows
+
 ### Complete API Key Workflow
-- Validation: Format check followed by functional check
-- Storage: Serialize APIKeyConfig and write to secure storage
-- Cloud backup: Optional, encrypted, and stored separately
-- Update: Validate new key, preserve metadata, optionally re-encrypt backup
-- Restore: Download and decrypt backup, then store locally
-- Deletion: Remove local config and optionally cloud backup
+The BYOK Manager implements a comprehensive lifecycle for API key management:
 
 ```mermaid
 flowchart TD
@@ -425,49 +617,316 @@ ReturnFuncError --> Done
 - [byok_manager.dart](file://lib/core/byok/byok_manager.dart#L182-L231)
 - [cloud_backup_service.dart](file://lib/core/byok/cloud_backup_service.dart#L167-L249)
 
-## Dependency Analysis
-- BYOKManagerImpl depends on:
-  - SecureStorageService for persistence
-  - APIKeyValidator for validation
-  - CloudBackupService for optional cloud backup
-  - Uuid for idempotency key generation
-- CloudBackupServiceImpl depends on:
-  - KeyDerivationService for key derivation
-  - EncryptionService for encryption/decryption
-  - Firebase Storage for cloud operations
-- APIKeyValidator depends on:
-  - HTTP client for functional validation
-- Cryptographic services depend on:
-  - Argon2 and PBKDF2 for key derivation
-  - AES-GCM for encryption
+### Update Workflow with Metadata Preservation
+When updating API keys, the system preserves critical metadata:
 
 ```mermaid
-graph LR
-BYOK["BYOKManagerImpl"] --> S["SecureStorageService"]
-BYOK --> V["APIKeyValidator"]
-BYOK --> CBS["CloudBackupService"]
-BYOK --> U["Uuid"]
-CBS --> KDF["KeyDerivationService"]
-CBS --> ENC["EncryptionService"]
-CBS --> FS["Firebase Storage"]
-V --> HTTP["HTTP Client"]
-KDF --> ARG["Argon2/PBKDF2"]
-ENC --> AES["AES-GCM"]
+sequenceDiagram
+participant Client as "Caller"
+participant BYOK as "BYOKManagerImpl"
+participant Validator as "APIKeyValidator"
+participant Storage as "SecureStorageService"
+Client->>BYOK : updateAPIKey(newApiKey, projectId, passphrase)
+BYOK->>Validator : validateFormat(newApiKey)
+Validator-->>BYOK : ValidationResult
+BYOK->>Validator : validateFunctionality(newApiKey, projectId)
+Validator-->>BYOK : ValidationResult
+BYOK->>BYOK : getExistingConfig()
+BYOK->>BYOK : createUpdatedConfig()<br/>Preserve : createdAt, cloudBackupEnabled
+BYOK->>Storage : write(updatedConfig)
+Storage-->>BYOK : ok
+BYOK->>BYOK : reEncryptBackupIfNeeded()
+BYOK-->>Client : Success(void)
+```
+
+**Diagram sources**
+- [byok_manager.dart](file://lib/core/byok/byok_manager.dart#L298-L384)
+
+**Section sources**
+- [byok_manager.dart](file://lib/core/byok/byok_manager.dart#L298-L384)
+
+### Cloud Backup Rotation Workflow
+Passphrase rotation uses a temporary backup for atomic swap:
+
+```mermaid
+flowchart TD
+Start(["Rotate Passphrase"]) --> VerifyAuth["Verify User Auth"]
+VerifyAuth --> FetchBlob["Fetch Existing Blob"]
+FetchBlob --> RestoreOld["Restore with Old Passphrase"]
+RestoreOld --> UploadTemp["Upload to Temp Path"]
+UploadTemp --> VerifyTemp["Verify Temp Backup"]
+VerifyTemp --> DeleteOriginal["Delete Original Backup"]
+DeleteOriginal --> UploadFinal["Upload to Final Path<br/>Preserve createdAt"]
+UploadFinal --> CleanupTemp["Clean Up Temp Backup"]
+CleanupTemp --> Success(["Rotation Complete"])
+```
+
+**Diagram sources**
+- [cloud_backup_service.dart](file://lib/core/byok/cloud_backup_service.dart#L414-L555)
+
+**Section sources**
+- [cloud_backup_service.dart](file://lib/core/byok/cloud_backup_service.dart#L414-L555)
+
+## Validation and Error Handling
+
+### Validation Workflow
+The API key validation follows a two-tier approach:
+
+1. **Format Validation**: Checks key structure without network calls
+2. **Functional Validation**: Verifies key works with Vertex AI API
+
+```mermaid
+flowchart TD
+Validate["validateFunctionality"] --> CheckRegion["Validate Region Format"]
+CheckRegion --> CheckProject["Validate Project ID Format"]
+CheckProject --> BuildURL["Build API Endpoint URL"]
+BuildURL --> MakeRequest["Make HTTP Request"]
+MakeRequest --> HandleResponse["Handle Response"]
+HandleResponse --> Success["ValidationSuccess"]
+HandleResponse --> Handle401["401 Unauthorized"]
+HandleResponse --> Handle403["403 Forbidden"]
+HandleResponse --> Handle404["404 Not Found"]
+HandleResponse --> Handle429["429 Rate Limited"]
+HandleResponse --> HandleOther["Other Errors"]
+Handle401 --> ReturnUnauthorized["Return Unauthorized"]
+Handle403 --> CheckAPIEnabled["Check API Enabled"]
+CheckAPIEnabled --> ReturnAPIError["Return API Not Enabled"]
+CheckAPIEnabled --> ReturnProjectError["Return Invalid Project"]
+Handle404 --> ReturnInvalidProject["Return Invalid Project"]
+Handle429 --> ReturnRateLimited["Return Rate Limited"]
+HandleOther --> ReturnUnknown["Return Unknown Error"]
+```
+
+**Diagram sources**
+- [api_key_validator.dart](file://lib/core/byok/api_key_validator.dart#L153-L224)
+
+**Section sources**
+- [api_key_validator.dart](file://lib/core/byok/api_key_validator.dart#L153-L224)
+
+### Error Handling Strategy
+The system uses a comprehensive error handling approach:
+
+**Validation Errors:**
+- `ValidationFailureType.invalidFormat`: Key format issues
+- `ValidationFailureType.malformedKey`: Structural problems
+- `ValidationFailureType.unauthorized`: Invalid or revoked keys
+- `ValidationFailureType.invalidProject`: Project access issues
+- `ValidationFailureType.apiNotEnabled`: API not enabled
+- `ValidationFailureType.networkError`: Connectivity issues
+- `ValidationFailureType.rateLimited`: Rate limiting
+- `ValidationFailureType.unknown`: Unexpected errors
+
+**Storage Errors:**
+- `StorageError`: General storage failures
+- `NotFoundError`: Missing data operations
+
+**Backup Errors:**
+- `BackupErrorType.notFound`: Missing backups
+- `BackupErrorType.wrongPassphrase`: Incorrect passphrases
+- `BackupErrorType.corrupted`: Data corruption
+- `BackupErrorType.networkError`: Network issues
+- `BackupErrorType.storageError`: Storage failures
+
+**Section sources**
+- [validation_result.dart](file://lib/core/byok/models/validation_result.dart#L163-L187)
+- [byok_error.dart](file://lib/core/byok/models/byok_error.dart#L67-L83)
+
+## Cloud Backup Integration
+
+### Backup Creation Process
+Cloud backup creation involves multiple security layers:
+
+```mermaid
+sequenceDiagram
+participant BYOK as "BYOKManagerImpl"
+participant CBS as "CloudBackupService"
+participant KDF as "KeyDerivationService"
+participant ENC as "EncryptionService"
+participant FS as "Firebase Storage"
+BYOK->>CBS : createOrUpdateBackup(config, passphrase)
+CBS->>KDF : generateMetadata()
+KDF-->>CBS : KdfMetadata with salt, iterations, params
+CBS->>KDF : deriveKey(passphrase, metadata)
+KDF-->>CBS : 32-byte encryption key
+CBS->>ENC : encrypt(configJson, key)
+ENC-->>CBS : nonce+ciphertext+mac
+CBS->>FS : upload blob with version, kdf, encryptedData
+FS-->>CBS : success
+CBS-->>BYOK : Success(void)
+```
+
+**Diagram sources**
+- [cloud_backup_service.dart](file://lib/core/byok/cloud_backup_service.dart#L167-L249)
+- [key_derivation_service.dart](file://lib/core/crypto/key_derivation_service.dart#L22-L53)
+- [encryption_service.dart](file://lib/core/crypto/encryption_service.dart#L26-L40)
+
+**Section sources**
+- [cloud_backup_service.dart](file://lib/core/byok/cloud_backup_service.dart#L167-L249)
+- [key_derivation_service.dart](file://lib/core/crypto/key_derivation_service.dart#L22-L53)
+- [encryption_service.dart](file://lib/core/crypto/encryption_service.dart#L26-L40)
+
+### Key Derivation Parameters
+Different platforms use optimized key derivation parameters:
+
+**Mobile Platforms (Android/iOS/macOS):**
+- Algorithm: Argon2id
+- Iterations: 3
+- Memory: 64 MB
+- Parallelism: 4
+- Salt: Random 16 bytes
+
+**Desktop/Web Platforms:**
+- Algorithm: PBKDF2
+- Iterations: 600,000
+- Salt: Random 16 bytes
+
+**Section sources**
+- [key_derivation_service.dart](file://lib/core/crypto/key_derivation_service.dart#L36-L53)
+
+### Backup Blob Structure
+Cloud backup blobs contain all necessary information for decryption:
+
+```mermaid
+classDiagram
+class CloudBackupBlob {
++int version
++KdfMetadata kdfMetadata
++String encryptedData
++DateTime createdAt
++DateTime updatedAt
++toJson() Map~String,dynamic~
++fromJson(json) CloudBackupBlob
++copyWith() CloudBackupBlob
+}
+class KdfMetadata {
++KdfAlgorithm algorithm
++Uint8List salt
++int iterations
++int memory
++int parallelism
++toJson() Map~String,dynamic~
++fromJson(json) KdfMetadata
+}
+CloudBackupBlob --> KdfMetadata
+```
+
+**Diagram sources**
+- [cloud_backup_blob.dart](file://lib/core/byok/models/cloud_backup_blob.dart#L8-L166)
+- [kdf_metadata.dart](file://lib/core/crypto/kdf_metadata.dart#L9-L78)
+
+**Section sources**
+- [cloud_backup_blob.dart](file://lib/core/byok/models/cloud_backup_blob.dart#L8-L166)
+- [kdf_metadata.dart](file://lib/core/crypto/kdf_metadata.dart#L9-L78)
+
+## Practical Usage Patterns
+
+### Basic API Key Management
+```dart
+// Store API key
+final result = await byokManager.storeAPIKey(apiKey, projectId);
+if (result.isSuccess) {
+  print("API key stored successfully");
+} else {
+  print("Error: ${result.errorOrNull?.message}");
+}
+
+// Retrieve API key
+final getResult = await byokManager.getAPIKey();
+if (getResult.isSuccess) {
+  final config = getResult.valueOrNull!;
+  print("Project ID: ${config.projectId}");
+} else {
+  print("No API key found");
+}
+```
+
+**Section sources**
+- [byok_manager_test.dart](file://test/byok_manager_test.dart#L267-L350)
+
+### Cloud Backup Operations
+```dart
+// Enable cloud backup
+final enableResult = await byokManager.enableCloudBackup(passphrase);
+if (enableResult.isFailure) {
+  print("Backup enable failed: ${enableResult.errorOrNull?.message}");
+}
+
+// Rotate passphrase
+final rotateResult = await byokManager.rotateBackupPassphrase(
+  oldPassphrase, 
+  newPassphrase
+);
+
+// Restore from backup
+final restoreResult = await byokManager.restoreFromCloudBackup(passphrase);
+if (restoreResult.isSuccess) {
+  print("Backup restored successfully");
+}
+```
+
+**Section sources**
+- [byok_manager_test.dart](file://test/byok_manager_test.dart#L508-L700)
+- [byok_manager_test.dart](file://test/byok_manager_test.dart#L772-L1091)
+
+### Error Handling Best Practices
+```dart
+// Check operation result
+if (result.isFailure) {
+  if (result.errorOrNull is ValidationError) {
+    // Handle validation errors
+    final validationError = result.errorOrNull as ValidationError;
+    handleErrorByType(validationError.validationResult);
+  } else if (result.errorOrNull is StorageError) {
+    // Handle storage errors
+    handleStorageError(result.errorOrNull as StorageError);
+  } else if (result.errorOrNull is BackupError) {
+    // Handle backup errors
+    handleBackupError(result.errorOrNull as BackupError);
+  }
+}
+
+// Helper functions
+void handleErrorByType(ValidationResult validationResult) {
+  if (validationResult is ValidationFailure) {
+    switch (validationResult.type) {
+      case ValidationFailureType.invalidFormat:
+        // Show format validation message
+        break;
+      case ValidationFailureType.unauthorized:
+        // Prompt for new key
+        break;
+      // Handle other cases...
+    }
+  }
+}
+```
+
+**Section sources**
+- [byok_manager_test.dart](file://test/byok_manager_test.dart#L1097-L1230)
+
+### Integration with Other Services
+The BYOK Manager integrates seamlessly with other core services:
+
+```mermaid
+graph TB
+BYOK["BYOKManager"] --> Storage["SecureStorageService"]
+BYOK --> Validator["APIKeyValidator"]
+BYOK --> Backup["CloudBackupService"]
+Backup --> KDF["KeyDerivationService"]
+Backup --> Crypto["EncryptionService"]
+Backup --> Firebase["Firebase Storage"]
+Validator --> HTTP["HTTP Client"]
 ```
 
 **Diagram sources**
 - [byok_manager.dart](file://lib/core/byok/byok_manager.dart#L153-L180)
 - [cloud_backup_service.dart](file://lib/core/byok/cloud_backup_service.dart#L97-L119)
 - [api_key_validator.dart](file://lib/core/byok/api_key_validator.dart#L53-L80)
-- [key_derivation_service.dart](file://lib/core/crypto/key_derivation_service.dart#L17-L21)
-- [encryption_service.dart](file://lib/core/crypto/encryption_service.dart#L22-L23)
 
 **Section sources**
 - [byok_manager.dart](file://lib/core/byok/byok_manager.dart#L153-L180)
 - [cloud_backup_service.dart](file://lib/core/byok/cloud_backup_service.dart#L97-L119)
 - [api_key_validator.dart](file://lib/core/byok/api_key_validator.dart#L53-L80)
-- [key_derivation_service.dart](file://lib/core/crypto/key_derivation_service.dart#L17-L21)
-- [encryption_service.dart](file://lib/core/crypto/encryption_service.dart#L22-L23)
 
 ## Performance Considerations
 - Validation overhead: Functional validation performs a network request; cache results when feasible within session boundaries.
@@ -477,22 +936,27 @@ ENC --> AES["AES-GCM"]
 
 ## Troubleshooting Guide
 Common issues and resolutions:
-- Validation failures:
-  - Invalid format: Ensure key starts with expected prefix and has correct length.
-  - Unauthorized: Verify key validity and permissions.
-  - API not enabled: Enable Vertex AI API in the project.
-  - Network errors: Check connectivity and timeouts.
-- Storage errors:
-  - Handle StorageError gracefully; log and retry if transient.
-- Cloud backup errors:
-  - Wrong passphrase: Prompt user to re-enter.
-  - Backup not found: Offer restore from another source or recreate.
-  - Network errors: Retry with exponential backoff.
-- Update failures:
-  - New key validation fails: Do not replace; keep existing key.
-  - Backup re-encryption fails: Disable backup locally and log warning.
-- Presence checks:
-  - hasStoredKey/isCloudBackupEnabled return false on storage errors to avoid throwing.
+
+**Validation Failures:**
+- Invalid format: Ensure key starts with expected prefix and has correct length.
+- Unauthorized: Verify key validity and permissions.
+- API not enabled: Enable Vertex AI API in the project.
+- Network errors: Check connectivity and timeouts.
+
+**Storage Errors:**
+- Handle StorageError gracefully; log and retry if transient.
+
+**Cloud Backup Errors:**
+- Wrong passphrase: Prompt user to re-enter.
+- Backup not found: Offer restore from another source or recreate.
+- Network errors: Retry with exponential backoff.
+
+**Update Failures:**
+- New key validation fails: Do not replace; keep existing key.
+- Backup re-encryption fails: Disable backup locally and log warning.
+
+**Presence Checks:**
+- hasStoredKey/isCloudBackupEnabled return false on storage errors to avoid throwing.
 
 **Section sources**
 - [byok_error.dart](file://lib/core/byok/models/byok_error.dart#L7-L94)
@@ -505,32 +969,40 @@ The BYOK Manager provides a robust, secure, and extensible foundation for API ke
 ## Appendices
 
 ### Public Methods Reference
-- storeAPIKey(apiKey, projectId): Validates and stores the API key; returns Success or Failure.
-- getAPIKey(): Retrieves stored API key configuration; returns Success(APIKeyConfig) or NotFoundError.
-- deleteAPIKey(deleteCloudBackup): Deletes local key and optionally cloud backup; returns Success or Failure.
-- updateAPIKey(newApiKey, projectId, passphrase?): Validates and replaces the key; preserves metadata; optionally re-encrypts backup.
-- enableCloudBackup(passphrase): Encrypts and uploads backup; marks cloud backup enabled.
-- disableCloudBackup(deleteBackup): Disables cloud backup and optionally deletes remote backup.
-- restoreFromCloudBackup(passphrase): Downloads and decrypts backup; stores locally.
-- hasStoredKey(): Checks local key presence.
-- isCloudBackupEnabled(): Checks cloud backup flag.
-- rotateBackupPassphrase(oldPassphrase, newPassphrase): Re-encrypts backup with new passphrase.
+- `storeAPIKey(apiKey, projectId)`: Validates and stores the API key; returns Success or Failure.
+- `getAPIKey()`: Retrieves stored API key configuration; returns Success(APIKeyConfig) or NotFoundError.
+- `deleteAPIKey(deleteCloudBackup)`: Deletes local key and optionally cloud backup; returns Success or Failure.
+- `updateAPIKey(newApiKey, projectId, passphrase?)`: Validates and replaces the key; preserves metadata; optionally re-encrypts backup.
+- `enableCloudBackup(passphrase)`: Encrypts and uploads backup; marks cloud backup enabled.
+- `disableCloudBackup(deleteBackup)`: Disables cloud backup and optionally deletes remote backup.
+- `restoreFromCloudBackup(passphrase)`: Downloads and decrypts backup; stores locally.
+- `hasStoredKey()`: Checks local key presence.
+- `isCloudBackupEnabled()`: Checks cloud backup flag.
+- `rotateBackupPassphrase(oldPassphrase, newPassphrase)`: Re-encrypts backup with new passphrase.
 
 **Section sources**
 - [byok_manager.dart](file://lib/core/byok/byok_manager.dart#L84-L147)
 
 ### Practical Usage Patterns
-- Store and retrieve:
-  - Use storeAPIKey followed by getAPIKey to manage keys.
-- Update with backup:
-  - Call updateAPIKey with passphrase to re-encrypt backup if enabled.
-- Cloud backup lifecycle:
-  - Enable via enableCloudBackup; disable via disableCloudBackup; restore via restoreFromCloudBackup.
-- Error handling:
-  - Always check isSuccess/isFailure and handle specific error types appropriately.
+- **Store and retrieve**: Use storeAPIKey followed by getAPIKey to manage keys.
+- **Update with backup**: Call updateAPIKey with passphrase to re-encrypt backup if enabled.
+- **Cloud backup lifecycle**: Enable via enableCloudBackup; disable via disableCloudBackup; restore via restoreFromCloudBackup.
+- **Error handling**: Always check isSuccess/isFailure and handle specific error types appropriately.
 
 **Section sources**
 - [byok_manager_test.dart](file://test/byok_manager_test.dart#L267-L502)
 - [byok_manager_test.dart](file://test/byok_manager_test.dart#L508-L700)
 - [byok_manager_test.dart](file://test/byok_manager_test.dart#L772-L1091)
 - [byok_manager_test.dart](file://test/byok_manager_test.dart#L1236-L1385)
+
+### Test Coverage
+The implementation includes comprehensive test coverage for:
+- API key storage and retrieval operations
+- Cloud backup enable/disable functionality
+- Error handling scenarios
+- Validation workflow testing
+- Integration with mock services
+
+**Section sources**
+- [byok_manager_test.dart](file://test/byok_manager_test.dart#L1-L200)
+- [cloud_backup_service_test.dart](file://test/cloud_backup_service_test.dart#L1-L200)

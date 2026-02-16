@@ -351,14 +351,32 @@ void main() {
         await tester.ensureVisible(buttonFinder);
         await tester.pumpAndSettle();
 
-        // Focus the button and activate via Enter key (keyboard accessibility)
-        await tester.tap(buttonFinder); // Focus the button
-        await tester.pump();
+        // Navigate focus to the button via keyboard traversal (Tab key)
+        // Tab through focusable elements until the button is focused
+        for (var i = 0; i < 10; i++) {
+          await tester.sendKeyEvent(LogicalKeyboardKey.tab);
+          await tester.pumpAndSettle();
+
+          // Check if the button now has focus
+          final buttonElement = tester.element(buttonFinder);
+          final focusNode = Focus.of(buttonElement);
+          if (focusNode.hasFocus) {
+            break;
+          }
+        }
+
+        // Verify the button has focus before attempting activation
+        final buttonElement = tester.element(buttonFinder);
+        final focusNode = Focus.of(buttonElement);
+        expect(focusNode.hasFocus, isTrue,
+            reason: 'button should have keyboard focus before activation');
+
+        // Activate the focused button via Enter key (keyboard accessibility)
         await tester.sendKeyEvent(LogicalKeyboardKey.enter);
-        await tester.pump();
+        await tester.pumpAndSettle();
 
         expect(callbackInvoked, isTrue,
-            reason: 'onGetStarted callback should be invoked when button is activated via Enter key');
+            reason: 'onGetStarted callback should be invoked when button is activated via Enter key from keyboard focus');
       });
     });
   });

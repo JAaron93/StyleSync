@@ -149,7 +149,7 @@ class ClothingItem {
       failureReason: json['failureReason'] as String?,
       retryCount: json['retryCount'] as int,
       idempotencyKey: json['idempotencyKey'] as String,
-      metadata: json['metadata'] as Map<String, dynamic>,
+      metadata: Map<String, dynamic>.from(json['metadata'] as Map),
     );
   }
 
@@ -210,7 +210,7 @@ class ClothingTags {
                 'Season',
               ))
           .toList(),
-      additionalAttributes: json['additionalAttributes'] as Map<String, dynamic>,
+      additionalAttributes: Map<String, dynamic>.from(json['additionalAttributes'] as Map),
     );
   }
 
@@ -330,7 +330,7 @@ class OutfitLayer {
       clothingItemId: json['clothingItemId'] as String,
       index: json['index'] as int,
       isVisible: json['isVisible'] as bool,
-      opacity: (json['opacity'] as num).toDouble(),
+      opacity: (json['opacity'] as num).toDouble().clamp(0.0, 1.0),
       assetReference: json['assetReference'] as String?,
       metadata: Map<String, dynamic>.from(json['metadata'] as Map),
       positioning: json['positioning'] != null ? Map<String, dynamic>.from(json['positioning'] as Map) : null,
@@ -665,15 +665,18 @@ class GeneratedImage {
   });
 
   factory GeneratedImage.fromJson(Map<String, dynamic> json) {
+    final modeName = json['modeName'] as String;
+    // Validate the mode name exists (logs warning if unknown)
+    GenerationMode.fromName(modeName);
     return GeneratedImage(
       id: json['id'] as String,
       userId: json['userId'] as String,
       imageUrl: json['imageUrl'] as String,
       modelUsed: json['modelUsed'] as String,
-      modeName: json['modeName'] as String,
+      modeName: modeName,
       generatedAt: DateTime.parse(json['generatedAt'] as String),
       clothingItemId: json['clothingItemId'] as String,
-      metadata: json['metadata'] as Map<String, dynamic>,
+      metadata: Map<String, dynamic>.from(json['metadata'] as Map),
     );
   }
 
@@ -701,24 +704,46 @@ class GenerationMode {
     required this.primaryModelId,
     required this.fallbackModelIds,
   });
-  
+
   static const quality = GenerationMode(
     name: 'quality',
     primaryModelId: 'gemini-3-pro-image-preview',
     fallbackModelIds: ['gemini-2.5-flash-image'],
   );
-  
+
   static const speed = GenerationMode(
     name: 'speed',
     primaryModelId: 'gemini-2.5-flash-image',
     fallbackModelIds: ['gemini-3-pro-image-preview'],
   );
-  
+
   static const tryOn = GenerationMode(
     name: 'tryOn',
     primaryModelId: 'virtual-try-on-preview-08-04',
     fallbackModelIds: ['gemini-3-pro-image-preview', 'gemini-2.5-flash-image'],
   );
+
+  static const unknown = GenerationMode(
+    name: 'unknown',
+    primaryModelId: '',
+    fallbackModelIds: [],
+  );
+
+  /// All available generation modes.
+  static const List<GenerationMode> values = [quality, speed, tryOn, unknown];
+
+  /// Returns the [GenerationMode] matching [name], or [unknown] if not found.
+  ///
+  /// Logs a warning when an unrecognized mode name is encountered.
+  static GenerationMode fromName(String name) {
+    for (final mode in values) {
+      if (mode.name == name) {
+        return mode;
+      }
+    }
+    _logger.warning('Unknown GenerationMode value: $name');
+    return unknown;
+  }
 }
 
 // ============================================================================

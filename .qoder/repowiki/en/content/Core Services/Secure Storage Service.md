@@ -13,7 +13,19 @@
 - [cloud_backup_service.dart](file://lib/core/byok/cloud_backup_service.dart)
 - [api_key_validator.dart](file://lib/core/byok/api_key_validator.dart)
 - [byok_design.md](file://lib/core/byok/byok_design.md)
+- [android.md](file://docs/platform/android.md)
+- [ios.md](file://docs/platform/ios.md)
+- [web.md](file://docs/platform/web.md)
 </cite>
+
+## Update Summary
+**Changes Made**
+- Enhanced platform-specific implementation details for Android Keystore and iOS Keychain configurations
+- Added comprehensive hardware-backed security module information
+- Updated Android Keystore configuration with AES-GCM and StrongBox details
+- Expanded iOS Keychain configuration with Secure Enclave and accessibility settings
+- Improved hardware security module integration documentation
+- Added platform-specific performance and security characteristics
 
 ## Table of Contents
 1. [Introduction](#introduction)
@@ -21,13 +33,17 @@
 3. [Core Components](#core-components)
 4. [Architecture Overview](#architecture-overview)
 5. [Detailed Component Analysis](#detailed-component-analysis)
-6. [Dependency Analysis](#dependency-analysis)
-7. [Performance Considerations](#performance-considerations)
-8. [Troubleshooting Guide](#troubleshooting-guide)
-9. [Conclusion](#conclusion)
+6. [Platform-Specific Implementations](#platform-specific-implementations)
+7. [Hardware Security Module Integration](#hardware-security-module-integration)
+8. [Dependency Analysis](#dependency-analysis)
+9. [Performance Considerations](#performance-considerations)
+10. [Troubleshooting Guide](#troubleshooting-guide)
+11. [Conclusion](#conclusion)
 
 ## Introduction
 This document describes the Secure Storage Service abstraction layer that provides platform-native secure storage across Android, iOS, and web environments. It defines a unified interface for reading, writing, deleting, and checking the existence of sensitive data, with automatic selection of hardware-backed or software-backed storage depending on platform capabilities. The service integrates with the Bring Your Own Key (BYOK) Manager to persist API key configurations securely, and it supports optional cloud backup through encrypted storage.
+
+**Updated** Enhanced with detailed platform-specific implementations and hardware security module configurations.
 
 ## Project Structure
 The Secure Storage Service resides in the core storage module and is consumed by the BYOK Manager and related services. The key files are:
@@ -53,12 +69,20 @@ end
 subgraph "Cloud Backup"
 CBS["CloudBackupService<br/>cloud_backup_service.dart"]
 end
+subgraph "Platform Configurations"
+ANDROID["Android Keystore<br/>android.md"]
+IOS["iOS Keychain<br/>ios.md"]
+WEB["Web Storage<br/>web.md"]
+end
 SSI_API --> SSI
 BYOK --> SSI_API
 BYOK --> ENC
 BYOK --> KDF
 BYOK --> CBS
 Keys --> BYOK
+ANDROID --> SSI
+IOS --> SSI
+WEB --> SSI
 ```
 
 **Diagram sources**
@@ -69,6 +93,9 @@ Keys --> BYOK
 - [encryption_service.dart](file://lib/core/crypto/encryption_service.dart#L14-L74)
 - [key_derivation_service.dart](file://lib/core/crypto/key_derivation_service.dart#L9-L117)
 - [cloud_backup_service.dart](file://lib/core/byok/cloud_backup_service.dart#L21-L91)
+- [android.md](file://docs/platform/android.md#L31-L45)
+- [ios.md](file://docs/platform/ios.md#L25-L35)
+- [web.md](file://docs/platform/web.md#L23-L26)
 
 **Section sources**
 - [secure_storage_service.dart](file://lib/core/storage/secure_storage_service.dart#L1-L30)
@@ -143,6 +170,8 @@ Platform-specific initialization and behavior:
 - Initialization safety: Uses a Completer to ensure initialization completes before any operation executes.
 - Fallback: On initialization failure, falls back to software-backed storage and logs the error.
 
+**Updated** Enhanced with detailed platform-specific configurations and hardware security module integration.
+
 Hardware security module integration:
 - Android: AES-GCM with hardware protection when available via Flutter Secure Storage v10.0.0+ defaults.
 - iOS: Keychain-backed storage leveraging Secure Enclave when available.
@@ -157,10 +186,10 @@ Start(["Initialize SecureStorageServiceImpl"]) --> CheckInjected{"Injected stora
 CheckInjected --> |Yes| UseInjected["Use injected storage and backend"]
 CheckInjected --> |No| DetectPlatform["Detect platform"]
 DetectPlatform --> Android{"Android?"}
-Android --> |Yes| InitAndroid["Initialize with AndroidOptions (AES-GCM)"]
+Android --> |Yes| InitAndroid["Initialize with AndroidOptions (AES-GCM)<br/>Hardware-backed: StrongBox/TEE"]
 Android --> |No| IOS{"iOS?"}
-IOS --> |Yes| InitIOS["Initialize with IOSOptions (Keychain)"]
-IOS --> |No| InitSoftware["Initialize with default FlutterSecureStorage"]
+IOS --> |Yes| InitIOS["Initialize with IOSOptions (Keychain)<br/>Hardware-backed: Secure Enclave"]
+IOS --> |No| InitSoftware["Initialize with default FlutterSecureStorage<br/>Software-backed"]
 InitAndroid --> SetBackendHW["Set backend = hardwareBacked"]
 InitIOS --> SetBackendHW
 InitSoftware --> SetBackendSW["Set backend = software"]
@@ -172,6 +201,8 @@ Complete --> End(["Ready"])
 
 **Diagram sources**
 - [secure_storage_service_impl.dart](file://lib/core/storage/secure_storage_service_impl.dart#L33-L73)
+- [android.md](file://docs/platform/android.md#L31-L45)
+- [ios.md](file://docs/platform/ios.md#L25-L35)
 
 **Section sources**
 - [secure_storage_service_impl.dart](file://lib/core/storage/secure_storage_service_impl.dart#L7-L104)
@@ -240,6 +271,121 @@ CBS-->>BYOK : Success
 - [encryption_service.dart](file://lib/core/crypto/encryption_service.dart#L14-L74)
 - [key_derivation_service.dart](file://lib/core/crypto/key_derivation_service.dart#L9-L117)
 
+## Platform-Specific Implementations
+
+### Android Implementation Details
+The Android implementation leverages the system's hardware security infrastructure:
+
+**Configuration Parameters:**
+- **Key Cipher Algorithm**: AES_GCM_NoPadding - Authenticated encryption with hardware acceleration
+- **Storage Cipher Algorithm**: AES_GCM_NoPadding - Ensures integrity and confidentiality
+- **Enforce Biometrics**: false - Biometric authentication not required for basic operations
+- **Reset on Error**: true - Automatic key rotation on authentication failures
+
+**Hardware Security Features:**
+- **Android Keystore**: System-wide credential storage managed by the OS
+- **StrongBox**: Dedicated hardware security module (Android 9+) for enhanced protection
+- **TEE (Trusted Execution Environment)**: Isolated execution environment for cryptographic operations
+- **AES-GCM**: Authenticated encryption providing both confidentiality and integrity
+
+**Backend Selection Priority:**
+1. StrongBox (dedicated HSM) - Highest security level
+2. Hardware-backed TEE - Hardware-protected keys
+3. Software fallback - Standard AES encryption
+
+**Section sources**
+- [secure_storage_service_impl.dart](file://lib/core/storage/secure_storage_service_impl.dart#L37-L47)
+- [android.md](file://docs/platform/android.md#L31-L45)
+
+### iOS Implementation Details
+The iOS implementation utilizes Apple's secure storage infrastructure:
+
+**Configuration Parameters:**
+- **Accessibility**: unlocked_this_device - Keys accessible only when device is unlocked
+- **Secure Enclave**: Hardware security module for cryptographic operations
+- **Keychain Integration**: System-managed secure storage
+
+**Security Features:**
+- **iOS Keychain**: Secure credential storage managed by the operating system
+- **Secure Enclave**: Hardware security module (iPhone 5s+) for cryptographic operations
+- **Accessibility Control**: Device-locked access prevents unauthorized access
+- **No iCloud Sync**: Prevents cloud backup of sensitive data
+
+**Backend Selection Logic:**
+- Hardware-backed storage automatically selected when available
+- Secure Enclave leveraged when present for enhanced security
+- Automatic fallback to software-backed storage when hardware unavailable
+
+**Section sources**
+- [secure_storage_service_impl.dart](file://lib/core/storage/secure_storage_service_impl.dart#L50-L57)
+- [ios.md](file://docs/platform/ios.md#L25-L35)
+
+### Web Platform Implementation
+The web implementation provides software-backed storage with browser-native cryptography:
+
+**Configuration Characteristics:**
+- **IndexedDB**: Underlying storage mechanism for persistent data
+- **Software Encryption**: Pure software AES-256-GCM encryption
+- **PBKDF2**: Key derivation function (Argon2id not available in browsers)
+
+**Limitations:**
+- No hardware-backed secure storage available
+- PBKDF2 instead of Argon2id (slower key derivation)
+- No Secure Enclave/Keystore equivalent
+- IndexedDB-based storage with browser security constraints
+
+**Section sources**
+- [web.md](file://docs/platform/web.md#L23-L26)
+- [web.md](file://docs/platform/web.md#L48-L53)
+
+## Hardware Security Module Integration
+
+### Android Hardware Security Modules
+The Android implementation seamlessly integrates with multiple hardware security layers:
+
+**StrongBox HSM (Hardware Security Module):**
+- Dedicated security chip providing tamper-resistant key storage
+- Available on Android 9+ devices (Pixel 3+)
+- Provides additional protection beyond traditional keystore
+- Hardware-accelerated cryptographic operations
+
+**Trusted Execution Environment (TEE):**
+- Isolated execution environment for sensitive operations
+- Hardware isolation from main operating system
+- Protection against malicious software and side-channel attacks
+- Transparent integration with Android Keystore
+
+**Hardware-Accelerated Cryptography:**
+- AES-NI instruction set support when available
+- Optimized cryptographic operations
+- Reduced CPU overhead for encryption/decryption
+- Enhanced performance on supported devices
+
+### iOS Secure Enclave Integration
+The iOS implementation leverages Apple's hardware security infrastructure:
+
+**Secure Enclave:**
+- Dedicated security coprocessor (iPhone 5s+)
+- Tamper-resistant hardware for cryptographic operations
+- Independent from main processor and memory
+- Hardware-accelerated AES operations
+
+**Keychain Integration:**
+- System-managed secure storage
+- Automatic key derivation and management
+- Device-specific key wrapping
+- Seamless integration with iOS security model
+
+**Accessibility Controls:**
+- Device-locked access prevents unauthorized access
+- Touch ID/Face ID integration when available
+- Automatic key invalidation on device lock
+- Protection against extraction attempts
+
+**Section sources**
+- [android.md](file://docs/platform/android.md#L31-L45)
+- [ios.md](file://docs/platform/ios.md#L25-L35)
+
 ## Dependency Analysis
 External dependencies relevant to Secure Storage:
 - flutter_secure_storage: Provides platform-native secure storage abstraction.
@@ -254,12 +400,18 @@ BYOK["BYOKManagerImpl"] --> SSI
 BYOK --> ENC["EncryptionService"]
 BYOK --> KDF["KeyDerivationService"]
 BYOK --> CBS["CloudBackupService"]
+FSS --> ANDROID["Android Keystore"]
+FSS --> IOS["iOS Keychain"]
+FSS --> WEB["Web IndexedDB"]
 ```
 
 **Diagram sources**
 - [secure_storage_service_impl.dart](file://lib/core/storage/secure_storage_service_impl.dart#L1-L5)
 - [byok_manager.dart](file://lib/core/byok/byok_manager.dart#L1-L15)
 - [pubspec.yaml](file://pubspec.yaml#L34-L47)
+- [android.md](file://docs/platform/android.md#L31-L45)
+- [ios.md](file://docs/platform/ios.md#L25-L35)
+- [web.md](file://docs/platform/web.md#L23-L26)
 
 **Section sources**
 - [pubspec.yaml](file://pubspec.yaml#L30-L47)
@@ -273,7 +425,7 @@ BYOK --> CBS["CloudBackupService"]
 - Initialization overhead: The Completer-based initialization ensures operations wait for readiness, preventing race conditions at the cost of a small startup delay.
 - Error handling: Fallback to software-backed storage avoids blocking the app on initialization failures.
 
-[No sources needed since this section provides general guidance]
+**Updated** Enhanced with platform-specific performance characteristics and hardware acceleration details.
 
 ## Troubleshooting Guide
 Common issues and resolutions:
@@ -281,10 +433,14 @@ Common issues and resolutions:
 - Operation timing: Ensure callers await initialization completion; operations are gated by a Completer to prevent premature access.
 - Backend mismatches: Confirm platform detection logic and Flutter Secure Storage options for Android and iOS.
 - Test coverage: Unit tests validate that write/read/delete/deleteAll delegate to the underlying storage and return expected results.
+- Hardware availability: On Android, StrongBox/TEE availability depends on device capabilities; fallback to software is automatic.
+- iOS Keychain access: Ensure proper entitlements and accessibility settings for device-locked access.
 
 **Section sources**
 - [secure_storage_service_impl.dart](file://lib/core/storage/secure_storage_service_impl.dart#L63-L72)
 - [secure_storage_service_test.dart](file://test/secure_storage_service_test.dart#L10-L147)
 
 ## Conclusion
-The Secure Storage Service provides a robust, platform-aware abstraction for secure data persistence. It automatically selects hardware-backed storage on Android and iOS, with a reliable software-backed fallback for other platforms. Integrated with the BYOK Manager, it enables secure API key lifecycle management, complemented by optional cloud backup through encrypted storage. The design balances security, portability, and maintainability across diverse deployment targets.
+The Secure Storage Service provides a robust, platform-aware abstraction for secure data persistence. It automatically selects hardware-backed storage on Android and iOS, with a reliable software-backed fallback for other platforms. Integrated with the BYOK Manager, it enables secure API key lifecycle management, complemented by optional cloud backup through encrypted storage. The design balances security, portability, and maintainability across diverse deployment targets, with comprehensive hardware security module integration and platform-specific optimizations.
+
+**Updated** Enhanced documentation reflects detailed platform-specific implementations, hardware security module configurations, and comprehensive security considerations for each supported platform.

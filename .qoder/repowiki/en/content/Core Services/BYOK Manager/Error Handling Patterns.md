@@ -11,19 +11,32 @@
 - [byok_manager_test.dart](file://test/byok_manager_test.dart)
 </cite>
 
+## Update Summary
+**Changes Made**
+- Enhanced documentation with detailed error categories for FirebaseError to ProcessingError transitions
+- Added comprehensive recovery procedures for critical backup operations
+- Expanded user-facing messaging guidelines for different error scenarios
+- Documented specific error handling patterns for FirebaseException to BackupError transitions
+- Added detailed BackupErrorType extensions for passphrase rotation operations
+
 ## Table of Contents
 1. [Introduction](#introduction)
 2. [Project Structure](#project-structure)
 3. [Core Components](#core-components)
 4. [Architecture Overview](#architecture-overview)
 5. [Detailed Component Analysis](#detailed-component-analysis)
-6. [Dependency Analysis](#dependency-analysis)
-7. [Performance Considerations](#performance-considerations)
-8. [Troubleshooting Guide](#troubleshooting-guide)
-9. [Conclusion](#conclusion)
+6. [Enhanced Error Categories and Recovery Procedures](#enhanced-error-categories-and-recovery-procedures)
+7. [FirebaseError to ProcessingError Transition Patterns](#firebaseerror-to-processingerror-transition-patterns)
+8. [User-Facing Messaging Guidelines](#user-facing-messaging-guidelines)
+9. [Dependency Analysis](#dependency-analysis)
+10. [Performance Considerations](#performance-considerations)
+11. [Troubleshooting Guide](#troubleshooting-guide)
+12. [Conclusion](#conclusion)
 
 ## Introduction
 This document explains the Result<T> sealed class pattern and error handling strategies used throughout BYOKManager. It covers the Success and Failure classes, their usage patterns, and how errors propagate through method chains. It documents all BYOKError types including ValidationError, StorageError, NotFoundError, and BackupError with their specific use cases. It details error handling strategies for validation failures, storage errors, and cloud backup operations, and provides practical examples of error handling in method calls, error propagation patterns, and best practices for consuming Result<T> types in client code.
+
+**Updated** Enhanced with detailed error categories, recovery procedures, user-facing messaging guidelines, and specific error handling patterns for FirebaseError to ProcessingError transitions.
 
 ## Project Structure
 The BYOK subsystem is organized around a Result<T> sealed class pattern that unifies success and failure outcomes. Supporting models define error categories and validation outcomes. The BYOKManager orchestrates API key lifecycle operations, delegating validation to APIKeyValidator and cloud backup to CloudBackupService. Tests demonstrate error handling across all operational paths.
@@ -34,6 +47,7 @@ subgraph "BYOK Core"
 Result["Result<T> sealed class<br/>Success<T>, Failure<T>"]
 BYOKError["BYOKError sealed class<br/>ValidationError, StorageError,<br/>NotFoundError, BackupError, CryptoError"]
 ValidationResult["ValidationResult sealed class<br/>ValidationSuccess, ValidationFailure"]
+BackupErrorType["BackupErrorType enum<br/>notFound, wrongPassphrase,<br/>corrupted, networkError,<br/>storageError, cryptoError,<br/>renameFailure, localUpdateFailure,<br/>recoveryFailure, unknown"]
 end
 subgraph "Services"
 BYOKManager["BYOKManager interface<br/>BYOKManagerImpl"]
@@ -50,6 +64,7 @@ BYOKManager --> CloudBackupService
 BYOKManager --> APIKeyConfig
 CloudBackupService --> CloudBackupBlob
 APIKeyValidator --> ValidationResult
+BackupErrorType --> CloudBackupService
 ```
 
 **Diagram sources**
@@ -161,8 +176,10 @@ The BYOKError sealed class hierarchy categorizes errors:
 - ValidationError: Wraps ValidationResult to indicate validation failures with detailed reasons.
 - StorageError: Indicates failures in secure storage operations with optional original error context.
 - NotFoundError: Signals absence of stored API key configuration.
-- BackupError: Represents cloud backup failures with typed reasons (notFound, wrongPassphrase, corrupted, networkError, storageError).
+- BackupError: Represents cloud backup failures with typed reasons (notFound, wrongPassphrase, corrupted, networkError, storageError, cryptoError, renameFailure, localUpdateFailure, recoveryFailure, unknown).
 - CryptoError: Represents cryptographic operation failures.
+
+**Updated** Enhanced BackupErrorType with additional categories for passphrase rotation operations including localUpdateFailure, recoveryFailure, and renameFailure.
 
 ```mermaid
 classDiagram
@@ -179,11 +196,25 @@ class BackupError {
 +BackupErrorType type
 }
 class CryptoError
+class BackupErrorType {
+<<enumeration>>
+notFound
+wrongPassphrase
+corrupted
+networkError
+storageError
+cryptoError
+renameFailure
+localUpdateFailure
+recoveryFailure
+unknown
+}
 BYOKError <|-- ValidationError
 BYOKError <|-- StorageError
 BYOKError <|-- NotFoundError
 BYOKError <|-- BackupError
 BYOKError <|-- CryptoError
+BackupError --> BackupErrorType
 ```
 
 **Diagram sources**
@@ -232,6 +263,8 @@ Cloud backup operations are encapsulated in CloudBackupService. The implementati
 
 Errors are categorized using BackupError with specific types. Network errors are detected and mapped to BackupErrorType.networkError. Firebase exceptions are mapped to BackupErrorType.storageError with original error context.
 
+**Updated** Enhanced with detailed recovery procedures for local state update failures and comprehensive error categorization for monitoring dashboards.
+
 ```mermaid
 sequenceDiagram
 participant Manager as "BYOKManagerImpl"
@@ -272,6 +305,8 @@ BYOKManager methods consistently return Result<T>:
 - restoreFromCloudBackup: Downloads and decrypts backup, mapping passphrase mismatches to wrongPassphrase and missing backups to notFound.
 - rotateBackupPassphrase: Uses a temporary backup to achieve atomic rotation, preserving createdAt timestamps and cleaning up temp artifacts.
 
+**Updated** Enhanced with detailed recovery procedures for critical failure scenarios during passphrase rotation.
+
 ```mermaid
 flowchart TD
 A["Method call returns Result<T>"] --> B{"Is Success?"}
@@ -283,6 +318,7 @@ F --> G["Validation errors -> show user feedback"]
 F --> H["Storage errors -> retry or fallback"]
 F --> I["Backup errors -> guide user action"]
 F --> J["Crypto errors -> log and notify"]
+F --> K["Local update failures -> attempt recovery"]
 ```
 
 **Diagram sources**
@@ -308,9 +344,170 @@ F --> J["Crypto errors -> log and notify"]
   - Log warnings for non-fatal failures (e.g., cloud backup deletion during key deletion) to preserve local state integrity.
   - Preserve user data when possible (e.g., disable cloud backup locally on re-encryption failure).
 
+**Updated** Enhanced with recovery procedures for critical failure scenarios and detailed user-facing messaging guidelines.
+
 **Section sources**
 - [byok_manager_test.dart](file://test/byok_manager_test.dart#L1097-L1229)
 - [byok_manager_test.dart](file://test/byok_manager_test.dart#L1391-L1433)
+
+## Enhanced Error Categories and Recovery Procedures
+
+### Comprehensive BackupErrorType Extensions
+The BackupErrorType enumeration has been extended to support detailed error reporting required for passphrase rotation operations:
+
+- **notFound**: Backup does not exist
+- **wrongPassphrase**: Passphrase is incorrect
+- **corrupted**: Backup is corrupted
+- **networkError**: Network error during backup operation
+- **storageError**: Firebase Storage error
+- **cryptoError**: Encryption or decryption operation failed
+- **renameFailure**: Atomic rename operation failed after retries
+- **localUpdateFailure**: Local state update failed; recovery attempted
+- **recoveryFailure**: Critical: Recovery from failure was unsuccessful
+- **unknown**: Unknown or unexpected error
+
+**Updated** Added new error categories specifically for passphrase rotation operations including localUpdateFailure, recoveryFailure, and renameFailure.
+
+### Local State Update Failure Recovery
+When local state updates fail during passphrase rotation, the system implements comprehensive recovery procedures:
+
+```dart
+Future<Result<void>> _recoverFromLocalUpdateFailure({
+  required CloudBackupBlob blob,
+  required CloudBackupBlob newBlob,
+  required String operationId,
+}) async {
+  // Attempt to restore original blob to maintain consistency
+  final restoreResult = await _uploadWithRetry(
+    blob,
+    'backups/$userId/api_key_backup.json',
+    operationId,
+  );
+  
+  if (restoreResult.isFailure) {
+    // CRITICAL: Cannot restore original blob
+    return Failure(BackupError(
+      'Passphrase rotation failed and recovery was unsuccessful. '
+      'Your backup may be in an inconsistent state. '
+      'Please try restoring with your OLD passphrase, then retry rotation. '
+      'Error code: ROTATION_RECOVERY_FAILED',
+      BackupErrorType.storageError,
+      originalError: restoreResult.error,
+    ));
+  }
+  
+  return Failure(BackupError(
+    'Passphrase rotation failed during local state update. '
+    'Your backup has been restored to its previous state. '
+    'Please try again. Error code: ROTATION_LOCAL_UPDATE_FAILED',
+    BackupErrorType.storageError,
+  ));
+}
+```
+
+**Section sources**
+- [cloud_backup_service.dart](file://lib/core/byok/cloud_backup_service.dart#L1234-L1301)
+
+### Error Categorization for Monitoring Dashboards
+Errors are categorized for monitoring dashboards with specific alert thresholds:
+
+| Category | Error Types | Alert Threshold |
+|----------|-------------|-----------------|
+| **User Error** | `wrongPassphrase` | No alert (expected) |
+| **Transient** | `networkError`, `storageError` (retryable) | > 10% failure rate |
+| **Infrastructure** | `storageError` (quota, permissions) | Any occurrence |
+| **Critical** | `ROTATION_RECOVERY_FAILED`, `ROTATION_RECOVERY_EXCEPTION` | Any occurrence |
+| **Bug** | `unknown`, unexpected exceptions | Any occurrence |
+
+**Section sources**
+- [cloud_backup_service.dart](file://lib/core/byok/cloud_backup_service.dart#L1513-L1520)
+
+## FirebaseError to ProcessingError Transition Patterns
+
+### FirebaseException to BackupError Mapping
+The system implements sophisticated error mapping for Firebase exceptions to BackupError types:
+
+```dart
+on FirebaseException catch (e) {
+  // Only return Success(false) for object-not-found
+  if (e.code == 'object-not-found') {
+    return const Success(false);
+  }
+  // Propagate other Firebase errors (permission denied, etc.)
+  return Failure(BackupError(
+    'Firebase Storage error: ${e.message}',
+    BackupErrorType.storageError,
+    originalError: e,
+  ));
+}
+```
+
+**Updated** Enhanced error mapping includes comprehensive handling of FirebaseException codes and network-related error detection.
+
+### Network Error Detection and Classification
+The system includes sophisticated network error detection:
+
+```dart
+bool _isNetworkError(Object error) {
+  if (error is SocketException) {
+    return true;
+  }
+  if (error is HttpException) {
+    return true;
+  }
+  if (error is FirebaseException) {
+    const networkErrorCodes = {
+      'network-request-failed',
+      'unavailable',
+    };
+    return networkErrorCodes.contains(error.code);
+  }
+  return false;
+}
+```
+
+**Section sources**
+- [cloud_backup_service.dart](file://lib/core/byok/cloud_backup_service.dart#L139-L164)
+
+### ProcessingError Implementation
+ProcessingError is used for background processing failures in related services:
+
+```dart
+class ProcessingError extends ClothingError {
+  const ProcessingError(super.message, {super.originalError});
+  
+  @override
+  String toString() => 'ProcessingError($message)';
+}
+```
+
+**Section sources**
+- [clothing_error.dart](file://lib/core/clothing/models/clothing_error.dart#L62-L70)
+
+## User-Facing Messaging Guidelines
+
+### Validation Error Messages
+- **Invalid format**: "The API key format is invalid. Please ensure it starts with 'AIza' and has the correct length."
+- **Unauthorized**: "The API key is not authorized for this project. Please verify your project ID and key permissions."
+- **Network error**: "Unable to validate the API key due to network issues. Please check your connection and try again."
+
+### Storage Error Messages
+- **Parse/format errors**: "Unable to read stored API key. The data appears to be corrupted. Please re-enter your key."
+- **Write/read failures**: "Storage operation failed. Please try again or contact support if the issue persists."
+
+### Backup Error Messages
+- **Wrong passphrase**: "Incorrect passphrase. Please verify your passphrase and try again."
+- **Not found**: "No backup found for your account. Would you like to create a new backup?"
+- **Corrupted**: "Backup data is corrupted. Please recreate your backup or restore from another source."
+- **Network/storage errors**: "Backup operation failed due to network/storage issues. Please check your connection and try again."
+
+### Critical Error Recovery Messages
+- **Rotation recovery failed**: "Passphrase rotation failed and recovery was unsuccessful. Your backup may be in an inconsistent state. Please try restoring with your OLD passphrase, then retry rotation."
+- **Rotation local update failed**: "Passphrase rotation failed during local state update. Your backup has been restored to its previous state. Please try again."
+
+**Section sources**
+- [cloud_backup_service.dart](file://lib/core/byok/cloud_backup_service.dart#L1269-L1287)
+- [cloud_backup_service.dart](file://lib/core/byok/cloud_backup_service.dart#L1282-L1287)
 
 ## Dependency Analysis
 The BYOK subsystem exhibits low coupling and high cohesion:
@@ -345,6 +542,7 @@ CloudBackupServiceImpl --> EncryptionService
 - Storage operations: JSON serialization and deserialization are lightweight; avoid unnecessary reads/writes.
 - Cloud backup: Encryption and upload can be expensive; batch operations and minimize redundant uploads.
 - Error handling overhead: Logging and error wrapping add minimal overhead compared to I/O operations.
+- Recovery procedures: Local state update recovery attempts add computational overhead but ensure data consistency.
 
 ## Troubleshooting Guide
 Common issues and strategies:
@@ -360,10 +558,19 @@ Common issues and strategies:
   - Not found: Confirm backup existence and authentication.
   - Corrupted: Verify backup integrity and consider re-creation.
   - Network/storage errors: Retry operations and monitor service health.
+- Critical recovery scenarios:
+  - Rotation recovery failures: Guide users through manual recovery procedures.
+  - Local state inconsistencies: Implement automatic recovery with clear user messaging.
+
+**Updated** Enhanced troubleshooting guide includes recovery procedures for critical failure scenarios.
 
 **Section sources**
 - [byok_manager_test.dart](file://test/byok_manager_test.dart#L1097-L1229)
 - [cloud_backup_service.dart](file://lib/core/byok/cloud_backup_service.dart#L252-L317)
 
 ## Conclusion
-The BYOK subsystem employs a robust Result<T> sealed class pattern to unify success and failure outcomes, enabling predictable error handling across validation, storage, and cloud backup operations. BYOKError types provide precise categorization of failure modes, while the orchestration in BYOKManager ensures resilient behavior, graceful degradation, and clear user feedback. Following the documented patterns and best practices will help maintain consistency and reliability as the system evolves.
+The BYOK subsystem employs a robust Result<T> sealed class pattern to unify success and failure outcomes, enabling predictable error handling across validation, storage, and cloud backup operations. BYOKError types provide precise categorization of failure modes, while the orchestration in BYOKManager ensures resilient behavior, graceful degradation, and clear user feedback. 
+
+**Updated** The enhanced error handling system now includes comprehensive recovery procedures for critical failure scenarios, detailed error categorization for monitoring, and sophisticated FirebaseException to BackupError mapping patterns. These improvements ensure data consistency, provide clear user guidance during error conditions, and maintain system reliability even under adverse circumstances.
+
+Following the documented patterns and best practices will help maintain consistency and reliability as the system evolves, with particular emphasis on the new recovery procedures and error categorization strategies that enhance the overall error handling experience.

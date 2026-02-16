@@ -1,3 +1,5 @@
+import 'onboarding_error.dart';
+
 /// Represents the different steps in the onboarding flow.
 ///
 /// The onboarding process guides new users through the initial setup
@@ -28,7 +30,7 @@ class OnboardingState {
   /// Creates an [OnboardingState] instance.
   ///
   /// [currentStep] represents the current step in the onboarding flow.
-  /// [error] contains any error that occurred during onboarding operations.
+  /// [error] contains any [OnboardingError] that occurred during onboarding operations.
   const OnboardingState({
     required this.currentStep,
     this.error,
@@ -45,8 +47,14 @@ class OnboardingState {
         error = null;
 
   /// Creates a state representing an error during onboarding.
-  const OnboardingState.error(this.error)
-      : currentStep = OnboardingStep.apiKeyInput;
+  ///
+  /// [error] is the [OnboardingError] that occurred.
+  /// [currentStep] is the step where the error occurred, defaults to
+  /// [OnboardingStep.welcome] if not specified.
+  const OnboardingState.error(
+    OnboardingError error, {
+    this.currentStep = OnboardingStep.welcome,
+  }) : error = error;
 
   /// Whether the onboarding process has been completed.
   ///
@@ -58,7 +66,7 @@ class OnboardingState {
   final OnboardingStep currentStep;
 
   /// The error that occurred during onboarding, if any.
-  final Object? error;
+  final OnboardingError? error;
 
   /// Whether the state has an error.
   bool get hasError => error != null;
@@ -66,7 +74,7 @@ class OnboardingState {
   /// Creates a copy of this state with the given fields replaced.
   OnboardingState copyWith({
     OnboardingStep? currentStep,
-    Object? error,
+    OnboardingError? error,
     bool clearError = false,
   }) {
     return OnboardingState(

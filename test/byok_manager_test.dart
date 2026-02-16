@@ -58,6 +58,11 @@ class MockHttpClient extends http.BaseClient {
       headers: response.headers,
     );
   }
+
+  /// Resets internal state for test isolation
+  void reset() {
+    callCount = 0;
+  }
 }
 
 /// In-memory mock implementation of SecureStorageService

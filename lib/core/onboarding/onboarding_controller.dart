@@ -49,5 +49,12 @@ abstract class OnboardingController {
   /// - Clearing user data on logout
   ///
   /// After calling this method, [isOnboardingComplete] will return `false`.
+  ///
+  /// Throws [OnboardingPersistenceException] if the persistence operation fails,
+  /// such as when the storage backend is unavailable or the write operation
+  /// is rejected by the storage layer.
+  ///
+  /// Implementations should throw [OnboardingPersistenceException] with
+  /// `operation: 'resetOnboarding'` for consistent error handling.
   Future<void> resetOnboarding();
 }

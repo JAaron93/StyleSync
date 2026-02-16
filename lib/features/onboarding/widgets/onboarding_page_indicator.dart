@@ -39,7 +39,9 @@ class OnboardingPageIndicator extends StatelessWidget {
 
         return Padding(
           padding: const EdgeInsets.symmetric(horizontal: 4),
+          // Key enables test discovery via find.byKey('indicator_dot_$index')
           child: AnimatedContainer(
+            key: Key('indicator_dot_$index'),
             duration: const Duration(milliseconds: 200),
             curve: Curves.easeInOut,
             width: isActive ? 24 : 8,
@@ -111,6 +113,7 @@ class OnboardingPageIndicatorWithLabels extends StatelessWidget {
                     ),
                   // Circle
                   AnimatedContainer(
+                    key: Key('labeled_indicator_circle_$index'),
                     duration: const Duration(milliseconds: 200),
                     width: 28,
                     height: 28,

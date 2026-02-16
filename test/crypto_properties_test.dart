@@ -1,6 +1,6 @@
 import 'dart:typed_data';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:glados/glados.dart' hide expect, group, test;
+import 'package:glados/glados.dart' hide expect, expectLater, group, test;
 import 'package:stylesync/core/crypto/encryption_service.dart';
 import 'package:stylesync/core/crypto/key_derivation_service.dart';
 import 'package:stylesync/core/crypto/kdf_metadata.dart';
@@ -68,8 +68,8 @@ void main() {
       );
       
       // Empty passphrases are intentionally rejected by the implementation
-      expect(
-        () => kdfService.deriveKey('', metadata),
+      await expectLater(
+        kdfService.deriveKey('', metadata),
         throwsA(isA<ArgumentError>()),
       );
     });

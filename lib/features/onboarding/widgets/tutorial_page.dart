@@ -249,6 +249,7 @@ class _TutorialStep extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         // Step number circle
+        // Key enables test discovery via find.byKey('step-number-$stepNumber')
         Container(
           key: ValueKey('step-number-$stepNumber'),
           width: 32,

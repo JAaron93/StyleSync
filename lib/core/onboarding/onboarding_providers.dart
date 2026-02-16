@@ -1,5 +1,7 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'models/onboarding_error.dart';
 import 'models/onboarding_state.dart';
 import 'onboarding_controller.dart';
 import 'onboarding_controller_impl.dart';
@@ -77,7 +79,16 @@ class OnboardingStateNotifier extends StateNotifier<OnboardingState> {
         state = const OnboardingState.completed();
       }
     } catch (e) {
-      state = OnboardingState.error(e);
+      debugPrint('Onboarding initialization error: $e');
+      // Error during initialization - use welcome as the step since state isn't set yet
+      state = OnboardingState.error(
+        OnboardingError(
+          'Failed to check onboarding status',
+          operation: OnboardingOperation.checkComplete,
+          originalError: e,
+        ),
+        currentStep: OnboardingStep.welcome,
+      );
     }
   }
 
@@ -98,7 +109,15 @@ class OnboardingStateNotifier extends StateNotifier<OnboardingState> {
           await _controller.markOnboardingComplete();
           state = const OnboardingState.completed();
         } catch (e) {
-          state = OnboardingState.error(e);
+          debugPrint('Onboarding completion error: $e');
+          state = OnboardingState.error(
+            OnboardingError(
+              'Failed to complete onboarding',
+              operation: OnboardingOperation.markComplete,
+              originalError: e,
+            ),
+            currentStep: OnboardingStep.apiKeyInput,
+          );
         }
         break;
       case OnboardingStep.complete:
@@ -132,9 +151,25 @@ class OnboardingStateNotifier extends StateNotifier<OnboardingState> {
   /// This clears the persisted onboarding completion status and returns
   /// the state to the welcome step. Useful for testing or allowing users
   /// to re-experience the onboarding flow.
+  ///
+  /// If the reset operation fails, the state is set to an error state
+  /// allowing the UI to react accordingly.
   Future<void> reset() async {
-    await _controller.resetOnboarding();
-    state = const OnboardingState.initial();
+    try {
+      await _controller.resetOnboarding();
+      state = const OnboardingState.initial();
+    } catch (e) {
+      debugPrint('Onboarding reset error: $e');
+      // Preserve the current step when reset fails
+      state = OnboardingState.error(
+        OnboardingError(
+          'Failed to reset onboarding',
+          operation: OnboardingOperation.reset,
+          originalError: e,
+        ),
+        currentStep: state.currentStep,
+      );
+    }
   }
 
   /// Skips directly to a specific step.

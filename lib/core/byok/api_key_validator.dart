@@ -217,7 +217,7 @@ class APIKeyValidatorImpl implements APIKeyValidator {
     } catch (e) {
       return ValidationFailure(
         type: ValidationFailureType.unknown,
-        message: 'An unexpected error occurred: ${e.toString()}',
+        message: 'An unexpected error occurred',
         originalError: e,
       );
     }

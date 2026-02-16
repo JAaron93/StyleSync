@@ -164,15 +164,26 @@ void main() {
             reason: 'Page indicator should be displayed');
 
         // The indicator should have 3 dots (welcome, tutorial, apiKeyInput)
-        final dotsCount = find
-            .descendant(
-              of: find.byType(OnboardingPageIndicator),
-              matching: find.byType(AnimatedContainer),
-            )
-            .evaluate()
-            .length;
-        expect(dotsCount, equals(3),
-            reason: 'Page indicator should have 3 dots for onboarding steps');
+        // Count dots by their stable keys rather than implementation widget type
+        final dot0 = find.descendant(
+          of: find.byType(OnboardingPageIndicator),
+          matching: find.byKey(const Key('indicator_dot_0')),
+        );
+        final dot1 = find.descendant(
+          of: find.byType(OnboardingPageIndicator),
+          matching: find.byKey(const Key('indicator_dot_1')),
+        );
+        final dot2 = find.descendant(
+          of: find.byType(OnboardingPageIndicator),
+          matching: find.byKey(const Key('indicator_dot_2')),
+        );
+
+        expect(dot0, findsOneWidget,
+            reason: 'Page indicator should have dot 0 (welcome)');
+        expect(dot1, findsOneWidget,
+            reason: 'Page indicator should have dot 1 (tutorial)');
+        expect(dot2, findsOneWidget,
+            reason: 'Page indicator should have dot 2 (apiKeyInput)');
 
         final indicator = tester.widget<OnboardingPageIndicator>(
           find.byType(OnboardingPageIndicator),
@@ -281,9 +292,6 @@ void main() {
     group('Navigation flow', () {
       testWidgets('navigates from welcome to tutorial when Get Started is tapped',
           (WidgetTester tester) async {
-        // Set up mock SharedPreferences for the controller
-        SharedPreferences.setMockInitialValues({});
-
         await tester.pumpWidget(createTestWidget());
         await tester.pumpAndSettle();
 

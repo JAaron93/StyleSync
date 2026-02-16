@@ -306,13 +306,8 @@ class CloudBackupServiceImpl implements CloudBackupService {
         ));
       }
     } catch (e) {
-      if (_isNetworkError(e)) {
-        return Failure(BackupError(
-          'Network error during restore: ${e.toString()}',
-          BackupErrorType.networkError,
-          originalError: e,
-        ));
-      }
+      // All errors in _decryptBlob are local (key derivation, decryption, parsing)
+      // so network errors are not applicable here
       return Failure(BackupError(
         'Failed to restore backup: ${e.toString()}',
         BackupErrorType.storageError,

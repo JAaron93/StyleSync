@@ -426,7 +426,7 @@ void main() {
             reason: 'TutorialPage content should be scrollable');
       });
 
-      testWidgets('navigation buttons are present',
+      testWidgets('navigation buttons are arranged in a Row at the bottom',
           (WidgetTester tester) async {
         await tester.pumpWidget(createTestWidget(
           onNext: () {},
@@ -434,11 +434,35 @@ void main() {
         ));
         await tester.pumpAndSettle();
 
-        // Both Back and Next buttons should be present
-        expect(find.text('Back'), findsOneWidget,
-            reason: 'Back button should be present');
-        expect(find.text('Next'), findsOneWidget,
-            reason: 'Next button should be present');
+        // Verify Back button is inside a Row (layout container)
+        final backInRow = find.ancestor(
+          of: find.text('Back'),
+          matching: find.byType(Row),
+        );
+        expect(backInRow, findsWidgets,
+            reason: 'Back button should be inside a Row');
+
+        // Verify Next button is inside a Row (layout container)
+        final nextInRow = find.ancestor(
+          of: find.text('Next'),
+          matching: find.byType(Row),
+        );
+        expect(nextInRow, findsWidgets,
+            reason: 'Next button should be inside a Row');
+
+        // Verify both buttons share the same Row ancestor (side by side)
+        final backButton = find.text('Back');
+        final nextButton = find.text('Next');
+        final backTopLeft = tester.getTopLeft(backButton);
+        final nextTopLeft = tester.getTopLeft(nextButton);
+
+        // Back button should be positioned to the left of Next button
+        expect(backTopLeft.dx, lessThan(nextTopLeft.dx),
+            reason: 'Back button should be positioned left of Next button');
+
+        // Both buttons should be at approximately the same vertical position (same row)
+        expect((backTopLeft.dy - nextTopLeft.dy).abs(), lessThan(10),
+            reason: 'Back and Next buttons should be vertically aligned');
       });
 
       testWidgets('info icon is displayed for important notice',

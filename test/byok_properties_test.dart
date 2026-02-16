@@ -166,21 +166,26 @@ class MockHttpClient extends http.BaseClient {
   @override
   Future<http.StreamedResponse> send(http.BaseRequest request) async {
     callCount++;
-    
+
     if (shouldTimeout) {
       throw TimeoutException('Request timed out');
     }
-    
+
     if (shouldThrowSocketException) {
       throw const SocketException('Network unreachable');
     }
-    
+
     final response = http.Response(responseBody, statusCode);
     return http.StreamedResponse(
       Stream.value(response.bodyBytes),
       statusCode,
       headers: response.headers,
     );
+  }
+
+  /// Resets internal state for test isolation
+  void reset() {
+    callCount = 0;
   }
 }
 
@@ -226,6 +231,37 @@ class MockSecureStorage implements SecureStorageService {
 
   /// Clear storage for test isolation
   void clear() => _storage.clear();
+}
+
+// =============================================================================
+// Mock API Key Validator for Testing
+// =============================================================================
+
+/// Mock implementation of [APIKeyValidator] for tests that don't need HTTP.
+///
+/// Delegates [validateFormat] to a real validator for canonical rules,
+/// while [validateFunctionality] always returns success without network calls.
+class MockAPIKeyValidator implements APIKeyValidator {
+  final APIKeyValidatorImpl _realValidator = APIKeyValidatorImpl();
+
+  @override
+  ValidationResult validateFormat(String apiKey) {
+    return _realValidator.validateFormat(apiKey);
+  }
+
+  @override
+  Future<ValidationResult> validateFunctionality(
+    String apiKey,
+    String projectId, {
+    String region = 'us-central1',
+  }) async {
+    return const ValidationSuccess();
+  }
+
+  @override
+  void dispose() {
+    _realValidator.dispose();
+  }
 }
 
 // =============================================================================
@@ -786,9 +822,8 @@ void main() {
     });
 
     test('Retrieving non-existent key returns NotFoundError', () async {
-      final mockClient = MockHttpClient(statusCode: 200);
       final mockStorage = MockSecureStorage();
-      final validator = APIKeyValidatorImpl(httpClient: mockClient);
+      final validator = MockAPIKeyValidator();
       addTearDown(validator.dispose);
       final manager = BYOKManagerImpl(
         secureStorage: mockStorage,
@@ -796,14 +831,13 @@ void main() {
       );
 
       final result = await manager.getAPIKey();
-      
+
       expect(result, isA<Failure<APIKeyConfig>>());
     });
 
     test('Deleting non-existent key returns NotFoundError', () async {
-      final mockClient = MockHttpClient(statusCode: 200);
       final mockStorage = MockSecureStorage();
-      final validator = APIKeyValidatorImpl(httpClient: mockClient);
+      final validator = MockAPIKeyValidator();
       addTearDown(validator.dispose);
       final manager = BYOKManagerImpl(
         secureStorage: mockStorage,
@@ -811,7 +845,7 @@ void main() {
       );
 
       final result = await manager.deleteAPIKey();
-      
+
       expect(result, isA<Failure<void>>());
     });
 

@@ -55,7 +55,8 @@ class APIKeyConfig {
         idempotencyKey: json['idempotencyKey'] as String,
       );
     } catch (e, stackTrace) {
-      throw FormatException('Invalid APIKeyConfig JSON: $e\n$stackTrace');
+      final exception = FormatException('Invalid APIKeyConfig JSON: $e');
+      Error.throwWithStackTrace(exception, stackTrace);
     }
   }
 

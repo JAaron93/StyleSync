@@ -16,26 +16,45 @@
 - [lib/core/byok/api_key_validator.dart](file://lib/core/byok/api_key_validator.dart)
 - [lib/core/byok/cloud_backup_service.dart](file://lib/core/byok/cloud_backup_service.dart)
 - [lib/core/byok/models/api_key_config.dart](file://lib/core/byok/models/api_key_config.dart)
+- [lib/features/privacy/widgets/biometric_consent_dialog.dart](file://lib/features/privacy/widgets/biometric_consent_dialog.dart)
+- [lib/core/privacy/consent_manager.dart](file://lib/core/privacy/consent_manager.dart)
+- [lib/core/auth/models/user_profile.dart](file://lib/core/auth/models/user_profile.dart)
+- [lib/core/auth/auth_providers.dart](file://lib/core/auth/auth_providers.dart)
+- [lib/core/auth/auth_service.dart](file://lib/core/auth/auth_service.dart)
+- [docs/design/firebase-contracts.md](file://docs/design/firebase-contracts.md)
+- [test/face_detection_consent_properties_test.dart](file://test/face_detection_consent_properties_test.dart)
 </cite>
+
+## Update Summary
+**Changes Made**
+- Added new section on Biometric Consent Management System
+- Updated Privacy Framework Architecture to include biometric consent flow
+- Enhanced Consent Management documentation with biometric consent tracking
+- Added new diagrams showing biometric consent dialog implementation
+- Updated authentication service documentation to include biometric consent handling
 
 ## Table of Contents
 1. [Introduction](#introduction)
 2. [Project Structure](#project-structure)
 3. [Core Components](#core-components)
 4. [Architecture Overview](#architecture-overview)
-5. [Detailed Component Analysis](#detailed-component-analysis)
-6. [Dependency Analysis](#dependency-analysis)
-7. [Performance Considerations](#performance-considerations)
-8. [Troubleshooting Guide](#troubleshooting-guide)
-9. [Conclusion](#conclusion)
+5. [Privacy Framework](#privacy-framework)
+6. [Biometric Consent Management System](#biometric-consent-management-system)
+7. [Detailed Component Analysis](#detailed-component-analysis)
+8. [Dependency Analysis](#dependency-analysis)
+9. [Performance Considerations](#performance-considerations)
+10. [Troubleshooting Guide](#troubleshooting-guide)
+11. [Conclusion](#conclusion)
 
 ## Introduction
 The Privacy Services Suite is a comprehensive Flutter-based system designed to securely manage sensitive data, primarily focusing on Vertex AI API key lifecycle management with robust encryption, secure storage, and optional cloud backup capabilities. The suite implements defense-in-depth security principles with multiple layers of protection for sensitive data including API keys, authentication tokens, and user credentials.
 
 The system emphasizes user privacy through client-side encryption, platform-native secure storage integration, and minimal data collection practices. It provides a complete solution for managing API keys with optional encrypted cloud backup, ensuring that sensitive data remains protected both at rest and in transit.
 
+**Updated** Enhanced with comprehensive biometric consent management system supporting virtual try-on features with proper state management and back navigation handling.
+
 ## Project Structure
-The Privacy Services Suite follows a modular architecture organized around core privacy services:
+The Privacy Services Suite follows a modular architecture organized around core privacy services with integrated biometric consent management:
 
 ```mermaid
 graph TB
@@ -44,15 +63,23 @@ A[Secure Storage Service]
 B[Crypto Services]
 C[BYOK Manager]
 D[Onboarding Controller]
+E[Consent Manager]
 end
 subgraph "Feature Layer"
-E[Cloud Backup Service]
-F[API Key Validator]
+F[Cloud Backup Service]
+G[API Key Validator]
+H[Biometric Consent Dialog]
+end
+subgraph "Authentication Layer"
+I[Auth Service]
+J[Auth Providers]
+K[User Profile]
 end
 subgraph "Models & Interfaces"
-G[APIKeyConfig]
-H[KdfMetadata]
-I[ValidationResult]
+L[APIKeyConfig]
+M[KdfMetadata]
+N[ValidationResult]
+O[BiometricConsentDialog]
 end
 A --> C
 B --> C
@@ -60,22 +87,32 @@ B --> E
 C --> E
 C --> F
 C --> G
-B --> H
-F --> I
+C --> H
+E --> I
+I --> J
+J --> K
+K --> O
+B --> L
+B --> N
+F --> L
+G --> N
+H --> O
 ```
 
 **Diagram sources**
 - [lib/core/storage/secure_storage_service_impl.dart](file://lib/core/storage/secure_storage_service_impl.dart#L1-L105)
 - [lib/core/crypto/key_derivation_service.dart](file://lib/core/crypto/key_derivation_service.dart#L1-L119)
 - [lib/core/byok/byok_manager.dart](file://lib/core/byok/byok_manager.dart#L1-L583)
+- [lib/core/privacy/consent_manager.dart](file://lib/core/privacy/consent_manager.dart#L1-L77)
+- [lib/features/privacy/widgets/biometric_consent_dialog.dart](file://lib/features/privacy/widgets/biometric_consent_dialog.dart#L1-L80)
 
-The project structure demonstrates clear separation of concerns with distinct modules for each privacy service component, enabling maintainability and testability while ensuring security isolation between different functional areas.
+The project structure demonstrates clear separation of concerns with distinct modules for each privacy service component, enabling maintainability and testability while ensuring security isolation between different functional areas. The addition of biometric consent management enhances the privacy framework with proper user decision tracking.
 
 **Section sources**
 - [README.md](file://README.md#L68-L88)
 
 ## Core Components
-The Privacy Services Suite comprises four primary security-focused components that work together to provide comprehensive privacy protection:
+The Privacy Services Suite comprises five primary security-focused components that work together to provide comprehensive privacy protection:
 
 ### Secure Storage Service
 Provides platform-agnostic secure storage using native platform mechanisms (iOS Keychain, Android Keystore) with automatic backend selection based on device capabilities. The service offers three security tiers: StrongBox/Hardware-backed, Software-backed encryption, and abstracts platform-specific implementations behind a unified interface.
@@ -89,42 +126,178 @@ Orchestrates the complete API key lifecycle including validation, secure storage
 ### Cloud Backup Service
 Manages encrypted cloud backup operations with atomic passphrase rotation, temporary backup handling, and comprehensive error recovery mechanisms. Ensures data integrity and provides rollback capabilities for critical operations.
 
+### Consent Management System
+**New** Provides centralized management of user consent for privacy-sensitive operations including face detection and biometric processing. Tracks consent states separately for different privacy features and maintains persistent storage using SharedPreferences.
+
 **Section sources**
 - [docs/core-services/secure-storage-service.md](file://docs/core-services/secure-storage-service.md#L1-L339)
 - [docs/core-services/crypto-services.md](file://docs/core-services/crypto-services.md#L1-L333)
 - [docs/core-services/byok-manager.md](file://docs/core-services/byok-manager.md#L1-L800)
 - [docs/core-services/onboarding-controller.md](file://docs/core-services/onboarding-controller.md#L1-L310)
+- [lib/core/privacy/consent_manager.dart](file://lib/core/privacy/consent_manager.dart#L1-L77)
 
 ## Architecture Overview
-The Privacy Services Suite implements a layered security architecture with clear separation between cryptographic operations, storage abstractions, and business logic:
+The Privacy Services Suite implements a layered security architecture with clear separation between cryptographic operations, storage abstractions, and business logic, now enhanced with biometric consent management:
 
 ```mermaid
 sequenceDiagram
 participant Client as "Client Application"
-participant BYOK as "BYOK Manager"
-participant Validator as "API Key Validator"
+participant Consent as "Consent Manager"
+participant Dialog as "Biometric Consent Dialog"
+participant Auth as "Auth Service"
 participant Storage as "Secure Storage"
 participant Crypto as "Crypto Services"
-participant Cloud as "Cloud Backup"
-Client->>BYOK : storeAPIKey(apiKey, projectId)
-BYOK->>Validator : validateFormat(apiKey)
-Validator-->>BYOK : ValidationResult
-BYOK->>Validator : validateFunctionality(apiKey, projectId)
-Validator-->>BYOK : ValidationResult
-BYOK->>Storage : write(APIKeyConfig)
-Storage-->>BYOK : Success/Failure
-BYOK->>Cloud : createOrUpdateBackup(APIKeyConfig, passphrase)
-Cloud-->>BYOK : Success/Failure
-BYOK-->>Client : Result
-Note over BYOK,Crypto : Encryption/Decryption using AES-256-GCM<br/>Key derivation using Argon2id/PBKDF2
+Client->>Dialog : showBiometricConsentDialog()
+Dialog->>Dialog : setState() for decision tracking
+Dialog->>Consent : recordBiometricConsent()
+Consent->>Storage : persist consent state
+Consent->>Auth : updateBiometricConsent(true)
+Auth->>Auth : updateUserProfile()
+Auth->>Storage : update user document
+Auth-->>Client : consent granted
+Note over Dialog,Consent : Stateful widget with proper<br/>back navigation handling and decision tracking
 ```
 
 **Diagram sources**
-- [lib/core/byok/byok_manager.dart](file://lib/core/byok/byok_manager.dart#L183-L231)
-- [lib/core/byok/api_key_validator.dart](file://lib/core/byok/api_key_validator.dart#L112-L150)
-- [lib/core/byok/cloud_backup_service.dart](file://lib/core/byok/cloud_backup_service.dart#L167-L249)
+- [lib/features/privacy/widgets/biometric_consent_dialog.dart](file://lib/features/privacy/widgets/biometric_consent_dialog.dart#L20-L31)
+- [lib/core/privacy/consent_manager.dart](file://lib/core/privacy/consent_manager.dart#L54-L67)
+- [lib/core/auth/auth_providers.dart](file://lib/core/auth/auth_providers.dart#L166-L183)
 
-The architecture ensures that sensitive data never leaves the device in plaintext, with all encryption and key derivation operations performed client-side using platform-native cryptographic primitives.
+The architecture ensures that sensitive data never leaves the device in plaintext, with all encryption and key derivation operations performed client-side using platform-native cryptographic primitives. The biometric consent system adds proper state management and back navigation handling for enhanced user experience.
+
+## Privacy Framework
+The Privacy Services Suite implements a comprehensive privacy framework with separate consent tracking for different privacy-sensitive features:
+
+```mermaid
+flowchart TD
+A[User Initiates Virtual Try-On] --> B{Has Biometric Consent?}
+B --> |Yes| C[Proceed with On-Device Processing]
+B --> |No| D[Show Biometric Consent Dialog]
+D --> E{User Decision}
+E --> |Grant| F[Record Biometric Consent]
+E --> |Reject| G[Deny Access]
+F --> H[Update User Profile]
+H --> I[Enable Virtual Try-On Features]
+C --> I
+G --> J[Return to Previous Screen]
+I --> K[Process Image with Face Detection]
+K --> L[Generate Try-On Results]
+L --> M[Ephemeral Processing - Immediate Deletion]
+M --> N[User Can Save Results if Desired]
+```
+
+**Diagram sources**
+- [lib/features/privacy/widgets/biometric_consent_dialog.dart](file://lib/features/privacy/widgets/biometric_consent_dialog.dart#L33-L78)
+- [lib/core/privacy/consent_manager.dart](file://lib/core/privacy/consent_manager.dart#L54-L67)
+- [lib/core/auth/models/user_profile.dart](file://lib/core/auth/models/user_profile.dart#L35-L36)
+
+The privacy framework ensures that biometric processing is opt-in, with explicit user consent required before any facial recognition or biometric data processing occurs. All processing happens on-device with immediate data deletion.
+
+**Section sources**
+- [docs/design/firebase-contracts.md](file://docs/design/firebase-contracts.md#L54-L67)
+
+## Biometric Consent Management System
+**New Section** The biometric consent management system provides a comprehensive solution for handling user consent for virtual try-on features with proper state management and back navigation handling.
+
+### Biometric Consent Dialog Implementation
+The biometric consent dialog is implemented as a StatefulWidget to provide proper state management and handle back navigation gracefully:
+
+```mermaid
+classDiagram
+class BiometricConsentDialog {
+<<StatefulWidget>>
+-bool _decisionMade
++VoidCallback onConsentGranted
++VoidCallback onConsentRejected
++createState() _BiometricConsentDialogState
+}
+class _BiometricConsentDialogState {
+<<State>>
+-bool _decisionMade
++_handleConsentGranted()
++_handleConsentRejected()
++build(context) Widget
+}
+class PopScope {
+<<Flutter Widget>>
++onPopInvokedWithResult
+}
+BiometricConsentDialog --> _BiometricConsentDialogState
+_BiometricConsentDialogState --> PopScope
+```
+
+**Diagram sources**
+- [lib/features/privacy/widgets/biometric_consent_dialog.dart](file://lib/features/privacy/widgets/biometric_consent_dialog.dart#L6-L18)
+- [lib/features/privacy/widgets/biometric_consent_dialog.dart](file://lib/features/privacy/widgets/biometric_consent_dialog.dart#L20-L31)
+
+The dialog uses a PopScope widget to handle back navigation events and ensures that user decisions are properly tracked even when users navigate back without making a choice.
+
+### Consent State Management
+The consent management system tracks biometric consent separately from other privacy consents:
+
+```mermaid
+classDiagram
+class ConsentManager {
+<<abstract>>
++hasFaceDetectionConsent() Future~bool~
++recordFaceDetectionConsent() Future~void~
++revokeFaceDetectionConsent() Future~void~
++hasBiometricConsent() Future~bool~
++recordBiometricConsent() Future~void~
++revokeBiometricConsent() Future~void~
++clearAllConsents() Future~void~
+}
+class ConsentManagerImpl {
+<<implements ConsentManager>>
+-SharedPreferences _prefs
+-static _faceDetectionConsentKey
+-static _biometricConsentKey
++hasBiometricConsent() Future~bool~
++recordBiometricConsent() Future~void~
++revokeBiometricConsent() Future~void~
++clearAllConsents() Future~void~
+}
+ConsentManager <|.. ConsentManagerImpl
+```
+
+**Diagram sources**
+- [lib/core/privacy/consent_manager.dart](file://lib/core/privacy/consent_manager.dart#L8-L29)
+- [lib/core/privacy/consent_manager.dart](file://lib/core/privacy/consent_manager.dart#L31-L77)
+
+The system maintains separate consent flags for different privacy features, allowing users to grant or revoke consent independently for each feature category.
+
+### Authentication Integration
+The biometric consent system integrates seamlessly with the authentication service:
+
+```mermaid
+sequenceDiagram
+participant User as "User"
+participant Dialog as "Biometric Consent Dialog"
+participant Consent as "Consent Manager"
+participant AuthProv as "Auth Providers"
+participant AuthSvc as "Auth Service"
+User->>Dialog : Tap "Grant Consent"
+Dialog->>Dialog : setState(_decisionMade = true)
+Dialog->>Consent : recordBiometricConsent()
+Consent->>Consent : persist to SharedPreferences
+Consent->>AuthProv : updateBiometricConsent(true)
+AuthProv->>AuthSvc : updateBiometricConsent(true)
+AuthSvc->>AuthSvc : update user document
+AuthSvc-->>AuthProv : success
+AuthProv->>AuthProv : update AuthState
+AuthProv-->>User : consent recorded
+```
+
+**Diagram sources**
+- [lib/features/privacy/widgets/biometric_consent_dialog.dart](file://lib/features/privacy/widgets/biometric_consent_dialog.dart#L23-L26)
+- [lib/core/privacy/consent_manager.dart](file://lib/core/privacy/consent_manager.dart#L60-L62)
+- [lib/core/auth/auth_providers.dart](file://lib/core/auth/auth_providers.dart#L166-L183)
+
+**Section sources**
+- [lib/features/privacy/widgets/biometric_consent_dialog.dart](file://lib/features/privacy/widgets/biometric_consent_dialog.dart#L1-L80)
+- [lib/core/privacy/consent_manager.dart](file://lib/core/privacy/consent_manager.dart#L1-L77)
+- [lib/core/auth/auth_providers.dart](file://lib/core/auth/auth_providers.dart#L166-L183)
+- [lib/core/auth/auth_service.dart](file://lib/core/auth/auth_service.dart#L304-L313)
 
 ## Detailed Component Analysis
 
@@ -266,8 +439,44 @@ The passphrase rotation process implements a sophisticated two-phase commit patt
 **Section sources**
 - [lib/core/byok/cloud_backup_service.dart](file://lib/core/byok/cloud_backup_service.dart#L413-L555)
 
+### Consent Management System Implementation
+**New** The consent management system provides centralized tracking of user consent for privacy-sensitive operations:
+
+```mermaid
+classDiagram
+class ConsentManager {
+<<abstract>>
++hasFaceDetectionConsent() Future~bool~
++recordFaceDetectionConsent() Future~void~
++revokeFaceDetectionConsent() Future~void~
++hasBiometricConsent() Future~bool~
++recordBiometricConsent() Future~void~
++revokeBiometricConsent() Future~void~
++clearAllConsents() Future~void~
+}
+class ConsentManagerImpl {
+<<implements ConsentManager>>
+-SharedPreferences _prefs
+-static _faceDetectionConsentKey = "face_detection_consent"
+-static _biometricConsentKey = "biometric_consent"
++hasBiometricConsent() Future~bool~
++recordBiometricConsent() Future~void~
++revokeBiometricConsent() Future~void~
++clearAllConsents() Future~void~
+}
+ConsentManager <|.. ConsentManagerImpl
+```
+
+**Diagram sources**
+- [lib/core/privacy/consent_manager.dart](file://lib/core/privacy/consent_manager.dart#L31-L77)
+
+The implementation uses SharedPreferences for persistent storage and provides separate tracking for face detection consent and biometric consent, allowing granular control over different privacy features.
+
+**Section sources**
+- [lib/core/privacy/consent_manager.dart](file://lib/core/privacy/consent_manager.dart#L1-L77)
+
 ## Dependency Analysis
-The Privacy Services Suite exhibits excellent modularity with clear dependency relationships and low coupling between components:
+The Privacy Services Suite exhibits excellent modularity with clear dependency relationships and low coupling between components, now enhanced with biometric consent management:
 
 ```mermaid
 graph LR
@@ -279,39 +488,56 @@ D[firebase_auth]
 E[firebase_storage]
 F[uuid package]
 G[http package]
+H[shared_preferences]
+I[flutter/material]
 end
 subgraph "Internal Dependencies"
-H[SecureStorageService]
-I[EncryptionService]
-J[KeyDerivationService]
-K[APIKeyValidator]
-L[CloudBackupService]
-M[BYOKManager]
+J[SecureStorageService]
+K[EncryptionService]
+L[KeyDerivationService]
+M[APIKeyValidator]
+N[CloudBackupService]
+O[BYOKManager]
+P[ConsentManager]
+Q[BiometricConsentDialog]
+R[UserProfile]
+S[AuthProviders]
+T[AuthService]
 end
-A --> I
-A --> J
-B --> J
-C --> H
-D --> L
-E --> L
-F --> M
-G --> K
-H --> M
-I --> L
-J --> L
-K --> M
-L --> M
+A --> K
+A --> L
+B --> L
+C --> J
+D --> S
+E --> N
+F --> O
+G --> M
+H --> P
+I --> Q
+J --> O
+K --> N
+L --> N
+M --> O
+N --> O
+P --> R
+R --> S
+S --> T
+Q --> P
 ```
 
 **Diagram sources**
 - [lib/core/byok/byok_manager.dart](file://lib/core/byok/byok_manager.dart#L1-L15)
 - [lib/core/byok/cloud_backup_service.dart](file://lib/core/byok/cloud_backup_service.dart#L1-L15)
+- [lib/features/privacy/widgets/biometric_consent_dialog.dart](file://lib/features/privacy/widgets/biometric_consent_dialog.dart#L1)
+- [lib/core/privacy/consent_manager.dart](file://lib/core/privacy/consent_manager.dart#L1)
 
-The dependency graph reveals a clean architecture where cryptographic services are foundational dependencies for higher-level services, while external dependencies are minimized to essential packages only. This design facilitates testing, maintenance, and platform-specific optimizations.
+The dependency graph reveals a clean architecture where cryptographic services are foundational dependencies for higher-level services, while external dependencies are minimized to essential packages only. The addition of biometric consent management introduces new dependencies on shared_preferences and Flutter Material components.
 
 **Section sources**
 - [lib/core/byok/byok_manager.dart](file://lib/core/byok/byok_manager.dart#L1-L15)
 - [lib/core/byok/cloud_backup_service.dart](file://lib/core/byok/cloud_backup_service.dart#L1-L15)
+- [lib/features/privacy/widgets/biometric_consent_dialog.dart](file://lib/features/privacy/widgets/biometric_consent_dialog.dart#L1)
+- [lib/core/privacy/consent_manager.dart](file://lib/core/privacy/consent_manager.dart#L1)
 
 ## Performance Considerations
 The Privacy Services Suite implements several performance optimization strategies:
@@ -331,6 +557,12 @@ The Privacy Services Suite implements several performance optimization strategie
 - **Timeout Management**: Configurable timeouts for network operations
 - **Error Caching**: Reduced retry attempts for persistent failures
 
+### Consent Management Performance
+**New** The consent management system optimizes performance through:
+- **Local Storage**: SharedPreferences for fast local consent state retrieval
+- **State Caching**: In-memory caching of consent states to reduce disk I/O
+- **Batch Operations**: Combined updates to minimize Firestore writes
+
 ## Troubleshooting Guide
 Common issues and their resolution strategies:
 
@@ -349,13 +581,25 @@ Common issues and their resolution strategies:
 - **Firebase Quotas**: Rate limiting or quota exceeded errors
 - **Atomic Operation Failures**: Partial state during critical operations
 
+### Consent Management Issues
+**New** Common consent management issues:
+- **Consent State Not Persisting**: SharedPreferences initialization failures
+- **Back Navigation Issues**: Dialog state not properly tracked during back navigation
+- **Concurrent Consent Updates**: Race conditions in consent state updates
+- **Authentication State Sync**: User profile not updating after consent changes
+
 **Section sources**
 - [docs/core-services/secure-storage-service.md](file://docs/core-services/secure-storage-service.md#L220-L239)
 - [lib/core/byok/cloud_backup_service.dart](file://lib/core/byok/cloud_backup_service.dart#L139-L164)
+- [lib/features/privacy/widgets/biometric_consent_dialog.dart](file://lib/features/privacy/widgets/biometric_consent_dialog.dart#L35-L40)
 
 ## Conclusion
 The Privacy Services Suite represents a comprehensive and well-architected solution for managing sensitive data with robust security guarantees. The implementation demonstrates excellent separation of concerns, with clear abstraction layers that enable maintainability and extensibility while providing strong privacy protections.
 
-Key strengths include the layered security architecture, platform-aware cryptographic implementations, comprehensive error handling, and atomic operation guarantees for critical state transitions. The system successfully balances security, performance, and usability across multiple platforms and deployment scenarios.
+**Updated** The recent enhancement of the biometric consent management system significantly strengthens the privacy framework by adding proper state management, back navigation handling, and user decision tracking for virtual try-on features. The system now provides comprehensive consent tracking with separate management for different privacy features, ensuring that users have granular control over their data processing preferences.
 
-The modular design facilitates future enhancements, including potential biometric authentication integration, hardware security module support, and expanded cloud storage providers. The comprehensive documentation and testing approach ensures long-term maintainability and reliability of the privacy services suite.
+Key strengths include the layered security architecture, platform-aware cryptographic implementations, comprehensive error handling, atomic operation guarantees for critical state transitions, and the newly enhanced biometric consent management system. The system successfully balances security, performance, and usability across multiple platforms and deployment scenarios.
+
+The modular design facilitates future enhancements, including potential biometric authentication integration, hardware security module support, expanded cloud storage providers, and additional privacy consent categories. The comprehensive documentation and testing approach ensures long-term maintainability and reliability of the privacy services suite.
+
+The addition of the biometric consent dialog with proper StatefulWidget implementation ensures that user decisions are properly tracked and handled, even during back navigation events. This enhancement improves the overall user experience while maintaining strict privacy controls and data protection standards.

@@ -28,17 +28,19 @@ class ValidationError extends BYOKError {
   });
 
   @override
-  String toString() => 'ValidationError($message, $validationResult)';
+  String toString() =>
+      'ValidationError($message, $validationResult${originalError != null ? ', originalError: $originalError' : ''})';
 }
 
 /// No API key is stored.
 ///
 /// Returned when attempting to retrieve or delete a key that doesn't exist.
 class NotFoundError extends BYOKError {
-  const NotFoundError() : super('No API key is stored');
+  const NotFoundError({super.originalError}) : super('No API key is stored');
 
   @override
-  String toString() => 'NotFoundError($message)';
+  String toString() =>
+      'NotFoundError($message${originalError != null ? ', originalError: $originalError' : ''})';
 }
 
 /// Secure storage operation failed.
@@ -48,7 +50,8 @@ class StorageError extends BYOKError {
   const StorageError(super.message, {super.originalError});
 
   @override
-  String toString() => 'StorageError($message)';
+  String toString() =>
+      'StorageError($message${originalError != null ? ', originalError: $originalError' : ''})';
 }
 
 /// Cloud backup operation failed.
@@ -61,7 +64,8 @@ class BackupError extends BYOKError {
   const BackupError(super.message, this.type, {super.originalError});
 
   @override
-  String toString() => 'BackupError($message, type: $type)';
+  String toString() =>
+      'BackupError($message, type: $type${originalError != null ? ', originalError: $originalError' : ''})';
 }
 
 /// Types of backup errors.
@@ -89,5 +93,6 @@ class CryptoError extends BYOKError {
   const CryptoError(super.message, {super.originalError});
 
   @override
-  String toString() => 'CryptoError($message)';
+  String toString() =>
+      'CryptoError($message${originalError != null ? ', originalError: $originalError' : ''})';
 }

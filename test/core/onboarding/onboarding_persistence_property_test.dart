@@ -60,9 +60,9 @@ Generator<List<bool>> operationSequenceGenerator({int maxLength = 10}) {
           yield Shrinkable([...operations.sublist(0, i), false, ...operations.sublist(i + 1)], () sync* {});
         }
       }
-      // Shrink to empty list (minimal case)
-      if (operations.isNotEmpty) {
-        yield Shrinkable(<bool>[], () sync* {});
+      // Shrink to single-element list (minimal meaningful case)
+      if (operations.length > 1) {
+        yield Shrinkable([operations.last], () sync* {});
       }
     });
   };
