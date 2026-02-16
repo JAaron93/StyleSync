@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:image/image.dart' as img;
+import 'package:path/path.dart' as p;
 
 /// Service for stripping EXIF and other metadata from images.
 /// 

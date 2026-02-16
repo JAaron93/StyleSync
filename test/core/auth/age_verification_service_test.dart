@@ -1,7 +1,12 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mockito/annotations.dart';
+import 'package:mockito/mockito.dart';
 import 'package:stylesync/core/auth/age_verification_service.dart';
 
 import 'age_verification_service_test.mocks.dart';
+
+@GenerateMocks([FirebaseFirestore])
 
 void main() {
   group('AgeVerificationLogic', () {

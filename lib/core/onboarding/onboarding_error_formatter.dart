@@ -96,7 +96,7 @@ String formatOnboardingError(OnboardingError? error) {
     return 'The app encountered an issue. Please restart and try again.';
   }
 
-  // Handle network-related errors with direct type checks
+  // Handle network-related errors
   if (isNetworkError(originalError)) {
     return 'Network error. Please check your connection and try again.';
   }
