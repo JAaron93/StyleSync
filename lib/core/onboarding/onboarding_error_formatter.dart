@@ -54,6 +54,16 @@ bool isUserFriendlyMessage(String? message) {
   return true;
 }
 
+/// Checks if the given error is a network-related error.
+///
+/// Returns `true` if the error is a [TimeoutException], [SocketException],
+/// or [HttpException].
+bool isNetworkError(Object? error) {
+  return error is TimeoutException ||
+      isSocketException(error) ||
+      isHttpException(error);
+}
+
 /// Formats an [OnboardingError] into a user-friendly message.
 ///
 /// Maps known error types to readable strings and falls back to the
@@ -64,11 +74,11 @@ bool isUserFriendlyMessage(String? message) {
 /// are never exposed to users.
 String formatOnboardingError(OnboardingError? error) {
   if (error == null) {
-    return 'An unexpected error occurred. Please try again.';
+    return genericErrorMessage;
   }
 
-  // Log the raw error for debugging (internal use only)
-  debugPrint('Onboarding error: $error (original: ${error.originalError})');
+  // Log error type for debugging (avoid logging potentially sensitive error details)
+  debugPrint('Onboarding error: ${error.runtimeType} (original type: ${error.originalError?.runtimeType})');
 
   final originalError = error.originalError;
 
@@ -87,13 +97,7 @@ String formatOnboardingError(OnboardingError? error) {
   }
 
   // Handle network-related errors with direct type checks
-  if (originalError is TimeoutException) {
-    return 'Network error. Please check your connection and try again.';
-  }
-  if (isSocketException(originalError)) {
-    return 'Network error. Please check your connection and try again.';
-  }
-  if (isHttpException(originalError)) {
+  if (isNetworkError(originalError)) {
     return 'Network error. Please check your connection and try again.';
   }
 

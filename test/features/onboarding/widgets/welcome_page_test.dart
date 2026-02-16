@@ -358,18 +358,19 @@ void main() {
 
         // Navigate focus to the button via keyboard traversal (Tab key)
         // Tab through focusable elements until the button is focused
+        Element? buttonElement;
         for (var i = 0; i < kMaxTabIterations; i++) {
           await tester.sendKeyEvent(LogicalKeyboardKey.tab);
           await tester.pumpAndSettle();
 
-          if (Focus.of(tester.element(buttonFinder)).hasFocus) {
+          buttonElement = tester.element(buttonFinder);
+          if (Focus.of(buttonElement).hasFocus) {
             break;
           }
         }
 
         // Verify the button has focus before attempting activation
-        final buttonElement = tester.element(buttonFinder);
-        final focusNode = Focus.of(buttonElement);
+        final focusNode = Focus.of(buttonElement!);
         expect(focusNode.hasFocus, isTrue,
             reason: 'button should have keyboard focus before activation');
 

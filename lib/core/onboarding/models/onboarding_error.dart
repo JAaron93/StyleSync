@@ -62,13 +62,11 @@ class OnboardingError implements Exception {
     return other is OnboardingError &&
         other.message == message &&
         other.operation == operation &&
-        other.originalError == originalError &&
-        other.originalStackTrace == originalStackTrace;
+        other.originalError == originalError;
   }
 
   @override
-  int get hashCode =>
-      Object.hash(message, operation, originalError, originalStackTrace);
+  int get hashCode => Object.hash(message, operation, originalError);
 }
 
 /// Enumeration of onboarding operations that can fail.
