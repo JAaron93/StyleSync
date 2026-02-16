@@ -14,21 +14,27 @@ void configureTestView(WidgetTester tester) {
 void main() {
   group('AgeGateLogic', () {
     test('is18Plus returns true for 25 years old', () {
-      final now = DateTime.now();
-      final date = DateTime(now.year - 25, now.month, now.day);
-      expect(is18Plus(date), isTrue);
+      final referenceDate = DateTime(2024, 6, 15);
+      final date = DateTime(1999, 6, 15); // Exactly 25 years old
+      expect(is18Plus(date, referenceDate: referenceDate), isTrue);
     });
 
     test('is18Plus returns false for under 18 (17 years old)', () {
-      final now = DateTime.now();
-      final date = DateTime(now.year - 17, now.month, now.day);
-      expect(is18Plus(date), isFalse);
+      final referenceDate = DateTime(2024, 6, 15);
+      final date = DateTime(2007, 6, 16); // 17 years old (birthday hasn't occurred yet)
+      expect(is18Plus(date, referenceDate: referenceDate), isFalse);
     });
 
     test('is18Plus returns true for exactly 18 years old', () {
-      final now = DateTime.now();
-      final date = DateTime(now.year - 18, now.month, now.day);
-      expect(is18Plus(date), isTrue);
+      final referenceDate = DateTime(2024, 6, 15);
+      final date = DateTime(2006, 6, 15); // Exactly 18 years old
+      expect(is18Plus(date, referenceDate: referenceDate), isTrue);
+    });
+
+    test('is18Plus returns false one day before 18th birthday', () {
+      final referenceDate = DateTime(2024, 6, 15);
+      final date = DateTime(2006, 6, 16); // 17 years, 364 days old
+      expect(is18Plus(date, referenceDate: referenceDate), isFalse);
     });
   });
 

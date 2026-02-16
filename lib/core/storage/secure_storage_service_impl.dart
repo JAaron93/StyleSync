@@ -81,7 +81,7 @@ class SecureStorageServiceImpl implements SecureStorageService {
   @override
   Future<String?> read(String key) async {
     await _initCompleter.future;
-    return await _storage.read(key: key);
+    return _storage.read(key: key);
   }
 
   @override

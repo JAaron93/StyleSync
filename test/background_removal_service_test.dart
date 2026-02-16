@@ -11,6 +11,10 @@ void main() {
       service = BackgroundRemovalServiceImpl();
     });
 
+    tearDown(() async {
+      await service.dispose();
+    });
+
     test(
       'background removal returns original file on non-existent file',
       () async {

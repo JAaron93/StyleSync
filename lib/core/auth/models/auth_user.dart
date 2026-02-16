@@ -1,8 +1,11 @@
+import 'package:flutter/foundation.dart';
+
 /// A minimal, platform-agnostic representation of an authenticated user.
 ///
 /// This abstraction decouples the application layer from Firebase Auth,
 /// allowing callers to access basic user information without depending
 /// on firebase_auth directly.
+@immutable
 class AuthUser {
   /// Creates an [AuthUser] with the given properties.
   const AuthUser({

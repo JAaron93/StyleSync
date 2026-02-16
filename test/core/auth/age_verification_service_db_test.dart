@@ -103,7 +103,8 @@ void main() {
 
     test('should throw AuthError and record cooldown for under 18', () async {
       const userId = 'user123';
-      final dob = DateTime.now().subtract(const Duration(days: 365 * 10));
+      final now = DateTime.now();
+      final dob = DateTime(now.year - 10, now.month, now.day);
 
       await expectLater(
         () => service.verify18PlusSelfReported(userId, dob),
@@ -116,7 +117,8 @@ void main() {
 
     test('should throw AuthError if cooldown is active', () async {
       const userId = 'user123';
-      final dob = DateTime.now().subtract(const Duration(days: 365 * 20));
+      final now = DateTime.now();
+      final dob = DateTime(now.year - 20, now.month, now.day);
 
       // Mock active cooldown by having a recent timestamp in the doc
       fakeFirestore.fakeCollection.fakeDoc.dataToReturn = {

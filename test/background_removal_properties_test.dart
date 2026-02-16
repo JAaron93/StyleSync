@@ -11,6 +11,10 @@ void main() {
       service = BackgroundRemovalServiceImpl();
     });
 
+    tearDown(() async {
+      await service.dispose();
+    });
+
     // Property 20: Background Removal Timeout with Fallback
     // Validates: Requirements 9.6, 9.7
     test('background removal returns valid file for various image sizes', () async {

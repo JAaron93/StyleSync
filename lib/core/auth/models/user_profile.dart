@@ -153,6 +153,6 @@ class UserProfile {
 
   @override
   String toString() {
-    return 'UserProfile(userId: $userId, email: *****, createdAt: $createdAt, onboardingComplete: $onboardingComplete, faceDetectionConsentGranted: $faceDetectionConsentGranted, biometricConsentGranted: $biometricConsentGranted, is18PlusVerified: $is18PlusVerified, dateOfBirth: $dateOfBirth)';
+    return 'UserProfile(userId: $userId, email: *****, createdAt: $createdAt, onboardingComplete: $onboardingComplete, faceDetectionConsentGranted: $faceDetectionConsentGranted, biometricConsentGranted: $biometricConsentGranted, is18PlusVerified: $is18PlusVerified, dateOfBirth: ${dateOfBirth != null ? '*****' : null})';
   }
 }

@@ -144,8 +144,11 @@ class _DatePickerWidgetState extends State<DatePickerWidget> {
 }
 
 /// Checks if the given date of birth corresponds to a user who is 18 years or older.
-bool is18Plus(DateTime dateOfBirth) {
-  final now = DateTime.now();
+///
+/// [dateOfBirth] - The user's date of birth.
+/// [referenceDate] - Optional reference date for testing. Defaults to DateTime.now().
+bool is18Plus(DateTime dateOfBirth, {DateTime? referenceDate}) {
+  final now = referenceDate ?? DateTime.now();
   final age = now.year - dateOfBirth.year -
       (now.month < dateOfBirth.month || (now.month == dateOfBirth.month && now.day < dateOfBirth.day) ? 1 : 0);
   return age >= 18;

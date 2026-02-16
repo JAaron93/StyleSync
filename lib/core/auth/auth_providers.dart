@@ -283,7 +283,7 @@ enum AuthStatus {
 /// react to authentication state changes.
 final authStateProvider =
     StateNotifierProvider<AuthStateNotifier, AuthState>((ref) {
-  final authService = ref.read(authServiceProvider);
-  final ageVerificationService = ref.read(ageVerificationServiceProvider);
+  final authService = ref.watch(authServiceProvider);
+  final ageVerificationService = ref.watch(ageVerificationServiceProvider);
   return AuthStateNotifier(authService, ageVerificationService);
 });

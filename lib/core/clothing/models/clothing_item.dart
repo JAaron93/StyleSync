@@ -1,5 +1,65 @@
 import 'package:uuid/uuid.dart';
 
+/// Helper function to require a field from JSON with type checking.
+///
+/// Throws [FormatException] if the field is missing or has wrong type.
+T _requireField<T>(Map<String, dynamic> json, String fieldName) {
+  final value = json[fieldName];
+  if (value == null) {
+    throw FormatException(
+      'ClothingItem: field "$fieldName" is required',
+    );
+  }
+  if (value is! T) {
+    throw FormatException(
+      'ClothingItem: field "$fieldName" must be a ${T.runtimeType}, got ${value.runtimeType}',
+    );
+  }
+  return value;
+}
+
+/// Helper function to require a List field from JSON with type checking.
+///
+/// Throws [FormatException] if the field is missing or is not a List.
+List<dynamic> _requireList(Map<String, dynamic> json, String fieldName) {
+  final value = json[fieldName];
+  if (value == null) {
+    throw FormatException(
+      'ClothingItem: field "$fieldName" is required',
+    );
+  }
+  if (value is! List) {
+    throw FormatException(
+      'ClothingItem: field "$fieldName" must be a List, got ${value.runtimeType}',
+    );
+  }
+  return value;
+}
+
+/// Helper function to require a DateTime field from JSON.
+///
+/// Throws [FormatException] if the field is missing, not a String, or invalid.
+DateTime _requireDateTime(Map<String, dynamic> json, String fieldName) {
+  final value = json[fieldName];
+  if (value == null) {
+    throw FormatException(
+      'ClothingItem: field "$fieldName" is required',
+    );
+  }
+  if (value is! String) {
+    throw FormatException(
+      'ClothingItem: field "$fieldName" must be a String, got ${value.runtimeType}',
+    );
+  }
+  try {
+    return DateTime.parse(value);
+  } on FormatException catch (e) {
+    throw FormatException(
+      'ClothingItem: field "$fieldName" is not a valid ISO 8601 date: ${e.message}',
+    );
+  }
+}
+
 /// Represents a clothing item in the user's digital closet.
 class ClothingItem {
   /// Unique identifier for this clothing item.
@@ -143,6 +203,7 @@ class ClothingItem {
 
   /// Creates a [ClothingItem] from a JSON map.
   factory ClothingItem.fromJson(Map<String, dynamic> json) {
+    // Validate and parse processingState
     final processingStateValue = json['processingState'];
     if (processingStateValue == null) {
       throw FormatException(
@@ -162,24 +223,20 @@ class ClothingItem {
       ),
     );
 
-    final idempotencyKey = json['idempotencyKey'] as String?;
-    if (idempotencyKey == null) {
-      throw FormatException(
-        'ClothingItem: field "idempotencyKey" is required for deduplication',
-      );
-    }
+    // Validate idempotencyKey
+    final idempotencyKey = _requireField<String>(json, 'idempotencyKey');
 
     return ClothingItem(
-      id: json['id'] as String,
-      userId: json['userId'] as String,
-      imageUrl: json['imageUrl'] as String,
-      processedImageUrl: json['processedImageUrl'] as String,
-      thumbnailUrl: json['thumbnailUrl'] as String,
-      category: json['category'] as String,
-      colors: List<String>.from(json['colors'] as List),
-      seasons: List<String>.from(json['seasons'] as List),
-      uploadedAt: DateTime.parse(json['uploadedAt'] as String),
-      updatedAt: DateTime.parse(json['updatedAt'] as String),
+      id: _requireField<String>(json, 'id'),
+      userId: _requireField<String>(json, 'userId'),
+      imageUrl: _requireField<String>(json, 'imageUrl'),
+      processedImageUrl: _requireField<String>(json, 'processedImageUrl'),
+      thumbnailUrl: _requireField<String>(json, 'thumbnailUrl'),
+      category: _requireField<String>(json, 'category'),
+      colors: List<String>.from(_requireList(json, 'colors')),
+      seasons: List<String>.from(_requireList(json, 'seasons')),
+      uploadedAt: _requireDateTime(json, 'uploadedAt'),
+      updatedAt: _requireDateTime(json, 'updatedAt'),
       processingState: processingState,
       failureReason: json['failureReason'] as String?,
       retryCount: json['retryCount'] as int? ?? 0,

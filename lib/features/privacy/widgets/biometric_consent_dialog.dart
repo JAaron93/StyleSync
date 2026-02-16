@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 /// Dialog widget for requesting biometric consent for virtual try-on.
 /// 
 /// Explains how user photos will be processed and stored during try-on generation.
-class BiometricConsentDialog extends StatelessWidget {
+class BiometricConsentDialog extends StatefulWidget {
   final VoidCallback onConsentGranted;
   final VoidCallback onConsentRejected;
 
@@ -14,11 +14,28 @@ class BiometricConsentDialog extends StatelessWidget {
   });
 
   @override
+  State<BiometricConsentDialog> createState() => _BiometricConsentDialogState();
+}
+
+class _BiometricConsentDialogState extends State<BiometricConsentDialog> {
+  bool _decisionMade = false;
+
+  void _handleConsentGranted() {
+    _decisionMade = true;
+    widget.onConsentGranted();
+  }
+
+  void _handleConsentRejected() {
+    _decisionMade = true;
+    widget.onConsentRejected();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return PopScope(
       onPopInvokedWithResult: (didPop, result) {
-        if (didPop) {
-          onConsentRejected();
+        if (didPop && !_decisionMade) {
+          _handleConsentRejected();
         }
       },
       child: AlertDialog(
@@ -48,11 +65,11 @@ class BiometricConsentDialog extends StatelessWidget {
         ),
         actions: [
           TextButton(
-            onPressed: onConsentRejected,
+            onPressed: _handleConsentRejected,
             child: const Text('Reject'),
           ),
           ElevatedButton(
-            onPressed: onConsentGranted,
+            onPressed: _handleConsentGranted,
             child: const Text('Grant Consent'),
           ),
         ],

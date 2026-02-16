@@ -58,7 +58,6 @@ void main() {
           // In a real implementation, we would verify the idempotency key
           expect(result.isFailure, false);
         } finally {
-          await tempFile.delete();
           await tempDir.delete(recursive: true);
         }
       },
@@ -142,13 +141,3 @@ void main() {
 class MockFirebaseFirestore extends Mock implements FirebaseFirestore {}
 
 class MockFirebaseStorage extends Mock implements FirebaseStorage {}
-
-class MockCollectionReference extends Mock
-    implements CollectionReference<Map<String, dynamic>> {}
-
-class MockDocumentReference extends Mock
-    implements DocumentReference<Map<String, dynamic>> {}
-
-class MockReference extends Mock implements Reference {}
-
-class MockTaskSnapshot extends Mock implements TaskSnapshot {}

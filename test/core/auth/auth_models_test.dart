@@ -36,6 +36,15 @@ void main() {
       final map = profile.toMap();
       final restored = UserProfile.fromMap(map);
 
+      // Field-level assertions for clearer failure messages
+      expect(restored.userId, profile.userId, reason: 'userId should round-trip');
+      expect(restored.email, profile.email, reason: 'email should round-trip');
+      expect(restored.createdAt, profile.createdAt, reason: 'createdAt should round-trip');
+      expect(restored.onboardingComplete, profile.onboardingComplete, reason: 'onboardingComplete should round-trip');
+      expect(restored.faceDetectionConsentGranted, profile.faceDetectionConsentGranted, reason: 'faceDetectionConsentGranted should round-trip');
+      expect(restored.biometricConsentGranted, profile.biometricConsentGranted, reason: 'biometricConsentGranted should round-trip');
+      expect(restored.is18PlusVerified, profile.is18PlusVerified, reason: 'is18PlusVerified should round-trip');
+      // Overall equality check
       expect(restored, profile);
     });
 
@@ -171,6 +180,15 @@ void main() {
       final error = AuthError('Test error message', 'ERROR_CODE');
       expect(error.toString(), contains('AuthError(ERROR_CODE): Test error message'));
     });
+
+    test('should have proper toString when code is null', () {
+      final error = AuthError('Test error message');
+      final result = error.toString();
+      expect(result, contains('AuthError'));
+      expect(result, contains('Test error message'));
+      expect(result, isNot(contains('(null)')));
+      expect(result, equals('AuthError: Test error message'));
+    });
   });
 
   group('AuthUser', () {
@@ -213,7 +231,19 @@ void main() {
       final user1 = AuthUser(id: 'user123', email: 'test@example.com');
       final user2 = AuthUser(id: 'user123', email: 'test@example.com');
 
-      expect(user1.hashCode, user2.hashCode);
+      // Verify hashCode is stable across multiple calls on the same instance
+      final user1HashCode1 = user1.hashCode;
+      final user1HashCode2 = user1.hashCode;
+      final user1HashCode3 = user1.hashCode;
+      expect(user1HashCode1, user1HashCode2, reason: 'user1.hashCode should be stable');
+      expect(user1HashCode1, user1HashCode3, reason: 'user1.hashCode should be stable');
+
+      final user2HashCode1 = user2.hashCode;
+      final user2HashCode2 = user2.hashCode;
+      expect(user2HashCode1, user2HashCode2, reason: 'user2.hashCode should be stable');
+
+      // Verify equal instances have equal hashCodes
+      expect(user1HashCode1, user2HashCode1, reason: 'Equal instances should have equal hashCodes');
     });
 
     test('should have proper toString', () {

@@ -82,4 +82,7 @@ class AuthErrorCode {
 
   /// Failed to mark user as verified.
   static const String markVerifiedFailed = 'mark-verified-failed';
+
+  /// Failed to complete age verification.
+  static const String verificationFailed = 'verification-failed';
 }

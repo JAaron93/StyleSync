@@ -161,6 +161,7 @@ void main() {
       expect(updated.colors, ['red', 'black']);
       expect(updated.userId, item.userId);
       expect(updated.imageUrl, item.imageUrl);
+      expect(updated.idempotencyKey, item.idempotencyKey);
     });
 
     // Property: Clothing item equality works correctly

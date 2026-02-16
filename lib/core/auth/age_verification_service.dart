@@ -239,14 +239,18 @@ class AgeVerificationServiceImpl implements AgeVerificationService {
         previousValue = doc.data()?[_kVerifiedKey] as bool? ?? false;
       }
 
-      // Update the user's verification status using set with merge to ensure
-      // the write succeeds even if the document doesn't exist
-      await _firestore.collection('users').doc(userId).set({
+      // Use a batch to atomically update user verification and write audit record
+      final batch = _firestore.batch();
+
+      // Update the user's verification status
+      final userRef = _firestore.collection('users').doc(userId);
+      batch.set(userRef, {
         _kVerifiedKey: true,
       }, SetOptions(merge: true));
 
       // Write audit record to verification-audit collection
-      await _firestore.collection('user_verification_audit').add({
+      final auditRef = _firestore.collection('user_verification_audit').doc();
+      batch.set(auditRef, {
         'userId': userId,
         'actor': 'system',
         'trigger': 'markUserAsVerified',
@@ -255,13 +259,16 @@ class AgeVerificationServiceImpl implements AgeVerificationService {
         'previousValue': previousValue,
         'newValue': true,
       });
+
+      // Commit both writes atomically
+      await batch.commit();
     } on FirebaseException catch (e) {
       _logger.warning(
         'Failed to mark user as verified for user $userId: ${e.message}',
         e,
       );
       throw AuthError(
-        'Failed to mark user as verified: ${e.message}',
+        'Failed to mark user as verified',
         AuthErrorCode.markVerifiedFailed,
       );
     } catch (e) {
@@ -270,7 +277,7 @@ class AgeVerificationServiceImpl implements AgeVerificationService {
         e,
       );
       throw AuthError(
-        'Failed to mark user as verified: ${e.toString()}',
+        'Failed to mark user as verified',
         AuthErrorCode.markVerifiedFailed,
       );
     }

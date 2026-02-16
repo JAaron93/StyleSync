@@ -6,6 +6,24 @@ import 'package:logging/logging.dart';
 /// Logger for data model parsing operations.
 final Logger _logger = Logger('DataModels');
 
+/// Generic helper to parse an enum value from a string.
+///
+/// Returns [defaultValue] if the value is not found in [values],
+/// logging a warning with [enumName] for context.
+T _parseEnum<T extends Enum>(
+  String value,
+  List<T> values,
+  T defaultValue,
+  String enumName,
+) {
+  try {
+    return values.byName(value);
+  } catch (e) {
+    _logger.warning('Unknown $enumName value: $value', e);
+    return defaultValue;
+  }
+}
+
 // ============================================================================
 // User Models
 // ============================================================================
@@ -45,17 +63,13 @@ class UserProfile {
       faceDetectionConsentGranted: json['faceDetectionConsentGranted'] as bool,
       biometricConsentGranted: json['biometricConsentGranted'] as bool,
       is18PlusVerified: json['is18PlusVerified'] as bool,
-      verificationMethod: _parseAgeVerificationMethod(json['verificationMethod'] as String),
+      verificationMethod: _parseEnum(
+        json['verificationMethod'] as String,
+        AgeVerificationMethod.values,
+        AgeVerificationMethod.unknown,
+        'AgeVerificationMethod',
+      ),
     );
-  }
-
-  static AgeVerificationMethod _parseAgeVerificationMethod(String value) {
-    try {
-      return AgeVerificationMethod.values.byName(value);
-    } catch (e) {
-      _logger.warning('Unknown AgeVerificationMethod value: $value', e);
-      return AgeVerificationMethod.unknown;
-    }
   }
 
   Map<String, dynamic> toJson() {
@@ -126,7 +140,12 @@ class ClothingItem {
       updatedAt: json['updatedAt'] != null 
           ? DateTime.parse(json['updatedAt'] as String) 
           : null,
-      processingState: _parseItemProcessingState(json['processingState'] as String),
+      processingState: _parseEnum(
+        json['processingState'] as String,
+        ItemProcessingState.values,
+        ItemProcessingState.unknown,
+        'ItemProcessingState',
+      ),
       failureReason: json['failureReason'] as String?,
       retryCount: json['retryCount'] as int,
       idempotencyKey: json['idempotencyKey'] as String,
@@ -150,15 +169,6 @@ class ClothingItem {
       'idempotencyKey': idempotencyKey,
       'metadata': metadata,
     };
-  }
-
-  static ItemProcessingState _parseItemProcessingState(String value) {
-    try {
-      return ItemProcessingState.values.byName(value);
-    } catch (e) {
-      _logger.warning('Unknown ItemProcessingState value: $value', e);
-      return ItemProcessingState.unknown;
-    }
   }
 }
 
@@ -185,10 +195,20 @@ class ClothingTags {
 
   factory ClothingTags.fromJson(Map<String, dynamic> json) {
     return ClothingTags(
-      category: _parseClothingCategory(json['category'] as String),
+      category: _parseEnum(
+        json['category'] as String,
+        ClothingCategory.values,
+        ClothingCategory.unknown,
+        'ClothingCategory',
+      ),
       colors: List<String>.from(json['colors'] as List),
       seasons: (json['seasons'] as List)
-          .map((s) => _parseSeason(s as String))
+          .map((s) => _parseEnum(
+                s as String,
+                Season.values,
+                Season.unknown,
+                'Season',
+              ))
           .toList(),
       additionalAttributes: json['additionalAttributes'] as Map<String, dynamic>,
     );
@@ -201,24 +221,6 @@ class ClothingTags {
       'seasons': seasons.map((s) => s.toString().split('.').last).toList(),
       'additionalAttributes': additionalAttributes,
     };
-  }
-
-  static ClothingCategory _parseClothingCategory(String value) {
-    try {
-      return ClothingCategory.values.byName(value);
-    } catch (e) {
-      _logger.warning('Unknown ClothingCategory value: $value', e);
-      return ClothingCategory.unknown;
-    }
-  }
-
-  static Season _parseSeason(String value) {
-    try {
-      return Season.values.byName(value);
-    } catch (e) {
-      _logger.warning('Unknown Season value: $value', e);
-      return Season.unknown;
-    }
   }
 }
 
@@ -319,7 +321,12 @@ class OutfitLayer {
     return OutfitLayer(
       id: json['id'] as String,
       name: json['name'] as String,
-      type: _parseLayerType(json['type'] as String),
+      type: _parseEnum(
+        json['type'] as String,
+        LayerType.values,
+        LayerType.unknown,
+        'LayerType',
+      ),
       clothingItemId: json['clothingItemId'] as String,
       index: json['index'] as int,
       isVisible: json['isVisible'] as bool,
@@ -343,15 +350,6 @@ class OutfitLayer {
       'metadata': metadata,
       'positioning': positioning,
     };
-  }
-
-  static LayerType _parseLayerType(String value) {
-    try {
-      return LayerType.values.byName(value);
-    } catch (e) {
-      _logger.warning('Unknown LayerType value: $value', e);
-      return LayerType.unknown;
-    }
   }
 }
 
@@ -393,7 +391,12 @@ class APIKeyConfig {
       createdAt: DateTime.parse(json['createdAt'] as String),
       lastValidated: DateTime.parse(json['lastValidated'] as String),
       cloudBackupEnabled: json['cloudBackupEnabled'] as bool,
-      storageBackend: _parseSecureStorageBackend(json['storageBackend'] as String),
+      storageBackend: _parseEnum(
+        json['storageBackend'] as String,
+        SecureStorageBackend.values,
+        SecureStorageBackend.unknown,
+        'SecureStorageBackend',
+      ),
     );
   }
 
@@ -413,15 +416,6 @@ class APIKeyConfig {
       ...toJson(),
       'apiKey': apiKey,
     };
-  }
-
-  static SecureStorageBackend _parseSecureStorageBackend(String value) {
-    try {
-      return SecureStorageBackend.values.byName(value);
-    } catch (e) {
-      _logger.warning('Unknown SecureStorageBackend value: $value', e);
-      return SecureStorageBackend.unknown;
-    }
   }
 }
 
@@ -485,7 +479,12 @@ class KDFMetadata {
 
   factory KDFMetadata.fromJson(Map<String, dynamic> json) {
     return KDFMetadata(
-      algorithm: _parseKDFAlgorithm(json['algorithm'] as String),
+      algorithm: _parseEnum(
+        json['algorithm'] as String,
+        KDFAlgorithm.values,
+        KDFAlgorithm.unknown,
+        'KDFAlgorithm',
+      ),
       salt: json['salt'] as String,
       params: json['params'] as Map<String, dynamic>,
     );
@@ -497,15 +496,6 @@ class KDFMetadata {
       'salt': salt,
       'params': params,
     };
-  }
-
-  static KDFAlgorithm _parseKDFAlgorithm(String value) {
-    try {
-      return KDFAlgorithm.values.byName(value);
-    } catch (e) {
-      _logger.warning('Unknown KDFAlgorithm value: $value', e);
-      return KDFAlgorithm.unknown;
-    }
   }
 }
 
@@ -580,7 +570,12 @@ class UsageHistoryEntry {
     return UsageHistoryEntry(
       id: json['id'] as String,
       userId: json['userId'] as String,
-      eventType: _parseQuotaEventType(json['eventType'] as String),
+      eventType: _parseEnum(
+        json['eventType'] as String,
+        QuotaEventType.values,
+        QuotaEventType.unknown,
+        'QuotaEventType',
+      ),
       timestamp: DateTime.parse(json['timestamp'] as String),
       requestCount: json['requestCount'] as int,
       metadata: json['metadata'] as Map<String, dynamic>,
@@ -596,15 +591,6 @@ class UsageHistoryEntry {
       'requestCount': requestCount,
       'metadata': metadata,
     };
-  }
-
-  static QuotaEventType _parseQuotaEventType(String value) {
-    try {
-      return QuotaEventType.values.byName(value);
-    } catch (e) {
-      _logger.warning('Unknown QuotaEventType value: $value', e);
-      return QuotaEventType.unknown;
-    }
   }
 }
 

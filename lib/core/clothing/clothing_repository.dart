@@ -2,6 +2,7 @@ import 'dart:io';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:uuid/uuid.dart';
 
@@ -174,11 +175,11 @@ class ClothingRepositoryImpl implements ClothingRepository {
       // Create a placeholder clothing item
       // In a real implementation, this would process the image and generate
       // processed and thumbnail versions
-      // NOTE: This placeholder branch is only for testing. Production builds
-      // should never use these example.com URLs.
+      // NOTE: This placeholder branch is only for debug/test builds. Production
+      // builds should never use these example.com URLs.
       final clothingItem = () {
-        // Prevent placeholder from being used in production
-        if (!bool.fromEnvironment('dart.test', defaultValue: false)) {
+        // Prevent placeholder from being used in production builds
+        if (!kDebugMode) {
           throw UnimplementedError(
             'ClothingItem upload is not yet implemented. '
             'Image processing, storage upload, and Firestore persistence '
