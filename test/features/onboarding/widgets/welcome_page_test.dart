@@ -15,6 +15,11 @@ import 'package:stylesync/features/onboarding/widgets/welcome_page.dart';
 // Test Helpers
 // =============================================================================
 
+/// Maximum iterations to traverse focusable widgets via Tab key to reach
+/// the target button. This assumes there are no more than this many focusable
+/// widgets between the initial focus and the button under test.
+const int kMaxTabIterations = 10;
+
 /// Creates a testable WelcomePage widget.
 Widget createTestWidget({
   required VoidCallback onGetStarted,
@@ -353,14 +358,11 @@ void main() {
 
         // Navigate focus to the button via keyboard traversal (Tab key)
         // Tab through focusable elements until the button is focused
-        for (var i = 0; i < 10; i++) {
+        for (var i = 0; i < kMaxTabIterations; i++) {
           await tester.sendKeyEvent(LogicalKeyboardKey.tab);
           await tester.pumpAndSettle();
 
-          // Check if the button now has focus
-          final buttonElement = tester.element(buttonFinder);
-          final focusNode = Focus.of(buttonElement);
-          if (focusNode.hasFocus) {
+          if (Focus.of(tester.element(buttonFinder)).hasFocus) {
             break;
           }
         }

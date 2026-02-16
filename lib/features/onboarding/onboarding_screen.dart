@@ -1,93 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../core/onboarding/models/onboarding_error.dart';
-import '../../core/onboarding/models/onboarding_persistence_exception.dart';
 import '../../core/onboarding/models/onboarding_state.dart';
+import '../../core/onboarding/onboarding_error_formatter.dart';
 import '../../core/onboarding/onboarding_providers.dart';
 import 'widgets/api_key_input_page.dart';
 import 'widgets/onboarding_page_indicator.dart';
 import 'widgets/tutorial_page.dart';
 import 'widgets/welcome_page.dart';
-
-/// Default generic error message when no user-friendly message is available.
-const String _genericErrorMessage = 'Something went wrong. Please try again.';
-
-/// Maximum allowed length for user-facing error messages.
-const int _maxMessageLength = 200;
-
-/// Patterns that indicate a message contains technical details.
-final RegExp _technicalPatterns = RegExp(
-  r'(Exception|Error|Stack|Trace|null|undefined|\{|\}|\[|\]|0x[0-9a-fA-F]+|\bat\b.*:\d+)',
-  caseSensitive: false,
-);
-
-/// Checks if the given message is safe and user-friendly for display.
-///
-/// Returns `true` if the message is non-empty, within length limits,
-/// and doesn't contain technical patterns.
-bool _isUserFriendlyMessage(String? message) {
-  if (message == null || message.trim().isEmpty) {
-    return false;
-  }
-  if (message.length > _maxMessageLength) {
-    return false;
-  }
-  if (_technicalPatterns.hasMatch(message)) {
-    return false;
-  }
-  return true;
-}
-
-/// Formats an [OnboardingError] into a user-friendly message.
-///
-/// Maps known error types to readable strings and falls back to the
-/// error's message or a generic message for unknown errors.
-/// The raw error is logged internally for debugging purposes.
-///
-/// This ensures technical details like stack traces or exception types
-/// are never exposed to users.
-String formatOnboardingError(OnboardingError? error) {
-  if (error == null) {
-    return 'An unexpected error occurred. Please try again.';
-  }
-
-  // Log the raw error for debugging (internal use only)
-  debugPrint('Onboarding error: $error (original: ${error.originalError})');
-
-  final originalError = error.originalError;
-
-  // Map known original error types to user-friendly messages
-  if (originalError is OnboardingPersistenceException) {
-    // Storage-related errors
-    return 'Unable to save your progress. Please check your device storage and try again.';
-  }
-
-  if (originalError is FormatException) {
-    return 'Invalid data format. Please try again.';
-  }
-
-  if (originalError is StateError) {
-    return 'The app encountered an issue. Please restart and try again.';
-  }
-
-  // Handle network-related errors by type name (to avoid direct dependency)
-  if (originalError != null) {
-    final errorTypeName = originalError.runtimeType.toString();
-    if (errorTypeName.contains('SocketException') ||
-        errorTypeName.contains('TimeoutException') ||
-        errorTypeName.contains('HttpException')) {
-      return 'Network error. Please check your connection and try again.';
-    }
-  }
-
-  // Use the OnboardingError's message as fallback if it's user-friendly
-  if (_isUserFriendlyMessage(error.message)) {
-    return error.message;
-  }
-
-  return _genericErrorMessage;
-}
 
 /// Main onboarding screen that manages the onboarding flow.
 ///

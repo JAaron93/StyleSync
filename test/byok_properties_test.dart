@@ -7,6 +7,7 @@ import 'package:http/http.dart' as http;
 import 'package:stylesync/core/byok/api_key_validator.dart';
 import 'package:stylesync/core/byok/byok_manager.dart';
 import 'package:stylesync/core/byok/models/api_key_config.dart';
+import 'package:stylesync/core/byok/models/byok_error.dart';
 import 'package:stylesync/core/byok/models/validation_result.dart';
 import 'package:stylesync/core/storage/secure_storage_service.dart';
 
@@ -833,6 +834,8 @@ void main() {
       final result = await manager.getAPIKey();
 
       expect(result, isA<Failure<APIKeyConfig>>());
+      expect(result.errorOrNull, isA<NotFoundError>(),
+          reason: 'Error should be NotFoundError for non-existent key');
     });
 
     test('Deleting non-existent key returns NotFoundError', () async {
@@ -847,6 +850,8 @@ void main() {
       final result = await manager.deleteAPIKey();
 
       expect(result, isA<Failure<void>>());
+      expect(result.errorOrNull, isA<NotFoundError>(),
+          reason: 'Error should be NotFoundError for non-existent key');
     });
 
     test('HTTP 500 returns unknown failure type', () async {

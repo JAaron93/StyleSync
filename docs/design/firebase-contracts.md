@@ -515,13 +515,35 @@ To detect and prevent unauthorized bulk downloads or brute-force attempts:
 **Security Rules**:
 ```javascript
 match /users/{userId}/api_key_backup.json {
-  // Requires recent re-authentication (within 5 minutes) before access.
-  // This helps mitigate sessions hijacked via XSS or stolen devices.
-  allow read, write: if request.auth != null 
-    && request.auth.uid == userId
-    && request.auth.token.auth_time > (request.time.toMillis() / 1000) - (5 * 60);
+  // DENY all direct client access to enforce signed-URL-only architecture.
+  // Access to backup files MUST go through the generateBackupAccessUrl Cloud Function,
+  // which issues time-limited signed URLs after validating:
+  //   1. User authentication (request.auth != null)
+  //   2. Ownership verification (request.auth.uid == userId)
+  //   3. Recent re-authentication (auth_time within 5 minutes)
+  //   4. Rate-limit compliance (per-user download quotas)
+  //
+  // Cloud Functions using the Admin SDK bypass these rules and can access
+  // the file directly to generate signed URLs or perform backup operations.
+  // This ensures all client access is mediated through rate-limited, audited endpoints.
+  allow read, write: if false;
+}
+
+// Rate-limit audit trail for backup access tracking
+match /access_audit/{userId}/backup_access {
+  // Users can read their own audit records for transparency
+  allow read: if request.auth != null && request.auth.uid == userId;
+  
+  // DENY all client-side writes to prevent rate-limit bypass.
+  // Writes to accessCount, windowStart, and lastAccess MUST be performed
+  // exclusively by server-side Cloud Functions or service accounts.
+  // This ensures users cannot reset their rate-limit counters to bypass
+  // download restrictions or anomaly detection thresholds.
+  allow write: if false;
 }
 ```
+
+> **Important**: The `access_audit` collection is write-protected from client requests. All writes to `access_audit/{userId}/backup_access` (including `accessCount`, `windowStart`, and `lastAccess` fields) must be performed by trusted server-side code using a service account with appropriate Firestore permissions. Client write requests are rejected to prevent users from resetting rate-limit counters and bypassing security controls.
 
 ---
 
@@ -688,7 +710,7 @@ match /users/{userId}/api_key_backup.json {
     2. Check lockout status; reject if account is locked.
     3. Retrieve the encrypted backup from Storage.
     4. Retrieve the server-side pepper from Secret Manager (using `pepper_id` from backup).
-    5. Derive the decryption key using Argon2id with the provided password hash and pepper.
+    5. Derive the decryption key server-side using Argon2id with the provided plaintext password and pepper (Argon2id parameters: memory=64MB, iterations=3, parallelism=1).
     6. Decrypt the API key and return it to the client.
     7. On failure, increment `failedAttempts` and check lockout threshold.
     8. On success, reset `failedAttempts` to 0.
@@ -703,13 +725,15 @@ match /users/{userId}/api_key_backup.json {
       - `api_key_decrypt_lockout` (counter)
 - **Security**:
     - The plaintext API key is returned over TLS and NEVER logged.
-    - The user's password is never sent to the server; only a client-side hash is transmitted.
+    - The user's plaintext password is transmitted over TLS; the server performs Argon2id hashing.
+    - **CRITICAL**: Client-side hashes (e.g., SHA-256) MUST NOT be accepted as password-equivalents. Accepting pre-hashed values would allow attackers to use stolen hashes directly without knowing the original password. All key derivation MUST occur server-side from the plaintext password.
     - The pepper is injected server-side and never exposed to the client in this flow.
+    - The plaintext password is used only for key derivation and is NEVER stored or logged.
 - **Request/Response**:
     ```typescript
     // Request
     {
-      passwordHash: string,    // Client-side SHA-256 of password (NOT plaintext)
+      password: string,        // Plaintext password (transmitted over TLS only)
       mfaToken: string         // MFA verification token/assertion
     }
     

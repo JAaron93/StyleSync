@@ -78,14 +78,15 @@ class OnboardingStateNotifier extends StateNotifier<OnboardingState> {
       if (isComplete) {
         state = const OnboardingState.completed();
       }
-    } catch (e) {
-      debugPrint('Onboarding initialization error: $e');
+    } catch (e, stack) {
+      debugPrint('Onboarding initialization error: $e\n$stack');
       // Error during initialization - use welcome as the step since state isn't set yet
       state = OnboardingState.error(
         OnboardingError(
           'Failed to check onboarding status',
           operation: OnboardingOperation.checkComplete,
           originalError: e,
+          originalStackTrace: stack,
         ),
         currentStep: OnboardingStep.welcome,
       );
@@ -108,13 +109,14 @@ class OnboardingStateNotifier extends StateNotifier<OnboardingState> {
         try {
           await _controller.markOnboardingComplete();
           state = const OnboardingState.completed();
-        } catch (e) {
-          debugPrint('Onboarding completion error: $e');
+        } catch (e, stack) {
+          debugPrint('Onboarding completion error: $e\n$stack');
           state = OnboardingState.error(
             OnboardingError(
               'Failed to complete onboarding',
               operation: OnboardingOperation.markComplete,
               originalError: e,
+              originalStackTrace: stack,
             ),
             currentStep: OnboardingStep.apiKeyInput,
           );
@@ -158,14 +160,15 @@ class OnboardingStateNotifier extends StateNotifier<OnboardingState> {
     try {
       await _controller.resetOnboarding();
       state = const OnboardingState.initial();
-    } catch (e) {
-      debugPrint('Onboarding reset error: $e');
+    } catch (e, stack) {
+      debugPrint('Onboarding reset error: $e\n$stack');
       // Preserve the current step when reset fails
       state = OnboardingState.error(
         OnboardingError(
           'Failed to reset onboarding',
           operation: OnboardingOperation.reset,
           originalError: e,
+          originalStackTrace: stack,
         ),
         currentStep: state.currentStep,
       );

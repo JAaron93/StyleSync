@@ -426,7 +426,7 @@ void main() {
             reason: 'TutorialPage content should be scrollable');
       });
 
-      testWidgets('navigation buttons are arranged in a Row at the bottom',
+      testWidgets('navigation buttons are arranged horizontally in a Row',
           (WidgetTester tester) async {
         await tester.pumpWidget(createTestWidget(
           onNext: () {},

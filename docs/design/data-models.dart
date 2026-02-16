@@ -318,6 +318,18 @@ class OutfitLayer {
   });
 
   factory OutfitLayer.fromJson(Map<String, dynamic> json) {
+    final rawOpacity = (json['opacity'] as num).toDouble();
+    final clampedOpacity = rawOpacity.clamp(0.0, 1.0);
+    if (rawOpacity != clampedOpacity) {
+      final assetRef = json['assetReference'] as String?;
+      final layerId = json['id'] as String?;
+      _logger.warning(
+        'Opacity value $rawOpacity out of range [0.0, 1.0], '
+        'clamped to $clampedOpacity '
+        '(layer: $layerId, assetReference: $assetRef)',
+      );
+    }
+
     return OutfitLayer(
       id: json['id'] as String,
       name: json['name'] as String,
@@ -330,7 +342,7 @@ class OutfitLayer {
       clothingItemId: json['clothingItemId'] as String,
       index: json['index'] as int,
       isVisible: json['isVisible'] as bool,
-      opacity: (json['opacity'] as num).toDouble().clamp(0.0, 1.0),
+      opacity: clampedOpacity,
       assetReference: json['assetReference'] as String?,
       metadata: Map<String, dynamic>.from(json['metadata'] as Map),
       positioning: json['positioning'] != null ? Map<String, dynamic>.from(json['positioning'] as Map) : null,
@@ -486,7 +498,7 @@ class KDFMetadata {
         'KDFAlgorithm',
       ),
       salt: json['salt'] as String,
-      params: json['params'] as Map<String, dynamic>,
+      params: Map<String, dynamic>.from(json['params'] as Map),
     );
   }
 
@@ -578,7 +590,7 @@ class UsageHistoryEntry {
       ),
       timestamp: DateTime.parse(json['timestamp'] as String),
       requestCount: json['requestCount'] as int,
-      metadata: json['metadata'] as Map<String, dynamic>,
+      metadata: Map<String, dynamic>.from(json['metadata'] as Map),
     );
   }
 
@@ -665,15 +677,15 @@ class GeneratedImage {
   });
 
   factory GeneratedImage.fromJson(Map<String, dynamic> json) {
-    final modeName = json['modeName'] as String;
-    // Validate the mode name exists (logs warning if unknown)
-    GenerationMode.fromName(modeName);
+    final rawModeName = json['modeName'] as String;
+    // Validate and normalize the mode name (returns unknown if invalid)
+    final validatedMode = GenerationMode.fromName(rawModeName);
     return GeneratedImage(
       id: json['id'] as String,
       userId: json['userId'] as String,
       imageUrl: json['imageUrl'] as String,
       modelUsed: json['modelUsed'] as String,
-      modeName: modeName,
+      modeName: validatedMode.name,
       generatedAt: DateTime.parse(json['generatedAt'] as String),
       clothingItemId: json['clothingItemId'] as String,
       metadata: Map<String, dynamic>.from(json['metadata'] as Map),

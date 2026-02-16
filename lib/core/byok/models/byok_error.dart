@@ -12,6 +12,13 @@ sealed class BYOKError {
   final Object? originalError;
 
   const BYOKError(this.message, {this.originalError});
+
+  /// Returns a formatted suffix for [originalError] if present, empty string otherwise.
+  ///
+  /// Used by subclass [toString] implementations to avoid duplicating
+  /// the conditional formatting logic.
+  String get _originalErrorSuffix =>
+      originalError != null ? ', originalError: $originalError' : '';
 }
 
 /// API key validation failed.
@@ -29,7 +36,7 @@ class ValidationError extends BYOKError {
 
   @override
   String toString() =>
-      'ValidationError($message, $validationResult${originalError != null ? ', originalError: $originalError' : ''})';
+      'ValidationError($message, $validationResult$_originalErrorSuffix)';
 }
 
 /// No API key is stored.
@@ -39,8 +46,7 @@ class NotFoundError extends BYOKError {
   const NotFoundError({super.originalError}) : super('No API key is stored');
 
   @override
-  String toString() =>
-      'NotFoundError($message${originalError != null ? ', originalError: $originalError' : ''})';
+  String toString() => 'NotFoundError($message$_originalErrorSuffix)';
 }
 
 /// Secure storage operation failed.
@@ -50,8 +56,7 @@ class StorageError extends BYOKError {
   const StorageError(super.message, {super.originalError});
 
   @override
-  String toString() =>
-      'StorageError($message${originalError != null ? ', originalError: $originalError' : ''})';
+  String toString() => 'StorageError($message$_originalErrorSuffix)';
 }
 
 /// Cloud backup operation failed.
@@ -65,7 +70,7 @@ class BackupError extends BYOKError {
 
   @override
   String toString() =>
-      'BackupError($message, type: $type${originalError != null ? ', originalError: $originalError' : ''})';
+      'BackupError($message, type: $type$_originalErrorSuffix)';
 }
 
 /// Types of backup errors.
@@ -93,6 +98,5 @@ class CryptoError extends BYOKError {
   const CryptoError(super.message, {super.originalError});
 
   @override
-  String toString() =>
-      'CryptoError($message${originalError != null ? ', originalError: $originalError' : ''})';
+  String toString() => 'CryptoError($message$_originalErrorSuffix)';
 }

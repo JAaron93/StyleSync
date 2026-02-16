@@ -8,12 +8,13 @@
 /// ```dart
 /// try {
 ///   await controller.markOnboardingComplete();
-/// } catch (e) {
+/// } catch (e, stack) {
 ///   state = OnboardingState.error(
 ///     OnboardingError(
 ///       'Failed to save onboarding progress',
 ///       operation: OnboardingOperation.markComplete,
 ///       originalError: e,
+///       originalStackTrace: stack,
 ///     ),
 ///     currentStep: OnboardingStep.apiKeyInput,
 ///   );
@@ -25,10 +26,12 @@ class OnboardingError implements Exception {
   /// [message] is a human-readable description of the error.
   /// [operation] indicates which onboarding operation failed.
   /// [originalError] is the underlying exception that caused this error.
+  /// [originalStackTrace] is the stack trace captured when the error occurred.
   const OnboardingError(
     this.message, {
     this.operation,
     this.originalError,
+    this.originalStackTrace,
   });
 
   /// A human-readable description of the error.
@@ -43,6 +46,11 @@ class OnboardingError implements Exception {
   /// user-facing error message clean.
   final Object? originalError;
 
+  /// The stack trace captured when the original error occurred.
+  ///
+  /// This preserves full diagnostic information for debugging and logging.
+  final StackTrace? originalStackTrace;
+
   @override
   String toString() => operation != null
       ? 'OnboardingError(${operation!.name}): $message'
@@ -54,11 +62,13 @@ class OnboardingError implements Exception {
     return other is OnboardingError &&
         other.message == message &&
         other.operation == operation &&
-        other.originalError == originalError;
+        other.originalError == originalError &&
+        other.originalStackTrace == originalStackTrace;
   }
 
   @override
-  int get hashCode => Object.hash(message, operation, originalError);
+  int get hashCode =>
+      Object.hash(message, operation, originalError, originalStackTrace);
 }
 
 /// Enumeration of onboarding operations that can fail.
