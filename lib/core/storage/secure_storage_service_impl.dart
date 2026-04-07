@@ -7,7 +7,6 @@ import 'secure_storage_service.dart';
 class SecureStorageServiceImpl implements SecureStorageService {
   late FlutterSecureStorage _storage;
   SecureStorageBackend _backend = SecureStorageBackend.software;
-  bool _initialized = false;
   final FlutterSecureStorage? _injectedStorage;
   final SecureStorageBackend? _injectedBackend;
   final Platform _platform;
@@ -23,7 +22,6 @@ class SecureStorageServiceImpl implements SecureStorageService {
     if (_injectedStorage != null) {
       _storage = _injectedStorage;
       _backend = _injectedBackend ?? SecureStorageBackend.software;
-      _initialized = true;
       _initCompleter.complete();
     } else {
       _init();
@@ -65,7 +63,6 @@ class SecureStorageServiceImpl implements SecureStorageService {
       _storage = const FlutterSecureStorage();
       _backend = SecureStorageBackend.software;
     } finally {
-      _initialized = true;
       if (!_initCompleter.isCompleted) {
         _initCompleter.complete();
       }

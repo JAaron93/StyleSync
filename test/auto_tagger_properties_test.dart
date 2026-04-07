@@ -56,13 +56,9 @@ void main() {
             reason: 'Category must be one of: tops, bottoms, shoes, accessories',
           );
 
-          // Property: Colors must be a list of strings
           expect(tags.colors, isList);
-          expect(tags.colors.every((c) => c is String), isTrue);
 
-          // Property: Seasons must be a list of strings
           expect(tags.seasons, isList);
-          expect(tags.seasons.every((c) => c is String), isTrue);
 
           // Property: No biometric data in additionalAttributes
           final biometricKeys = [
@@ -129,12 +125,9 @@ void main() {
           expect(tags.colors, isNotNull);
           expect(tags.seasons, isNotNull);
 
-          // Property: Colors and seasons must be lists of strings
           expect(tags.colors, isList);
-          expect(tags.colors.every((c) => c is String), isTrue);
 
           expect(tags.seasons, isList);
-          expect(tags.seasons.every((c) => c is String), isTrue);
 
           // Property: No person/facial data
           final hasPersonData = tags.additionalAttributes.keys.any((key) {

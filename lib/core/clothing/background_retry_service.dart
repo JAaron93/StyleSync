@@ -171,7 +171,7 @@ class BackgroundRetryServiceImpl implements BackgroundRetryService {
 
       return RetrySuccess(result.valueOrNull!);
     } catch (e) {
-      return RetryFailure(ClothingError('Unexpected error during retry: $e'));
+      return RetryFailure(FirebaseError('Unexpected error during retry: $e'));
     }
   }
 

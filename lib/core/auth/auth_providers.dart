@@ -58,11 +58,10 @@ final is18PlusVerifiedProvider = FutureProvider<bool>((ref) async {
 /// authentication, allowing UI components to respond to auth state changes.
 class AuthStateNotifier extends StateNotifier<AuthState> {
   /// Creates an [AuthStateNotifier] with the given services.
-  AuthStateNotifier(this._authService, this._ageVerificationService)
+  AuthStateNotifier(this._authService)
       : super(const AuthState.initial());
 
   final AuthService _authService;
-  final AgeVerificationService _ageVerificationService;
 
   /// Initializes the auth state by checking if a user is signed in.
   Future<void> initialize() async {
@@ -284,6 +283,5 @@ enum AuthStatus {
 final authStateProvider =
     StateNotifierProvider<AuthStateNotifier, AuthState>((ref) {
   final authService = ref.watch(authServiceProvider);
-  final ageVerificationService = ref.watch(ageVerificationServiceProvider);
-  return AuthStateNotifier(authService, ageVerificationService);
+  return AuthStateNotifier(authService);
 });

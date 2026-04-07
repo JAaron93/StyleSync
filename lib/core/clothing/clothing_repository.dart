@@ -105,12 +105,6 @@ abstract class ClothingRepository {
 /// Uses Firebase Firestore for metadata storage and Firebase Storage
 /// for image storage.
 class ClothingRepositoryImpl implements ClothingRepository {
-  /// The Firebase Firestore instance.
-  final FirebaseFirestore _firestore;
-
-  /// The Firebase Storage instance.
-  final FirebaseStorage _storage;
-
   /// The UUID generator for creating IDs.
   final Uuid _uuid;
 
@@ -119,24 +113,7 @@ class ClothingRepositoryImpl implements ClothingRepository {
     FirebaseFirestore? firestore,
     FirebaseStorage? storage,
     Uuid? uuid,
-  }) : _firestore = firestore ?? FirebaseFirestore.instance,
-       _storage = storage ?? FirebaseStorage.instance,
-       _uuid = uuid ?? const Uuid();
-
-  /// Gets the storage path for a user's clothing item.
-  String _getClothingPath(String userId, String itemId) {
-    return 'users/$userId/clothing/$itemId';
-  }
-
-  /// Gets the storage path for a user's try-on images.
-  String _getTryOnPath(String userId, String tryOnId) {
-    return 'users/$userId/try-ons/$tryOnId.jpg';
-  }
-
-  /// Gets the storage path for a user's outfit thumbnails.
-  String _getOutfitThumbnailPath(String userId, String outfitId) {
-    return 'users/$userId/outfits/${outfitId}_thumbnail.jpg';
-  }
+  }) : _uuid = uuid ?? const Uuid();
 
   /// Checks if the given error is a network-related error.
   bool _isNetworkError(Object error) {
