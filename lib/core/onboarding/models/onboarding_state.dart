@@ -52,9 +52,9 @@ class OnboardingState {
   /// [currentStep] is the step where the error occurred, defaults to
   /// [OnboardingStep.welcome] if not specified.
   const OnboardingState.error(
-    OnboardingError error, {
+    this.error, {
     this.currentStep = OnboardingStep.welcome,
-  }) : error = error;
+  });
 
   /// Whether the onboarding process has been completed.
   ///

@@ -68,7 +68,7 @@ abstract class BackgroundRetryService {
 /// For production, consider using a persistent queue (e.g., Hive, SQLite).
 class BackgroundRetryServiceImpl implements BackgroundRetryService {
   /// Maximum number of retry attempts before giving up.
-  static const int MAX_RETRIES = 5;
+  static const int maxRetries = 5;
 
   /// The clothing repository for performing retries.
   final ClothingRepository _repository;
@@ -123,7 +123,7 @@ class BackgroundRetryServiceImpl implements BackgroundRetryService {
         // Increment retry count and re-enqueue if under max retries
         final newRetryCount = task.retryCount + 1;
         _retryQueue.remove(task);
-        if (newRetryCount < MAX_RETRIES) {
+        if (newRetryCount < maxRetries) {
           _retryQueue.add(_RetryTask(itemId: task.itemId, retryCount: newRetryCount));
           debugPrint('Re-enqueued item ${task.itemId} for retry (attempt ${newRetryCount + 1})');
         } else {

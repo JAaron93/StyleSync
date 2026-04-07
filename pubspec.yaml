@@ -47,8 +47,9 @@ dependencies:
   url_launcher: ^6.2.5
   image: ^4.2.0
   google_mlkit_face_detection: ^0.10.0
-  tflite_flutter: ^0.10.4
+  tflite_flutter: ^0.12.1
   path: ^1.9.0
+  platform: ^3.1.5
 
 dev_dependencies:
   flutter_test:
@@ -61,9 +62,10 @@ dev_dependencies:
   # rules and activating additional ones.
   flutter_lints: ^6.0.0
   glados: ^1.1.7
-  mockito: ^5.6.3
-  build_runner: ^2.10.5
+  mockito: ^5.6.4
+  build_runner: ^2.13.1
   platform: ^3.1.5
+  test: ^1.26.3
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
