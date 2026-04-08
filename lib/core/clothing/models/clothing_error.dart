@@ -79,6 +79,16 @@ class ClothingValidationError extends ClothingError {
   String toString() => 'ClothingValidationError($message)';
 }
 
+/// Unexpected error occurred.
+///
+/// Returned when an unhandled exception is caught.
+class UnexpectedError extends ClothingError {
+  const UnexpectedError(super.message, {super.originalError});
+
+  @override
+  String toString() => 'UnexpectedError($message)';
+}
+
 /// Storage quota information.
 class StorageQuota {
   /// Current number of items stored.

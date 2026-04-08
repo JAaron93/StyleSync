@@ -1,22 +1,43 @@
+# Miscellaneous
 .DS_Store
+.apple
+.history/
+.mypy_cache/
 *.log
+
+# Dart/Flutter
 .dart_tool/
-build/
-.pub-cache/
 .packages
+.pub-cache/
 .flutter-plugins
 .flutter-plugins-dependencies
 .metadata
+build/
+coverage/
+
+# Generated Code (Optional: Choose based on preference)
+# Most teams ignore these to keep diffs clean, but some track them for CI speed.
+*.g.dart
+*.mocks.dart
+
+# IDEs
 .idea/
 *.iml
+.vscode/
+
+# Environment and Secrets
+.env
+.env.*
+! .env.example
 android/key.properties
 android/local.properties
 *.jks
 *.keystore
+
+# Internal Tools
 .kilocode/
+.kiro/
 
-# Coverage
-coverage/
-
-# Generated mocks (Mockito)
-*.mocks.dart
+# Platform Specific
+Icon?
+desktop.ini

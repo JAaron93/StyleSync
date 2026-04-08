@@ -109,11 +109,9 @@ class ClothingRepositoryImpl implements ClothingRepository {
   final Uuid _uuid;
 
   /// Creates a new [ClothingRepositoryImpl] instance.
-  ClothingRepositoryImpl({
-    FirebaseFirestore? firestore,
-    FirebaseStorage? storage,
-    Uuid? uuid,
-  }) : _uuid = uuid ?? const Uuid();
+  ///
+  /// An optional [uuid] generator can be injected for testing.
+  ClothingRepositoryImpl({Uuid? uuid}) : _uuid = uuid ?? const Uuid();
 
   /// Checks if the given error is a network-related error.
   bool _isNetworkError(Object error) {
@@ -419,23 +417,40 @@ class ClothingRepositoryImpl implements ClothingRepository {
 
   @override
   Future<Result<ClothingItem>> retryProcessing(String itemId) async {
+    // STUB: Real retry logic with exponential backoff is pending Firestore
+    // integration (see uploadClothing TODO).
+    //
+    // This method delegates to getClothingItem to locate the item before
+    // updating its processingState. Because getClothingItem is also a stub
+    // that always returns Failure(ClothingItemNotFoundError()), this method
+    // will always propagate that failure until persistence is wired up.
+    //
+    // TODO: Replace with real implementation:
+    //   1. Fetch item from Firestore (getClothingItem).
+    //   2. Increment retryCount and set processingState = processing.
+    //   3. Persist updated state via _firestore.collection(...).doc(itemId).update(...).
+    //   4. Return Success(updatedItem).
     try {
-      // TODO: Implement retry logic with exponential backoff
-      // For now, just return the item as if processing succeeded
       final item = await getClothingItem(itemId);
       if (item.isFailure) {
+        // Propagate the failure — most likely ClothingItemNotFoundError until
+        // getClothingItem is backed by real Firestore queries.
         return item;
       }
+
+      // Unreachable until getClothingItem is implemented; kept so the future
+      // real implementation has a clear skeleton to fill in.
       final currentItem = item.valueOrNull!;
       final updatedItem = currentItem.copyWith(
         processingState: ItemProcessingState.processing,
         retryCount: currentItem.retryCount + 1,
       );
 
-      // TODO: Update Firestore with new state
-      // await _firestore.collection('clothing_items').doc(itemId).update(
-      //   {'processingState': 'processing', 'retryCount': updatedItem.retryCount},
-      // );
+      // TODO: Persist updated state to Firestore.
+      // await _firestore.collection('clothing_items').doc(itemId).update({
+      //   'processingState': 'processing',
+      //   'retryCount': updatedItem.retryCount,
+      // });
 
       return Success(updatedItem);
     } catch (e) {
@@ -461,22 +476,11 @@ class ClothingRepositoryImpl implements ClothingRepository {
 // Riverpod Providers
 // ============================================================================
 
-/// Provider for [FirebaseFirestore].
-final firebaseFirestoreProvider = Provider<FirebaseFirestore>((ref) {
-  return FirebaseFirestore.instance;
-});
-
-/// Provider for [FirebaseStorage].
-final firebaseStorageClothingProvider = Provider<FirebaseStorage>((ref) {
-  return FirebaseStorage.instance;
-});
-
 /// Provider for [ClothingRepository].
 ///
-/// Creates a [ClothingRepositoryImpl] instance with injected dependencies.
+/// Creates a [ClothingRepositoryImpl] instance. Firebase dependencies
+/// (Firestore, Storage) are accessed via their singletons inside the
+/// repository once the TODO implementations are wired up.
 final clothingRepositoryProvider = Provider<ClothingRepository>((ref) {
-  final firestore = ref.watch(firebaseFirestoreProvider);
-  final storage = ref.watch(firebaseStorageClothingProvider);
-
-  return ClothingRepositoryImpl(firestore: firestore, storage: storage);
+  return ClothingRepositoryImpl();
 });

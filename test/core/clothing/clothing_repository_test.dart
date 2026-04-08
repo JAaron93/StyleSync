@@ -1,25 +1,15 @@
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:mockito/mockito.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
-import 'package:firebase_storage/firebase_storage.dart';
 
 import 'package:stylesync/core/clothing/clothing_repository.dart';
 import 'package:stylesync/core/clothing/models/clothing_error.dart';
 
 void main() {
   late ClothingRepositoryImpl repository;
-  late MockFirebaseFirestore mockFirestore;
-  late MockFirebaseStorage mockStorage;
 
   setUp(() {
-    mockFirestore = MockFirebaseFirestore();
-    mockStorage = MockFirebaseStorage();
-    repository = ClothingRepositoryImpl(
-      firestore: mockFirestore,
-      storage: mockStorage,
-    );
+    repository = ClothingRepositoryImpl();
   });
 
   group('ClothingRepository Upload Flow', () {
@@ -136,8 +126,3 @@ void main() {
     });
   });
 }
-
-// Mock classes for testing
-class MockFirebaseFirestore extends Mock implements FirebaseFirestore {}
-
-class MockFirebaseStorage extends Mock implements FirebaseStorage {}

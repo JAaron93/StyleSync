@@ -411,20 +411,12 @@ List<ClothingItem> getMockItemsBySeason(Season season) {
 
 /// Get mock outfit by ID
 Outfit? getMockOutfitById(String outfitId) {
-  try {
-    return mockOutfits.firstWhere((outfit) => outfit.id == outfitId);
-  } catch (e) {
-    return null;
-  }
+  return mockOutfits.where((outfit) => outfit.id == outfitId).firstOrNull;
 }
 
 /// Get mock clothing item by ID
 ClothingItem? getMockItemById(String itemId) {
-  try {
-    return mockClothingItems.firstWhere((item) => item.id == itemId);
-  } catch (e) {
-    return null;
-  }
+  return mockClothingItems.where((item) => item.id == itemId).firstOrNull;
 }
 
 /// Simulate quota increment
@@ -432,10 +424,10 @@ QuotaStatus simulateQuotaIncrement(QuotaStatus current) {
   final newUsed = current.usedToday + 1;
   return QuotaStatus(
     usedToday: newUsed,
-    estimatedRemaining: 100 - newUsed,
+    estimatedRemaining: newUsed >= 100 ? 0 : 100 - newUsed,
     resetTimeUTC: current.resetTimeUTC,
     isExceeded: newUsed >= 100,
-    usagePercentage: newUsed / 100.0,
+    usagePercentage: newUsed >= 100 ? 1.0 : newUsed / 100.0,
     quotaTrackingId: current.quotaTrackingId,
   );
 }

@@ -3,14 +3,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:stylesync/core/auth/age_verification_service.dart';
 import 'package:stylesync/core/auth/models/auth_error.dart';
 
-/// Mutable state container for FakeFirestore classes to satisfy @immutable requirements.
-class _FakeDocState {
-  Map<String, dynamic>? capturedData;
-  SetOptions? capturedOptions;
-  Map<String, dynamic>? dataToReturn;
-  bool shouldThrow = false;
-}
-
 class FakeFirestoreChain extends Fake implements FirebaseFirestore {
   final fakeCollection = FakeCollection();
   @override
@@ -28,25 +20,23 @@ class FakeCollection extends Fake
 
 // ignore: subtype_of_sealed_class
 class FakeDoc extends Fake implements DocumentReference<Map<String, dynamic>> {
-  final _state = _FakeDocState();
-
-  Map<String, dynamic>? get capturedData => _state.capturedData;
-  SetOptions? get capturedOptions => _state.capturedOptions;
-  set dataToReturn(Map<String, dynamic>? value) => _state.dataToReturn = value;
-  set shouldThrow(bool value) => _state.shouldThrow = value;
+  Map<String, dynamic>? capturedData;
+  SetOptions? capturedOptions;
+  Map<String, dynamic>? dataToReturn;
+  bool shouldThrow = false;
 
   @override
   Future<void> set(Map<String, dynamic> data, [SetOptions? options]) async {
-    if (_state.shouldThrow) throw Exception('Firestore error');
-    _state.capturedData = data;
-    _state.capturedOptions = options;
+    if (shouldThrow) throw Exception('Firestore error');
+    capturedData = data;
+    capturedOptions = options;
   }
 
   @override
   Future<DocumentSnapshot<Map<String, dynamic>>> get(
       [GetOptions? options]) async {
-    if (_state.shouldThrow) throw Exception('Firestore error');
-    return FakeDocumentSnapshot(_state.dataToReturn);
+    if (shouldThrow) throw Exception('Firestore error');
+    return FakeDocumentSnapshot(dataToReturn);
   }
 }
 
@@ -75,10 +65,10 @@ void main() {
   group('clearCooldown', () {
     test('should use set with merge: true to clear cooldown', () async {
       const userId = 'user123';
-      
+
       await service.clearCooldown(userId);
 
-      expect(fakeFirestore.fakeCollection.fakeDoc.capturedData, 
+      expect(fakeFirestore.fakeCollection.fakeDoc.capturedData,
           containsPair('age_verification_cooldown', isA<FieldValue>()));
       expect(fakeFirestore.fakeCollection.fakeDoc.capturedOptions?.merge, isTrue);
     });
@@ -128,7 +118,7 @@ void main() {
         throwsA(predicate((e) => e is AuthError && e.code == AuthErrorCode.underAge)),
       );
 
-      expect(fakeFirestore.fakeCollection.fakeDoc.capturedData, 
+      expect(fakeFirestore.fakeCollection.fakeDoc.capturedData,
           containsPair('age_verification_cooldown', isA<FieldValue>()));
     });
 
@@ -154,12 +144,12 @@ void main() {
   group('initiateThirdPartyVerification', () {
     test('should use set with merge: true for initiation', () async {
       const userId = 'user123';
-      
+
       await service.initiateThirdPartyVerification(userId);
 
-      expect(fakeFirestore.fakeCollection.fakeDoc.capturedData, 
+      expect(fakeFirestore.fakeCollection.fakeDoc.capturedData,
           containsPair('pendingThirdPartyVerification', true));
-      expect(fakeFirestore.fakeCollection.fakeDoc.capturedData, 
+      expect(fakeFirestore.fakeCollection.fakeDoc.capturedData,
           containsPair('thirdPartyVerificationRequestedAt', isA<FieldValue>()));
       expect(fakeFirestore.fakeCollection.fakeDoc.capturedOptions?.merge, isTrue);
     });
@@ -170,7 +160,7 @@ void main() {
 
       await expectLater(
         () => service.initiateThirdPartyVerification(userId),
-        throwsA(predicate((e) => e is AuthError && 
+        throwsA(predicate((e) => e is AuthError &&
             e.code == AuthErrorCode.thirdPartyInitiationFailed)),
       );
     });
