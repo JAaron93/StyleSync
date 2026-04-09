@@ -108,10 +108,22 @@ class ClothingRepositoryImpl implements ClothingRepository {
   /// The UUID generator for creating IDs.
   final Uuid _uuid;
 
+  /// The Firestore instance for metadata storage.
+  final FirebaseFirestore _firestore;
+
+  /// The Storage instance for image storage.
+  final FirebaseStorage _storage;
+
   /// Creates a new [ClothingRepositoryImpl] instance.
   ///
-  /// An optional [uuid] generator can be injected for testing.
-  ClothingRepositoryImpl({Uuid? uuid}) : _uuid = uuid ?? const Uuid();
+  /// Dependencies can be injected for testing.
+  ClothingRepositoryImpl({
+    FirebaseFirestore? firestore,
+    FirebaseStorage? storage,
+    Uuid? uuid,
+  })  : _firestore = firestore ?? FirebaseFirestore.instance,
+        _storage = storage ?? FirebaseStorage.instance,
+        _uuid = uuid ?? const Uuid();
 
   /// Checks if the given error is a network-related error.
   bool _isNetworkError(Object error) {
@@ -482,5 +494,9 @@ class ClothingRepositoryImpl implements ClothingRepository {
 /// (Firestore, Storage) are accessed via their singletons inside the
 /// repository once the TODO implementations are wired up.
 final clothingRepositoryProvider = Provider<ClothingRepository>((ref) {
-  return ClothingRepositoryImpl();
+  return ClothingRepositoryImpl(
+    firestore: FirebaseFirestore.instance,
+    storage: FirebaseStorage.instance,
+    uuid: const Uuid(),
+  );
 });

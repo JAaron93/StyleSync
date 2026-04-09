@@ -191,6 +191,8 @@ class BackgroundRetryServiceImpl implements BackgroundRetryService {
       _isProcessing = true;
       try {
         await processRetryQueue();
+      } catch (e) {
+        debugPrint('Error processing retry queue: $e');
       } finally {
         _isProcessing = false;
       }

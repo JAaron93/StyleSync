@@ -2,7 +2,6 @@
 .DS_Store
 .apple
 .history/
-.mypy_cache/
 *.log
 
 # Dart/Flutter
@@ -28,7 +27,7 @@ coverage/
 # Environment and Secrets
 .env
 .env.*
-! .env.example
+!.env.example
 android/key.properties
 android/local.properties
 *.jks
@@ -39,5 +38,6 @@ android/local.properties
 .kiro/
 
 # Platform Specific
-Icon?
+Icon
+Icon\r
 desktop.ini

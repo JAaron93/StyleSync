@@ -1,15 +1,29 @@
 import 'dart:io';
-
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:mockito/annotations.dart';
+import 'package:mockito/mockito.dart';
 
 import 'package:stylesync/core/clothing/clothing_repository.dart';
 import 'package:stylesync/core/clothing/models/clothing_error.dart';
 
+import 'clothing_repository_test.mocks.dart';
+
+@GenerateMocks([FirebaseFirestore, FirebaseStorage])
+
 void main() {
   late ClothingRepositoryImpl repository;
+  late MockFirebaseFirestore mockFirestore;
+  late MockFirebaseStorage mockStorage;
 
   setUp(() {
-    repository = ClothingRepositoryImpl();
+    mockFirestore = MockFirebaseFirestore();
+    mockStorage = MockFirebaseStorage();
+    repository = ClothingRepositoryImpl(
+      firestore: mockFirestore,
+      storage: mockStorage,
+    );
   });
 
   group('ClothingRepository Upload Flow', () {
@@ -68,7 +82,6 @@ void main() {
 
         expect(result.isFailure, false);
       } finally {
-        await tempFile.delete();
         await tempDir.delete(recursive: true);
       }
     });
