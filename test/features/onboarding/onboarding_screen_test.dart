@@ -30,7 +30,7 @@ Widget createTestWidget({
   return ProviderScope(
     overrides: [
       if (initialState != null)
-        onboardingStateProvider.overrideWith((ref) {
+        onboardingStateProvider.overrideWith(() {
           return TestOnboardingStateNotifier(initialState);
         }),
     ],
@@ -42,9 +42,13 @@ Widget createTestWidget({
 
 /// Test notifier that allows setting initial state.
 class TestOnboardingStateNotifier extends OnboardingStateNotifier {
-  TestOnboardingStateNotifier(OnboardingState initialState)
-      : super(TestOnboardingController()) {
-    state = initialState;
+  final OnboardingState initialState;
+  
+  TestOnboardingStateNotifier(this.initialState);
+
+  @override
+  OnboardingState build() {
+    return initialState;
   }
 }
 

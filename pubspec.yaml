@@ -19,7 +19,7 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 version: 1.0.0+1
 
 environment:
-  sdk: ^3.10.7
+  sdk: ^3.11.4
 
 # Dependencies specify other packages that your package needs in order to work.
 # To automatically upgrade your package dependencies to the latest versions
@@ -31,13 +31,13 @@ dependencies:
   flutter:
     sdk: flutter
   cupertino_icons: ^1.0.8
-  firebase_core: ^3.10.1
-  firebase_auth: ^5.4.1
-  firebase_storage: ^12.3.10
-  cloud_firestore: ^5.6.3
+  firebase_core: ^4.6.0
+  firebase_auth: ^6.3.0
+  firebase_storage: ^13.2.0
+  cloud_firestore: ^6.2.0
   flutter_secure_storage: ^10.0.0
-  riverpod: ^2.6.1
-  flutter_riverpod: ^2.6.1
+  riverpod: ^3.2.1
+  flutter_riverpod: ^3.3.1
   cryptography: ^2.9.0
   argon2: ^1.0.1
   http: ^1.2.2
@@ -46,7 +46,7 @@ dependencies:
   shared_preferences: ^2.3.5
   url_launcher: ^6.2.5
   image: ^4.2.0
-  google_mlkit_face_detection: ^0.10.0
+  google_mlkit_face_detection: ^0.13.2
   tflite_flutter: ^0.12.1
   path: ^1.9.0
   platform: ^3.1.5
@@ -70,6 +70,8 @@ dev_dependencies:
 # following page: https://dart.dev/tools/pub/pubspec
 
 # The following section is specific to Flutter packages.
+  cloud_firestore_platform_interface: any
+  firebase_storage_platform_interface: any
 flutter:
 
   # The following line ensures that the Material Icons font is

@@ -58,12 +58,11 @@ final isOnboardingCompleteProvider = FutureProvider<bool>((ref) async {
 /// This [StateNotifier] provides reactive state management for the
 /// onboarding flow, allowing UI components to respond to state changes
 /// and update the current step.
-class OnboardingStateNotifier extends StateNotifier<OnboardingState> {
-  /// Creates an [OnboardingStateNotifier] with the given controller.
-  OnboardingStateNotifier(this._controller)
-      : super(const OnboardingState.initial());
-
-  final OnboardingController _controller;
+class OnboardingStateNotifier extends Notifier<OnboardingState> {
+  @override
+  OnboardingState build() {
+    return const OnboardingState.initial();
+  }
 
   /// Initializes the state by checking if onboarding is already complete.
   ///
@@ -73,8 +72,9 @@ class OnboardingStateNotifier extends StateNotifier<OnboardingState> {
   /// If the storage check fails, the state is set to an error state
   /// allowing the UI to react accordingly.
   Future<void> initialize() async {
+    final controller = ref.read(onboardingControllerProvider);
     try {
-      final isComplete = await _controller.isOnboardingComplete();
+      final isComplete = await controller.isOnboardingComplete();
       if (isComplete) {
         state = const OnboardingState.completed();
       }
@@ -106,8 +106,9 @@ class OnboardingStateNotifier extends StateNotifier<OnboardingState> {
         state = state.copyWith(currentStep: OnboardingStep.apiKeyInput);
         break;
       case OnboardingStep.apiKeyInput:
+        final controller = ref.read(onboardingControllerProvider);
         try {
-          await _controller.markOnboardingComplete();
+          await controller.markOnboardingComplete();
           state = const OnboardingState.completed();
         } catch (e, stack) {
           debugPrint('Onboarding completion error: $e\n$stack');
@@ -157,8 +158,9 @@ class OnboardingStateNotifier extends StateNotifier<OnboardingState> {
   /// If the reset operation fails, the state is set to an error state
   /// allowing the UI to react accordingly.
   Future<void> reset() async {
+    final controller = ref.read(onboardingControllerProvider);
     try {
-      await _controller.resetOnboarding();
+      await controller.resetOnboarding();
       state = const OnboardingState.initial();
     } catch (e, stack) {
       debugPrint('Onboarding reset error: $e\n$stack');
@@ -227,7 +229,5 @@ class OnboardingStateNotifier extends StateNotifier<OnboardingState> {
 /// - [OnboardingStateNotifier.initialize] for the initialization method
 /// - [OnboardingStateNotifier.nextStep] for advancing the flow
 final onboardingStateProvider =
-    StateNotifierProvider<OnboardingStateNotifier, OnboardingState>((ref) {
-  final controller = ref.read(onboardingControllerProvider);
-  return OnboardingStateNotifier(controller);
-});
+    NotifierProvider<OnboardingStateNotifier, OnboardingState>(
+        OnboardingStateNotifier.new);

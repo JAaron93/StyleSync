@@ -185,14 +185,15 @@ class ClothingRepositoryImpl implements ClothingRepository {
         );
       }();
 
-      // TODO: Upload image to Firebase Storage
-      // final imageRef = _storage.ref(_getClothingPath(userId, itemId));
-      // await imageRef.putFile(image);
+      // Upload image to Firebase Storage
+      final itemId = clothingItem.id;
+      final imageRef = _storage.ref().child('users/$userId/clothing/$itemId/original.jpg');
+      await imageRef.putFile(image);
 
-      // TODO: Store metadata in Firestore
-      // await _firestore.collection('clothing_items').doc(itemId).set(
-      //   clothingItem.toJson(),
-      // );
+      // Store metadata in Firestore
+      await _firestore.collection('clothing_items').doc(itemId).set(
+        clothingItem.toJson(),
+      );
 
       return Success(clothingItem);
     } on FirebaseException catch (e) {
@@ -225,27 +226,26 @@ class ClothingRepositoryImpl implements ClothingRepository {
     int offset = 0,
   }) async {
     try {
-      // TODO: Query Firestore for clothing items
-      // final query = _firestore
-      //     .collection('clothing_items')
-      //     .where('userId', isEqualTo: userId);
-      //
-      // if (category != null) {
-      //   query.where('category', isEqualTo: category);
-      // }
-      //
-      // final snapshot = await query
-      //     .orderBy('uploadedAt', descending: true)
-      //     .limit(limit)
-      //     .offset(offset)
-      //     .get();
+      // Query Firestore for clothing items
+      var query = _firestore
+          .collection('clothing_items')
+          .where('userId', isEqualTo: userId);
 
-      // final items = snapshot.docs
-      //     .map((doc) => ClothingItem.fromJson(doc.data() as Map<String, dynamic>))
-      //     .toList();
+      if (category != null) {
+        query = query.where('category', isEqualTo: category);
+      }
 
-      // For now, return empty list
-      return Success([]);
+      final snapshot = await query
+          .orderBy('uploadedAt', descending: true)
+          .limit(limit)
+          // .offset(offset) // Firebase doesn't support easy offset pagination without cursors
+          .get();
+
+      final items = snapshot.docs
+          .map((doc) => ClothingItem.fromJson(doc.data()))
+          .toList();
+
+      return Success(items);
     } on FirebaseException catch (e) {
       return Failure(
         FirebaseError('Firebase error: ${e.message}', originalError: e),
@@ -271,18 +271,15 @@ class ClothingRepositoryImpl implements ClothingRepository {
   @override
   Future<Result<ClothingItem>> getClothingItem(String itemId) async {
     try {
-      // TODO: Query Firestore for a single clothing item
-      // final doc = await _firestore.collection('clothing_items').doc(itemId).get();
+      // Query Firestore for a single clothing item
+      final doc = await _firestore.collection('clothing_items').doc(itemId).get();
 
-      // if (!doc.exists) {
-      //   return const Failure(NotFoundError());
-      // }
+      if (!doc.exists) {
+        return const Failure(ClothingItemNotFoundError());
+      }
 
-      // final item = ClothingItem.fromJson(doc.data() as Map<String, dynamic>);
-      // return Success(item);
-
-      // For now, return not found
-      return const Failure(ClothingItemNotFoundError());
+      final item = ClothingItem.fromJson(doc.data()!);
+      return Success(item);
     } on FirebaseException catch (e) {
       return Failure(
         FirebaseError('Firebase error: ${e.message}', originalError: e),
@@ -311,10 +308,10 @@ class ClothingRepositoryImpl implements ClothingRepository {
     ClothingItem updates,
   ) async {
     try {
-      // TODO: Update Firestore document
-      // await _firestore.collection('clothing_items').doc(itemId).update(
-      //   updates.toJson(),
-      // );
+      // Update Firestore document
+      await _firestore.collection('clothing_items').doc(itemId).update(
+        updates.toJson(),
+      );
 
       return Success(updates);
     } on FirebaseException catch (e) {
@@ -345,18 +342,18 @@ class ClothingRepositoryImpl implements ClothingRepository {
     bool deleteImage = true,
   }) async {
     try {
-      // TODO: Delete from Firestore
-      // await _firestore.collection('clothing_items').doc(itemId).delete();
+      // Delete from Firestore
+      await _firestore.collection('clothing_items').doc(itemId).delete();
 
-      // TODO: Delete from Firebase Storage if requested
-      // if (deleteImage) {
-      //   final item = await getClothingItem(itemId);
-      //   if (item.isSuccess) {
-      //     final imageUrl = item.valueOrNull!.imageUrl;
-      //     final imageRef = _storage.refFromURL(imageUrl);
-      //     await imageRef.delete();
-      //   }
-      // }
+      // Delete from Firebase Storage if requested
+      if (deleteImage) {
+        final itemResult = await getClothingItem(itemId);
+        if (itemResult.isSuccess) {
+          final imageUrl = itemResult.valueOrNull!.imageUrl;
+          final imageRef = _storage.refFromURL(imageUrl);
+          await imageRef.delete();
+        }
+      }
 
       return const Success(null);
     } on FirebaseException catch (e) {
@@ -384,24 +381,23 @@ class ClothingRepositoryImpl implements ClothingRepository {
   @override
   Future<Result<StorageQuota>> getStorageQuota(String userId) async {
     try {
-      // TODO: Query Firestore to count items and calculate total size
-      // final itemsSnapshot = await _firestore
-      //     .collection('clothing_items')
-      //     .where('userId', isEqualTo: userId)
-      //     .get();
+      // Query Firestore to count items and calculate total size
+      final itemsSnapshot = await _firestore
+          .collection('clothing_items')
+          .where('userId', isEqualTo: userId)
+          .get();
 
-      // final itemCount = itemsSnapshot.size;
-      // final totalBytes = itemsSnapshot.docs.fold<int>(0, (sum, doc) {
-      //   final item = ClothingItem.fromJson(doc.data() as Map<String, dynamic>);
-      //   // Estimate size from image URLs (in a real implementation, store actual sizes)
-      //   return sum + 1024 * 1024; // Assume 1MB per image for estimation
-      // });
+      final itemCount = itemsSnapshot.size;
+      final totalBytes = itemsSnapshot.docs.fold<int>(0, (sum, doc) {
+        final item = ClothingItem.fromJson(doc.data());
+        // Estimate size from image URLs (in a real implementation, store actual sizes)
+        return sum + 1024 * 1024; // Assume 1MB per image for estimation
+      });
 
-      // For now, return a placeholder quota
       final quota = StorageQuota(
-        itemCount: 0,
+        itemCount: itemCount,
         maxItems: 500,
-        bytesUsed: 0,
+        bytesUsed: totalBytes,
         maxBytes: 2 * 1024 * 1024 * 1024, // 2GB
       );
       return Success(quota);
@@ -490,9 +486,9 @@ class ClothingRepositoryImpl implements ClothingRepository {
 
 /// Provider for [ClothingRepository].
 ///
-/// Creates a [ClothingRepositoryImpl] instance. Firebase dependencies
-/// (Firestore, Storage) are accessed via their singletons inside the
-/// repository once the TODO implementations are wired up.
+/// Creates a [ClothingRepositoryImpl] instance with Firebase dependencies
+/// explicitly injected. This allows for easier testing by substituting
+/// mock implementations.
 final clothingRepositoryProvider = Provider<ClothingRepository>((ref) {
   return ClothingRepositoryImpl(
     firestore: FirebaseFirestore.instance,

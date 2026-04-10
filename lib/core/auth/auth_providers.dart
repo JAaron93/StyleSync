@@ -56,19 +56,19 @@ final is18PlusVerifiedProvider = FutureProvider<bool>((ref) async {
 ///
 /// This [StateNotifier] provides reactive state management for
 /// authentication, allowing UI components to respond to auth state changes.
-class AuthStateNotifier extends StateNotifier<AuthState> {
-  /// Creates an [AuthStateNotifier] with the given services.
-  AuthStateNotifier(this._authService)
-      : super(const AuthState.initial());
-
-  final AuthService _authService;
+class AuthStateNotifier extends Notifier<AuthState> {
+  @override
+  AuthState build() {
+    return const AuthState.initial();
+  }
 
   /// Initializes the auth state by checking if a user is signed in.
   Future<void> initialize() async {
+    final authService = ref.read(authServiceProvider);
     try {
-      final signedIn = await _authService.isSignedIn();
+      final signedIn = await authService.isSignedIn();
       if (signedIn) {
-        final profile = await _authService.getUserProfile();
+        final profile = await authService.getUserProfile();
         if (profile != null) {
           state = AuthState.authenticated(profile);
         } else {
@@ -85,8 +85,9 @@ class AuthStateNotifier extends StateNotifier<AuthState> {
   /// Signs in a user with email and password.
   Future<void> signInWithEmail(String email, String password) async {
     state = const AuthState.loading();
+    final authService = ref.read(authServiceProvider);
     try {
-      final profile = await _authService.signInWithEmail(email, password);
+      final profile = await authService.signInWithEmail(email, password);
       state = AuthState.authenticated(profile);
     } catch (e) {
       state = AuthState.error(e.toString());
@@ -100,8 +101,9 @@ class AuthStateNotifier extends StateNotifier<AuthState> {
     DateTime dateOfBirth,
   ) async {
     state = const AuthState.loading();
+    final authService = ref.read(authServiceProvider);
     try {
-      final profile = await _authService.signUpWithEmail(
+      final profile = await authService.signUpWithEmail(
         email,
         password,
         dateOfBirth,
@@ -116,8 +118,9 @@ class AuthStateNotifier extends StateNotifier<AuthState> {
   Future<void> signOut() async {
     final prev = state; // Capture current state before operation
     state = const AuthState.loading();
+    final authService = ref.read(authServiceProvider);
     try {
-      await _authService.signOut();
+      await authService.signOut();
       state = const AuthState.unauthenticated();
     } catch (e) {
       // Preserve the prior authenticated state and surface the error
@@ -147,9 +150,10 @@ class AuthStateNotifier extends StateNotifier<AuthState> {
   Future<void> updateFaceDetectionConsent(bool granted) async {
     if (!_requireAuthenticated()) return;
     
+    final authService = ref.read(authServiceProvider);
     try {
-      await _authService.updateFaceDetectionConsent(granted);
-      final profile = await _authService.getUserProfile();
+      await authService.updateFaceDetectionConsent(granted);
+      final profile = await authService.getUserProfile();
       if (profile != null) {
         state = AuthState.authenticated(
           profile.copyWith(faceDetectionConsentGranted: granted),
@@ -166,9 +170,10 @@ class AuthStateNotifier extends StateNotifier<AuthState> {
   Future<void> updateBiometricConsent(bool granted) async {
     if (!_requireAuthenticated()) return;
     
+    final authService = ref.read(authServiceProvider);
     try {
-      await _authService.updateBiometricConsent(granted);
-      final profile = await _authService.getUserProfile();
+      await authService.updateBiometricConsent(granted);
+      final profile = await authService.getUserProfile();
       if (profile != null) {
         state = AuthState.authenticated(
           profile.copyWith(biometricConsentGranted: granted),
@@ -281,7 +286,4 @@ enum AuthStatus {
 /// authentication state. Use this provider in UI components to
 /// react to authentication state changes.
 final authStateProvider =
-    StateNotifierProvider<AuthStateNotifier, AuthState>((ref) {
-  final authService = ref.watch(authServiceProvider);
-  return AuthStateNotifier(authService);
-});
+    NotifierProvider<AuthStateNotifier, AuthState>(AuthStateNotifier.new);
