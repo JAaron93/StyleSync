@@ -107,6 +107,27 @@ void main() {
       expect(fakeFirebase.firestoreDeleteCalled, true);
     });
 
+    test('updateClothing succeeds and triggers firestoreUpdateCalled', () async {
+      final itemId = 'test-item-id';
+      final updates = ClothingItem.create(
+        userId: 'user123',
+        imageUrl: 'https://example.com/updated.jpg',
+        processedImageUrl: 'https://example.com/updated_proc.jpg',
+        thumbnailUrl: 'https://example.com/updated_thumb.jpg',
+        category: 'bottoms',
+        colors: ['black'],
+        seasons: ['winter'],
+        idempotencyKey: 'new-key',
+      );
+
+      fakeFirebase.itemToReturn = updates.toJson();
+      final result = await repository.updateClothing(itemId, updates);
+
+      expect(result.isFailure, false);
+      expect(fakeFirebase.firestoreUpdateCalled, true);
+      expect(fakeFirebase.firestoreSetCalled, false);
+    });
+
     test('retryProcessing returns failure for non-existent item', () async {
       fakeFirebase.itemExists = false;
       final result = await repository.retryProcessing('test-id');
@@ -133,6 +154,7 @@ class FakeFirebaseService extends Fake
     implements FirebaseFirestore, FirebaseStorage {
   // Verification states
   bool firestoreSetCalled = false;
+  bool firestoreUpdateCalled = false;
   bool firestoreDeleteCalled = false;
   bool firestoreGetCalled = false;
   bool storagePutFileCalled = false;
@@ -142,6 +164,9 @@ class FakeFirebaseService extends Fake
   // Return configuration
   bool itemExists = true;
   List<Map<String, dynamic>> itemsToReturn = [];
+  Map<String, dynamic>? itemToReturn;
+  Object? storageUploadError;
+  String downloadUrlToReturn = 'https://example.com/image.jpg';
 
   // Firestore implementation
   @override
@@ -207,7 +232,7 @@ class FakeDocumentReference extends Fake
 
   @override
   Future<void> update(Map<Object, Object?> data) async {
-    _service.firestoreSetCalled = true;
+    _service.firestoreUpdateCalled = true;
   }
 
   @override
@@ -218,7 +243,19 @@ class FakeDocumentReference extends Fake
   @override
   Future<DocumentSnapshot<Map<String, dynamic>>> get([GetOptions? options]) async {
     _service.firestoreGetCalled = true;
-    return FakeDocumentSnapshot(_service.itemExists, _service.itemsToReturn.isNotEmpty ? _service.itemsToReturn.first : {});
+    final Map<String, dynamic> data;
+    if (_service.itemExists) {
+      if (_service.itemToReturn != null) {
+        data = _service.itemToReturn!;
+      } else if (_service.itemsToReturn.isNotEmpty) {
+        data = _service.itemsToReturn.first;
+      } else {
+        data = {};
+      }
+    } else {
+      data = {};
+    }
+    return FakeDocumentSnapshot(_service.itemExists, data);
   }
 }
 
@@ -232,7 +269,15 @@ class FakeReference extends Fake implements Reference {
   @override
   UploadTask putFile(File file, [SettableMetadata? metadata]) {
     _service.storagePutFileCalled = true;
-    return FakeUploadTask();
+    return FakeUploadTask(
+      error: _service.storageUploadError,
+      snapshot: FakeTaskSnapshot(this),
+    );
+  }
+
+  @override
+  Future<String> getDownloadURL() async {
+    return _service.downloadUrlToReturn;
   }
 
   @override
@@ -276,11 +321,29 @@ class FakeDocumentSnapshot extends Fake
 }
 
 class FakeUploadTask extends Fake implements UploadTask {
+  final Object? error;
+  final FakeTaskSnapshot snapshot;
+
+  FakeUploadTask({this.error, required this.snapshot});
+
   @override
   Future<S> then<S>(FutureOr<S> Function(TaskSnapshot) onValue,
           {Function? onError}) async {
-    return onValue(FakeTaskSnapshot());
+    if (error != null) {
+      if (onError != null) {
+        return onError(error!) as FutureOr<S>;
+      }
+      throw error!;
+    }
+    return onValue(snapshot);
   }
 }
 
-class FakeTaskSnapshot extends Fake implements TaskSnapshot {}
+class FakeTaskSnapshot extends Fake implements TaskSnapshot {
+  final Reference _ref;
+
+  FakeTaskSnapshot(this._ref);
+
+  @override
+  Reference get ref => _ref;
+}

@@ -11,7 +11,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:stylesync/core/onboarding/models/onboarding_state.dart';
-import 'package:stylesync/core/onboarding/onboarding_controller.dart';
 import 'package:stylesync/core/onboarding/onboarding_providers.dart';
 import 'package:stylesync/features/onboarding/onboarding_screen.dart';
 import 'package:stylesync/features/onboarding/widgets/api_key_input_page.dart';
@@ -52,23 +51,7 @@ class TestOnboardingStateNotifier extends OnboardingStateNotifier {
   }
 }
 
-/// Mock controller for testing.
-class TestOnboardingController implements OnboardingController {
-  bool _isComplete = false;
 
-  @override
-  Future<bool> isOnboardingComplete() async => _isComplete;
-
-  @override
-  Future<void> markOnboardingComplete() async {
-    _isComplete = true;
-  }
-
-  @override
-  Future<void> resetOnboarding() async {
-    _isComplete = false;
-  }
-}
 
 // =============================================================================
 // Widget Tests

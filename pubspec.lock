@@ -154,7 +154,7 @@ packages:
     source: hosted
     version: "6.2.0"
   cloud_firestore_platform_interface:
-    dependency: transitive
+    dependency: "direct dev"
     description:
       name: cloud_firestore_platform_interface
       sha256: b82a35eb6a1bde9569df372f933fc5a01bcddef58c993d78f78c31d111fcd080
@@ -322,7 +322,7 @@ packages:
     source: hosted
     version: "13.2.0"
   firebase_storage_platform_interface:
-    dependency: transitive
+    dependency: "direct dev"
     description:
       name: firebase_storage_platform_interface
       sha256: "83f858784ebfdbe4d033d97c431ff67541d41266277ec290c169ce6c4bfda485"
@@ -1182,5 +1182,5 @@ packages:
     source: hosted
     version: "3.1.3"
 sdks:
-  dart: ">=3.10.7 <4.0.0"
+  dart: ">=3.11.4 <4.0.0"
   flutter: ">=3.38.4"

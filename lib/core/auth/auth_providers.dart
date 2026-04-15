@@ -54,7 +54,7 @@ final is18PlusVerifiedProvider = FutureProvider<bool>((ref) async {
 
 /// StateNotifier for managing authentication state.
 ///
-/// This [StateNotifier] provides reactive state management for
+/// This [Notifier] provides reactive state management for
 /// authentication, allowing UI components to respond to auth state changes.
 class AuthStateNotifier extends Notifier<AuthState> {
   @override
@@ -282,7 +282,7 @@ enum AuthStatus {
 
 /// Provider for the [AuthStateNotifier].
 ///
-/// This provider creates a [StateNotifierProvider] that manages the
+/// This provider creates a [NotifierProvider] that manages the
 /// authentication state. Use this provider in UI components to
 /// react to authentication state changes.
 final authStateProvider =

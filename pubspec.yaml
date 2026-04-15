@@ -70,8 +70,8 @@ dev_dependencies:
 # following page: https://dart.dev/tools/pub/pubspec
 
 # The following section is specific to Flutter packages.
-  cloud_firestore_platform_interface: any
-  firebase_storage_platform_interface: any
+  cloud_firestore_platform_interface: 7.1.0
+  firebase_storage_platform_interface: 5.2.19
 flutter:
 
   # The following line ensures that the Material Icons font is

@@ -55,7 +55,7 @@ final isOnboardingCompleteProvider = FutureProvider<bool>((ref) async {
 
 /// Notifier that manages the current onboarding state.
 ///
-/// This [StateNotifier] provides reactive state management for the
+///This [Notifier] provides reactive state management for the
 /// onboarding flow, allowing UI components to respond to state changes
 /// and update the current step.
 class OnboardingStateNotifier extends Notifier<OnboardingState> {
@@ -200,7 +200,7 @@ class OnboardingStateNotifier extends Notifier<OnboardingState> {
 
 /// Provider for the [OnboardingStateNotifier].
 ///
-/// This provider creates a [StateNotifierProvider] that manages the
+/// This provider creates a [NotifierProvider] that manages the
 /// onboarding flow state. Use this provider in UI components to
 /// react to onboarding state changes.
 ///

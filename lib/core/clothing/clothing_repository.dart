@@ -189,13 +189,16 @@ class ClothingRepositoryImpl implements ClothingRepository {
       final itemId = clothingItem.id;
       final imageRef = _storage.ref().child('users/$userId/clothing/$itemId/original.jpg');
       await imageRef.putFile(image);
+      final downloadUrl = await imageRef.getDownloadURL();
+
+      final updatedItem = clothingItem.copyWith(imageUrl: downloadUrl);
 
       // Store metadata in Firestore
       await _firestore.collection('clothing_items').doc(itemId).set(
-        clothingItem.toJson(),
+        updatedItem.toJson(),
       );
 
-      return Success(clothingItem);
+      return Success(updatedItem);
     } on FirebaseException catch (e) {
       return Failure(
         FirebaseError('Firebase error: ${e.message}', originalError: e),
@@ -313,8 +316,15 @@ class ClothingRepositoryImpl implements ClothingRepository {
         updates.toJson(),
       );
 
-      return Success(updates);
+      // Refetch to get server-side mutations like serverTimestamp
+      final doc = await _firestore.collection('clothing_items').doc(itemId).get();
+      final updatedItem = ClothingItem.fromJson(doc.data()!);
+
+      return Success(updatedItem);
     } on FirebaseException catch (e) {
+      if (e.code == 'not-found') {
+        return const Failure(ClothingItemNotFoundError());
+      }
       return Failure(
         FirebaseError('Firebase error: ${e.message}', originalError: e),
       );
@@ -342,17 +352,22 @@ class ClothingRepositoryImpl implements ClothingRepository {
     bool deleteImage = true,
   }) async {
     try {
+      // Get image URL before deleting document if we need to delete the image
+      String? imageUrl;
+      if (deleteImage) {
+        final itemResult = await getClothingItem(itemId);
+        if (itemResult.isSuccess) {
+          imageUrl = itemResult.valueOrNull?.imageUrl;
+        }
+      }
+
       // Delete from Firestore
       await _firestore.collection('clothing_items').doc(itemId).delete();
 
       // Delete from Firebase Storage if requested
-      if (deleteImage) {
-        final itemResult = await getClothingItem(itemId);
-        if (itemResult.isSuccess) {
-          final imageUrl = itemResult.valueOrNull!.imageUrl;
-          final imageRef = _storage.refFromURL(imageUrl);
-          await imageRef.delete();
-        }
+      if (deleteImage && imageUrl != null) {
+        final imageRef = _storage.refFromURL(imageUrl);
+        await imageRef.delete();
       }
 
       return const Success(null);
@@ -389,7 +404,6 @@ class ClothingRepositoryImpl implements ClothingRepository {
 
       final itemCount = itemsSnapshot.size;
       final totalBytes = itemsSnapshot.docs.fold<int>(0, (sum, doc) {
-        final item = ClothingItem.fromJson(doc.data());
         // Estimate size from image URLs (in a real implementation, store actual sizes)
         return sum + 1024 * 1024; // Assume 1MB per image for estimation
       });
