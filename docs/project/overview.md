@@ -33,7 +33,7 @@ StyleSync is a Flutter application that leverages Firebase for backend services 
 - **Firebase Core**: Firebase integration
 - **Firebase Auth**: User authentication
 - **Firebase Storage**: Cloud storage for encrypted backups
-- **Cloud Firestore**: (planned) NoSQL database
+- **Cloud Firestore**: Metadata storage for clothing items, user settings, and security audit logs
 
 ### State Management
 - **Riverpod**: Reactive state management and dependency injection
@@ -48,14 +48,22 @@ StyleSync is a Flutter application that leverages Firebase for backend services 
 - **Flutter Test**: Standard Flutter testing framework
 - **Mockito**: Mocking framework for unit tests
 - **Glados**: Property-based testing framework
+- **Google ML Kit**: On-device face detection and privacy-preserving filters
+- **TensorFlow Lite (TFLite)**: On-device machine learning for background removal and tagging
 
 ## Key Features
 
-### Bring Your Own Key (BYOK) System
 Users can securely manage their personal Vertex AI API keys with:
 - Format validation and functional testing
 - Secure local storage using platform-native features
 - Optional encrypted cloud backup with user-controlled passphrase
+
+### Digital Clothing Management
+Organize and digitize your wardrobe with secure, on-device processing:
+- **Background Removal**: AIService-powered isolation of clothing items
+- **Auto-Tagging**: Detection of categories, colors, and seasons
+- **Deletion Safety**: Atomic cleanup between Firestore and Storage to prevent data orphans
+- **Quota Management**: User-specific storage limits for digital assets
 
 ### Secure Cloud Backup
 - Client-side encryption before upload

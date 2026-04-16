@@ -100,11 +100,47 @@ void main() {
       },
     );
 
-    test('deleteClothing succeeds', () async {
+    test('deleteClothing succeeds without image deletion', () async {
       final result = await repository.deleteClothing('test-id', deleteImage: false);
 
       expect(result.isFailure, false);
       expect(fakeFirebase.firestoreDeleteCalled, true);
+      expect(fakeFirebase.storageDeleteCalled, false);
+    });
+
+    test('deleteClothing succeeds with image deletion', () async {
+      fakeFirebase.itemExists = true;
+      fakeFirebase.itemToReturn = {
+        'id': 'test-id',
+        'userId': 'user123',
+        'imageUrl': 'https://example.com/image.jpg',
+        'processedImageUrl': 'https://example.com/proc.jpg',
+        'thumbnailUrl': 'https://example.com/thumb.jpg',
+        'category': 'tops',
+        'colors': [],
+        'seasons': [],
+        'uploadedAt': DateTime.now().toIso8601String(),
+        'updatedAt': DateTime.now().toIso8601String(),
+        'processingState': 'completed',
+        'idempotencyKey': 'key',
+      };
+
+      final result = await repository.deleteClothing('test-id', deleteImage: true);
+
+      expect(result.isFailure, false);
+      expect(fakeFirebase.firestoreDeleteCalled, true);
+      expect(fakeFirebase.storageDeleteCalled, true);
+    });
+
+    test('deleteClothing fails when item not found and deleteImage is true', () async {
+      fakeFirebase.itemExists = false;
+      
+      final result = await repository.deleteClothing('non-existent', deleteImage: true);
+
+      expect(result.isFailure, true);
+      expect(result.errorOrNull, isA<ClothingItemNotFoundError>());
+      expect(fakeFirebase.firestoreDeleteCalled, false);
+      expect(fakeFirebase.storageDeleteCalled, false);
     });
 
     test('updateClothing succeeds and triggers firestoreUpdateCalled', () async {
@@ -126,6 +162,7 @@ void main() {
       expect(result.isFailure, false);
       expect(fakeFirebase.firestoreUpdateCalled, true);
       expect(fakeFirebase.firestoreSetCalled, false);
+      expect(fakeFirebase.capturedUpdateData, updates.toJson());
     });
 
     test('retryProcessing returns failure for non-existent item', () async {
@@ -160,6 +197,8 @@ class FakeFirebaseService extends Fake
   bool storagePutFileCalled = false;
   bool storageDeleteCalled = false;
   String? lastIdempotencyKey;
+  Map<Object, Object?>? capturedUpdateData;
+  Map<String, dynamic>? lastFirestoreSetData;
   
   // Return configuration
   bool itemExists = true;
@@ -227,12 +266,14 @@ class FakeDocumentReference extends Fake
   @override
   Future<void> set(Map<String, dynamic> data, [SetOptions? options]) async {
     _service.firestoreSetCalled = true;
+    _service.lastFirestoreSetData = data;
     _service.lastIdempotencyKey = data['idempotencyKey']?.toString();
   }
 
   @override
   Future<void> update(Map<Object, Object?> data) async {
     _service.firestoreUpdateCalled = true;
+    _service.capturedUpdateData = data;
   }
 
   @override

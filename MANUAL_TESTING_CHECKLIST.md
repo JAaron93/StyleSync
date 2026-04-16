@@ -147,7 +147,8 @@ This document outlines the manual testing required to complete Task 13 verificat
 |---|-----------|-----------------|-----------|
 | 51 | View clothing item details | Full image and tags displayed | |
 | 52 | Delete clothing item | Item removed from closet and storage | |
-| 53 | Filter by category | Items filtered correctly | |
+| 53 | **Deletion Safety**: Force image fetch failure | Firestore document remains if image path cannot be resolved | |
+| 54 | Filter by category | Items filtered correctly | |
 
 ---
 
@@ -182,10 +183,10 @@ This document outlines the manual testing required to complete Task 13 verificat
 | Secure Storage | 6 | | |
 | Privacy Services | 10 | | |
 | Background Removal | 4 | | |
-| Digital Closet | 9 | | |
+| Digital Closet | 10 | | |
 | Encryption Services | 3 | | |
 | Error Handling | 4 | | |
-| **TOTAL** | **60** | | |
+| **TOTAL** | **61** | | |
 
 ## Sign-off
 

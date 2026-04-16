@@ -183,6 +183,35 @@ when(mockStorage.read(key: 'api_key'))
 final manager = BYOKManagerImpl(secureStorage: mockStorage);
 ```
 
+### Manual Fakes (Recommended for Firebase)
+
+For complex services like Firestore and Storage, StyleSync prefers **Manual Fakes** over `mockito`. This avoids complex stubbing and provides more predictable behavior for asynchronous interactions.
+
+#### State Capture Flags
+Manual fakes should include verification flags and data capture fields:
+
+```dart
+class FakeFirestore extends Fake implements FirebaseFirestore {
+  // Verification flags
+  bool firestoreUpdateCalled = false;
+  
+  // Data capture
+  Map<Object, Object?>? capturedUpdateData;
+
+  @override
+  Future<void> update(Map<Object, Object?> data) async {
+    firestoreUpdateCalled = true;
+    capturedUpdateData = data;
+  }
+}
+```
+
+#### Why use Fakes?
+1. **Less Boilerplate**: No need for `build_runner` or complex `when(...)` chains.
+2. **Side Effect Tracking**: Easier to verify multiple state changes in a single operation.
+3. **Control over Hooks**: Easily simulate race conditions or specific failure modes (e.g., `shouldThrow = true`).
+
+
 ## Coverage Goals
 
 - **Overall**: 80%+

@@ -318,6 +318,9 @@ class ClothingRepositoryImpl implements ClothingRepository {
 
       // Refetch to get server-side mutations like serverTimestamp
       final doc = await _firestore.collection('clothing_items').doc(itemId).get();
+      if (!doc.exists) {
+        return const Failure(ClothingItemNotFoundError());
+      }
       final updatedItem = ClothingItem.fromJson(doc.data()!);
 
       return Success(updatedItem);
@@ -356,19 +359,25 @@ class ClothingRepositoryImpl implements ClothingRepository {
       String? imageUrl;
       if (deleteImage) {
         final itemResult = await getClothingItem(itemId);
-        if (itemResult.isSuccess) {
-          imageUrl = itemResult.valueOrNull?.imageUrl;
+        
+        // Explicitly handle failure: if we can't find the item to get its 
+        // image URL, we shouldn't proceed with deletion to avoid leaking 
+        // the image in Storage.
+        if (itemResult.isFailure) {
+          return Failure(itemResult.errorOrNull!);
         }
+        
+        imageUrl = itemResult.valueOrNull?.imageUrl;
       }
-
-      // Delete from Firestore
-      await _firestore.collection('clothing_items').doc(itemId).delete();
 
       // Delete from Firebase Storage if requested
       if (deleteImage && imageUrl != null) {
         final imageRef = _storage.refFromURL(imageUrl);
         await imageRef.delete();
       }
+
+      // Delete from Firestore
+      await _firestore.collection('clothing_items').doc(itemId).delete();
 
       return const Success(null);
     } on FirebaseException catch (e) {

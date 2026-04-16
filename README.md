@@ -5,7 +5,7 @@ A Flutter application for managing Vertex AI API keys with secure storage and en
 ## Quick Start
 
 ### Prerequisites
-- **Flutter SDK**: `^3.10.7`
+- **Flutter SDK**: `^3.11.4`
 - **Dart SDK**: Compatible with Flutter version
 - **Homebrew** (optional, for macOS installation)
 
@@ -33,10 +33,11 @@ flutter run
 
 ## Key Features
 
-- 🔐 **Secure API Key Management** - Platform-native secure storage (Keychain/Keystore)
+- ✅ **Digital Closet & Clothing Management** - Organize your wardrobe with background removal and auto-tagging
+- ✅ **Bring Your Own Key (BYOK) Management** - Securely manage personal Vertex AI API keys
 - ☁️ **Encrypted Cloud Backup** - Client-side encryption with user-controlled passphrase
 - 🔒 **Strong Cryptography** - AES-256-GCM encryption, Argon2id/PBKDF2 key derivation
-- ✅ **Comprehensive Testing** - Unit tests and property-based testing with Glados
+- ✅ **Comprehensive Testing** - Unit tests, manual fakes, and property-based testing with Glados
 - 📱 **Cross-Platform** - Android, iOS, Web, macOS, Linux, Windows
 
 ## Development
@@ -95,6 +96,5 @@ Before contributing:
 
 ## Additional Resources
 
-- **[AGENTS.md](./AGENTS.md)** - Guidance for AI agents
 - **[docs/](./docs/)** - Complete documentation hub
 - **Design Specs** - See `lib/core/byok/byok_design.md` and `plans/`
