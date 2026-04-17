@@ -35,8 +35,6 @@ dependencies:
   firebase_auth: ^6.3.0
   firebase_storage: ^13.2.0
   cloud_firestore: ^6.2.0
-  cloud_firestore_platform_interface: 7.1.0
-  firebase_storage_platform_interface: 5.2.19
   flutter_secure_storage: ^10.0.0
   riverpod: ^3.2.1
   flutter_riverpod: ^3.3.1
@@ -56,6 +54,10 @@ dependencies:
 dev_dependencies:
   flutter_test:
     sdk: flutter
+
+  # Explicit dependencies for platform interfaces needed by mockito to generate test mocks correctly
+  cloud_firestore_platform_interface: ^7.1.0
+  firebase_storage_platform_interface: ^5.2.19
 
   # The "flutter_lints" package below contains a set of recommended lints to
   # encourage good coding practices. The lint set provided by the package is

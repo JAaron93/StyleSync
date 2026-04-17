@@ -147,7 +147,7 @@ This document outlines the manual testing required to complete Task 13 verificat
 |---|-----------|-----------------|-----------|
 | 51 | View clothing item details | Full image and tags displayed | |
 | 52 | Delete clothing item | Item removed from closet and storage | |
-| 53 | **Deletion Safety**: Force image fetch failure | Firestore document remains if image path cannot be resolved | |
+| 53 | **Deletion Safety**: Force image fetch failure - In Firebase Console -> Storage, delete the image file referenced by a clothing Firestore document while leaving the Firestore document intact; then open the app and navigate to the clothing item's detail/listing to confirm how the app behaves. | App handles missing image gracefully (e.g., placeholder shown or user-facing error). | |
 | 54 | Filter by category | Items filtered correctly | |
 
 ---
@@ -157,9 +157,9 @@ This document outlines the manual testing required to complete Task 13 verificat
 ### 7.1 Encryption Round-Trip
 | # | Test Case | Expected Result | Pass/Fail |
 |---|-----------|-----------------|-----------|
-| 54 | Enable cloud backup with passphrase | Backup created with encryption | |
-| 55 | Restore backup with correct passphrase | Data restored correctly | |
-| 56 | Attempt restore with wrong passphrase | Decryption fails gracefully | |
+| 55 | Enable cloud backup with passphrase | Backup created with encryption | |
+| 56 | Restore backup with correct passphrase | Data restored correctly | |
+| 57 | Attempt restore with wrong passphrase | Decryption fails gracefully | |
 
 ---
 
@@ -167,10 +167,10 @@ This document outlines the manual testing required to complete Task 13 verificat
 
 | # | Test Case | Expected Result | Pass/Fail |
 |---|-----------|-----------------|-----------|
-| 57 | Turn off network, attempt upload | Offline indicator shown | |
-| 58 | Enter expired/invalid API key | Specific error prompting key verification | |
-| 59 | Force upload failure | Auto-retry (up to 3x), then error shown | |
-| 60 | Force background removal failure | Option to proceed with original image | |
+| 58 | Turn off network, attempt upload | Offline indicator shown | |
+| 59 | Enter expired/invalid API key | Specific error prompting key verification | |
+| 60 | Force upload failure | Auto-retry (up to 3x), then error shown | |
+| 61 | Force background removal failure | Option to proceed with original image | |
 
 ---
 

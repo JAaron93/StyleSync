@@ -160,9 +160,9 @@ void main() {
       final result = await repository.updateClothing(itemId, updates);
 
       expect(result.isFailure, false);
-      expect(fakeFirebase.firestoreUpdateCalled, true);
+      expect(fakeFirebase.fakeDocRef.firestoreUpdateCalled, true);
       expect(fakeFirebase.firestoreSetCalled, false);
-      expect(fakeFirebase.capturedUpdateData, updates.toJson());
+      expect(fakeFirebase.fakeDocRef.capturedUpdateData, updates.toJson());
     });
 
     test('retryProcessing returns failure for non-existent item', () async {
@@ -191,14 +191,13 @@ class FakeFirebaseService extends Fake
     implements FirebaseFirestore, FirebaseStorage {
   // Verification states
   bool firestoreSetCalled = false;
-  bool firestoreUpdateCalled = false;
   bool firestoreDeleteCalled = false;
   bool firestoreGetCalled = false;
   bool storagePutFileCalled = false;
   bool storageDeleteCalled = false;
   String? lastIdempotencyKey;
-  Map<Object, Object?>? capturedUpdateData;
-  Map<String, dynamic>? lastFirestoreSetData;
+  
+  late final FakeDocumentReference fakeDocRef = FakeDocumentReference(this);
   
   // Return configuration
   bool itemExists = true;
@@ -227,7 +226,7 @@ class FakeCollectionReference extends Fake
 
   @override
   DocumentReference<Map<String, dynamic>> doc([String? path]) =>
-      FakeDocumentReference(_service);
+      _service.fakeDocRef;
 
   @override
   Query<Map<String, dynamic>> where(Object field,
@@ -261,19 +260,22 @@ class FakeCollectionReference extends Fake
 class FakeDocumentReference extends Fake
     implements DocumentReference<Map<String, dynamic>> {
   final FakeFirebaseService _service;
+  
+  bool firestoreUpdateCalled = false;
+  Map<String, Object?>? capturedUpdateData;
+
   FakeDocumentReference(this._service);
 
   @override
   Future<void> set(Map<String, dynamic> data, [SetOptions? options]) async {
     _service.firestoreSetCalled = true;
-    _service.lastFirestoreSetData = data;
     _service.lastIdempotencyKey = data['idempotencyKey']?.toString();
   }
 
   @override
-  Future<void> update(Map<Object, Object?> data) async {
-    _service.firestoreUpdateCalled = true;
-    _service.capturedUpdateData = data;
+  Future<void> update(Map<String, Object?> data) async {
+    firestoreUpdateCalled = true;
+    capturedUpdateData = data;
   }
 
   @override

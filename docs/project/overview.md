@@ -48,6 +48,8 @@ StyleSync is a Flutter application that leverages Firebase for backend services 
 - **Flutter Test**: Standard Flutter testing framework
 - **Mockito**: Mocking framework for unit tests
 - **Glados**: Property-based testing framework
+
+### Machine Learning
 - **Google ML Kit**: On-device face detection and privacy-preserving filters
 - **TensorFlow Lite (TFLite)**: On-device machine learning for background removal and tagging
 
@@ -60,7 +62,7 @@ Users can securely manage their personal Vertex AI API keys with:
 
 ### Digital Clothing Management
 Organize and digitize your wardrobe with secure, on-device processing:
-- **Background Removal**: AIService-powered isolation of clothing items
+- **Background Removal**: AIService (our custom AI integration for image processing: background removal and segmentation) powered isolation of clothing items
 - **Auto-Tagging**: Detection of categories, colors, and seasons
 - **Deletion Safety**: Atomic cleanup between Firestore and Storage to prevent data orphans
 - **Quota Management**: User-specific storage limits for digital assets

@@ -188,18 +188,18 @@ final manager = BYOKManagerImpl(secureStorage: mockStorage);
 For complex services like Firestore and Storage, StyleSync prefers **Manual Fakes** over `mockito`. This avoids complex stubbing and provides more predictable behavior for asynchronous interactions.
 
 #### State Capture Flags
-Manual fakes should include verification flags and data capture fields:
+Manual fakes should include verification flags and data capture fields. Note that methods like `update()` belong to `DocumentReference`, so your fakes should model that structure:
 
 ```dart
-class FakeFirestore extends Fake implements FirebaseFirestore {
+class FakeDocumentReference extends Fake implements DocumentReference<Map<String, dynamic>> {
   // Verification flags
   bool firestoreUpdateCalled = false;
   
   // Data capture
-  Map<Object, Object?>? capturedUpdateData;
+  Map<String, Object?>? capturedUpdateData;
 
   @override
-  Future<void> update(Map<Object, Object?> data) async {
+  Future<void> update(Map<String, Object?> data) async {
     firestoreUpdateCalled = true;
     capturedUpdateData = data;
   }
